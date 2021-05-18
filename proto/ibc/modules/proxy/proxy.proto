@@ -1,0 +1,44 @@
+syntax = "proto3";
+package ibc.proxy.v1;
+
+option go_package = "github.com/datachainlab/ibc-proxy/modules/proxy/types";
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/any.proto";
+import "ibc/core/client/v1/client.proto";
+import "ibc/core/commitment/v1/commitment.proto";
+
+message ProxyRequestPacketData {
+  string upstream_client_id = 1;
+  string proxy_client_id = 2;
+}
+
+message ProxyRequestAcknowledgement {
+  Status status = 1;
+  ibc.core.commitment.v1.MerklePrefix prefix = 2;
+  UpstreamState upstream_state = 3;
+}
+
+message UpstreamState {
+  option (gogoproto.goproto_getters) = false;
+
+  ibc.core.client.v1.Height height           = 1
+      [(gogoproto.moretags) = "yaml:\"height\"", (gogoproto.nullable) = false];
+  google.protobuf.Any client_state = 2;
+  google.protobuf.Any consensus_state = 3;
+}
+
+enum Status {
+  option (gogoproto.goproto_enum_prefix) = false;
+
+  STATUS_UNINITIALIZED_UNSPECIFIED = 0 [(gogoproto.enumvalue_customname) = "UNINITIALIZED"];
+  STATE_OK = 1 [(gogoproto.enumvalue_customname) = "OK"];
+  STATE_FAILED = 2 [(gogoproto.enumvalue_customname) = "FAILED"];
+}
+
+message Params {
+  bool proxy_client_enabled = 1;
+  bool proxy_service_enabled = 2;
+}
+
+message GenesisState {}

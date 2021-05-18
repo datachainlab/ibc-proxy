@@ -1,0 +1,7 @@
+syntax = "proto3";
+package ibc.proxy.v1;
+
+option go_package = "github.com/datachainlab/ibc-proxy/modules/proxy/types";
+
+import "gogoproto/gogo.proto";
+import "ibc/core/commitment/v1/commitment.proto";

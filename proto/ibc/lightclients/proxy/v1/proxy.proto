@@ -1,0 +1,27 @@
+syntax = "proto3";
+package ibc.lightclients.proxy.v1;
+
+option go_package = "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-proxy/types";
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/any.proto";
+import "ibc/core/client/v1/client.proto";
+import "ibc/core/commitment/v1/commitment.proto";
+
+message ClientState {
+  option (gogoproto.goproto_getters) = false;
+
+  string upstream_client_id = 1; // client id corresponding to upstream on proxy
+  google.protobuf.Any proxy_client_state = 2; // client state corresponding to proxy
+
+  // commitment merkle prefix of the proxy chain.
+  ibc.core.commitment.v1.MerklePrefix prefix = 3;
+  google.protobuf.Any upstream_client_state = 4; // client state corresponding to upstream
+  google.protobuf.Any upstream_consensus_state = 5; // consensus state corresponding to upstream
+}
+
+message ConsensusState {
+  option (gogoproto.goproto_getters) = false;
+
+  google.protobuf.Any proxy_consensus_state = 1; // consensus state corresponding to proxy
+}
