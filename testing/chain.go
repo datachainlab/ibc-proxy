@@ -37,7 +37,6 @@ import (
 	"github.com/cosmos/ibc-go/modules/core/types"
 	ibctmtypes "github.com/cosmos/ibc-go/modules/light-clients/07-tendermint/types"
 
-	proxytypes "github.com/datachainlab/ibc-proxy/modules/proxy/types"
 	"github.com/datachainlab/ibc-proxy/testing/mock"
 	"github.com/datachainlab/ibc-proxy/testing/simapp"
 )
@@ -49,9 +48,8 @@ const (
 	MaxClockDrift      time.Duration = time.Minute * 10
 	DefaultDelayPeriod uint64        = 0
 
-	// DefaultChannelVersion = ibctransfertypes.Version
-	DefaultChannelVersion = proxytypes.Version
-	InvalidID             = "IDisInvalid"
+	TransferVersion = ibctransfertypes.Version
+	InvalidID       = "IDisInvalid"
 
 	ConnectionIDPrefix = "conn"
 	ChannelIDPrefix    = "chan"
@@ -379,8 +377,8 @@ func (chain *TestChain) NewClientID(clientType string) string {
 
 // AddTestConnection appends a new TestConnection which contains references
 // to the connection id, client id and counterparty client id.
-func (chain *TestChain) AddTestConnection(clientID, counterpartyClientID string) *TestConnection {
-	conn := chain.ConstructNextTestConnection(clientID, counterpartyClientID)
+func (chain *TestChain) AddTestConnection(clientID, counterpartyClientID, nextChannelVersion string) *TestConnection {
+	conn := chain.ConstructNextTestConnection(clientID, counterpartyClientID, nextChannelVersion)
 
 	chain.Connections = append(chain.Connections, conn)
 	return conn
@@ -389,25 +387,25 @@ func (chain *TestChain) AddTestConnection(clientID, counterpartyClientID string)
 // ConstructNextTestConnection constructs the next test connection to be
 // created given a clientID and counterparty clientID. The connection id
 // format: <chainID>-conn<index>
-func (chain *TestChain) ConstructNextTestConnection(clientID, counterpartyClientID string) *TestConnection {
+func (chain *TestChain) ConstructNextTestConnection(clientID, counterpartyClientID, nextChannelVersion string) *TestConnection {
 	connectionID := connectiontypes.FormatConnectionIdentifier(uint64(len(chain.Connections)))
 	return &TestConnection{
 		ID:                   connectionID,
 		ClientID:             clientID,
-		NextChannelVersion:   DefaultChannelVersion,
+		NextChannelVersion:   nextChannelVersion,
 		CounterpartyClientID: counterpartyClientID,
 	}
 }
 
-// GetFirstTestConnection returns the first test connection for a given clientID.
-// The connection may or may not exist in the chain state.
-func (chain *TestChain) GetFirstTestConnection(clientID, counterpartyClientID string) *TestConnection {
-	if len(chain.Connections) > 0 {
-		return chain.Connections[0]
-	}
+// // GetFirstTestConnection returns the first test connection for a given clientID.
+// // The connection may or may not exist in the chain state.
+// func (chain *TestChain) GetFirstTestConnection(clientID, counterpartyClientID string) *TestConnection {
+// 	if len(chain.Connections) > 0 {
+// 		return chain.Connections[0]
+// 	}
 
-	return chain.ConstructNextTestConnection(clientID, counterpartyClientID)
-}
+// 	return chain.ConstructNextTestConnection(clientID, counterpartyClientID)
+// }
 
 // AddTestChannel appends a new TestChannel which contains references to the port and channel ID
 // used for channel creation and interaction. See 'NextTestChannel' for channel ID naming format.

@@ -15,7 +15,7 @@ func (k Keeper) ConnOpenTry(
 
 	connectionID string, // the connection ID corresponding to B on A
 	upstreamClientID string, // the client ID corresponding to A on P
-	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to B on A
+	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to B on A (its state must be INIT)
 
 	clientState exported.ClientState, // clientState that chainA has for chainB or proxy
 	proofInit []byte, // proof that chainA stored connectionEnd in state (on ConnOpenInit)
@@ -27,6 +27,11 @@ func (k Keeper) ConnOpenTry(
 ) error {
 	if !k.IsProxyEnabled(ctx, upstreamClientID) {
 		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
+	}
+
+	_, found := k.GetConnection(ctx, upstreamClientID, connectionID)
+	if found {
+		return fmt.Errorf("connection '%v:%v' already exists", upstreamClientID, connectionID)
 	}
 
 	if proxyConnection.State != connectiontypes.INIT {
@@ -52,6 +57,7 @@ func (k Keeper) ConnOpenTry(
 		return err
 	}
 
+	k.SetConnection(ctx, upstreamClientID, connectionID, proxyConnection)
 	return nil
 }
 
@@ -61,7 +67,7 @@ func (k Keeper) ConnOpenACK(
 	ctx sdk.Context,
 	connectionID string, // connectionID corresponding to B on A
 	upstreamClientID string, // clientID corresponding to B on P
-	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to A on B
+	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to A on B (its state must be TRYOPEN)
 	clientState exported.ClientState, // client state for chainA on chainB
 	version *connectiontypes.Version, // version that ChainB chose in ConnOpenTry
 	proofTry []byte, // proof that connectionEnd was added to ChainB state in ConnOpenTry
@@ -73,6 +79,11 @@ func (k Keeper) ConnOpenACK(
 ) error {
 	if !k.IsProxyEnabled(ctx, upstreamClientID) {
 		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
+	}
+
+	_, found := k.GetConnection(ctx, upstreamClientID, connectionID)
+	if found {
+		return fmt.Errorf("connection '%v:%v' already exists", upstreamClientID, connectionID)
 	}
 
 	if proxyConnection.State != connectiontypes.TRYOPEN {
@@ -98,6 +109,7 @@ func (k Keeper) ConnOpenACK(
 		return err
 	}
 
+	k.SetConnection(ctx, upstreamClientID, connectionID, proxyConnection)
 	return nil
 }
 
@@ -107,12 +119,18 @@ func (k Keeper) ConnOpenConfirm(
 	ctx sdk.Context,
 	connectionID string, // the connection ID corresponding to A on B
 	upstreamClientID string, // the client ID corresponding to A
-	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to A on B
+	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to A on B (its state must be OPEN)
 	proofAck []byte, // proof that connection opened on ChainA during ConnOpenAck
 	proofHeight exported.Height, // height that relayer constructed proofAck
 ) error {
 	if !k.IsProxyEnabled(ctx, upstreamClientID) {
 		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
+	}
+
+	// TODO validate the connection with a given proxyConnection
+	_, found := k.GetConnection(ctx, upstreamClientID, connectionID)
+	if !found {
+		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, connectionID)
 	}
 
 	if proxyConnection.State != connectiontypes.OPEN {
@@ -126,5 +144,6 @@ func (k Keeper) ConnOpenConfirm(
 		return err
 	}
 
+	k.SetConnection(ctx, upstreamClientID, connectionID, proxyConnection)
 	return nil
 }

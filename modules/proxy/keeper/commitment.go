@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 
-	storeprefix "github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
@@ -20,7 +19,7 @@ func (k Keeper) GetClientStateCommitment(
 	counterpartyClientIdentifier string, // clientID corresponding to downstream on upstream
 	upstreamClientID string, // client id corresponding to upstream on proxy
 ) (exported.ClientState, bool) {
-	store := k.proxyClientStore(ctx, upstreamClientID, counterpartyClientIdentifier)
+	store := k.ProxyCommitmentClientStore(ctx, upstreamClientID, counterpartyClientIdentifier)
 	bz := store.Get(host.ClientStateKey())
 	if len(bz) == 0 {
 		return nil, false
@@ -34,7 +33,7 @@ func (k Keeper) GetClientConsensusState(
 	upstreamClientID string,
 	consensusHeight exported.Height,
 ) (exported.ConsensusState, bool) {
-	store := k.proxyClientStore(ctx, upstreamClientID, counterpartyClientIdentifier)
+	store := k.ProxyCommitmentClientStore(ctx, upstreamClientID, counterpartyClientIdentifier)
 	bz := store.Get(host.ConsensusStateKey(consensusHeight))
 	if len(bz) == 0 {
 		return nil, false
@@ -49,7 +48,7 @@ func (k Keeper) GetConnectionState(
 	connectionID string,
 ) (*connectiontypes.ConnectionEnd, bool) {
 	var connection connectiontypes.ConnectionEnd
-	store := k.proxyClientStore(ctx, upstreamClientID, counterpartyClientIdentifier)
+	store := k.ProxyCommitmentClientStore(ctx, upstreamClientID, counterpartyClientIdentifier)
 	bz := store.Get(host.ConnectionKey(connectionID))
 	if len(bz) == 0 {
 		return nil, false
@@ -71,7 +70,7 @@ func (k Keeper) setClientStateCommitment(
 	if err := k.validateParams(counterpartyPrefix); err != nil {
 		return err
 	}
-	store := k.proxyClientStore(ctx, upstreamClientID, counterpartyClientIdentifier)
+	store := k.ProxyCommitmentClientStore(ctx, upstreamClientID, counterpartyClientIdentifier)
 	bz := clienttypes.MustMarshalClientState(k.cdc, clientState)
 	store.Set(host.ClientStateKey(), bz)
 	return nil
@@ -88,7 +87,7 @@ func (k Keeper) setClientConsensusStateCommitment(
 	if err := k.validateParams(counterpartyPrefix); err != nil {
 		return err
 	}
-	store := k.proxyClientStore(ctx, upstreamClientID, counterpartyClientIdentifier)
+	store := k.ProxyCommitmentClientStore(ctx, upstreamClientID, counterpartyClientIdentifier)
 	bz := clienttypes.MustMarshalConsensusState(k.cdc, consensusState)
 	store.Set(host.ConsensusStateKey(consensusHeight), bz)
 	return nil
@@ -105,7 +104,7 @@ func (k Keeper) setConnectionStateCommitment(
 	if err := k.validateParams(counterpartyPrefix); err != nil {
 		return err
 	}
-	store := k.proxyStore(ctx, upstreamClientID)
+	store := k.ProxyCommitmentStore(ctx, upstreamClientID)
 	bz := k.cdc.MustMarshal(&connectionEnd)
 	store.Set(host.ConnectionKey(connectionID), bz)
 	return nil
@@ -123,7 +122,7 @@ func (k Keeper) setChannelStateCommitment(
 	if err := k.validateParams(counterpartyPrefix); err != nil {
 		return err
 	}
-	store := k.proxyStore(ctx, upstreamClientID)
+	store := k.ProxyCommitmentStore(ctx, upstreamClientID)
 	channel := channelEnd.(channeltypes.Channel)
 	bz := k.cdc.MustMarshal(&channel)
 	store.Set(host.ChannelKey(portID, channelID), bz)
@@ -143,7 +142,7 @@ func (k Keeper) setPacketCommitment(
 	if err := k.validateParams(counterpartyPrefix); err != nil {
 		return err
 	}
-	store := k.proxyStore(ctx, upstreamClientID)
+	store := k.ProxyCommitmentStore(ctx, upstreamClientID)
 	store.Set(host.PacketCommitmentKey(portID, channelID, sequence), commitmentBytes)
 	return nil
 }
@@ -161,7 +160,7 @@ func (k Keeper) setPacketAcknowledgement(
 	if err := k.validateParams(counterpartyPrefix); err != nil {
 		return err
 	}
-	store := k.proxyStore(ctx, upstreamClientID)
+	store := k.ProxyCommitmentStore(ctx, upstreamClientID)
 	store.Set(host.PacketAcknowledgementKey(portID, channelID, sequence), acknowledgement)
 	return nil
 }
@@ -178,7 +177,7 @@ func (k Keeper) setPacketReceiptAbsence(
 	if err := k.validateParams(counterpartyPrefix); err != nil {
 		return err
 	}
-	store := k.proxyStore(ctx, upstreamClientID)
+	store := k.ProxyCommitmentStore(ctx, upstreamClientID)
 	store.Set(host.PacketReceiptKey(portID, channelID, sequence), []byte{byte(1)})
 	return nil
 }
@@ -195,7 +194,7 @@ func (k Keeper) setNextSequenceRecv(
 	if err := k.validateParams(counterpartyPrefix); err != nil {
 		return err
 	}
-	store := k.proxyStore(ctx, upstreamClientID)
+	store := k.ProxyCommitmentStore(ctx, upstreamClientID)
 	bz := sdk.Uint64ToBigEndian(nextSequenceRecv)
 	store.Set(host.NextSequenceRecvKey(portID, channelID), bz)
 	return nil
@@ -208,13 +207,4 @@ func (k Keeper) validateParams(prefix exported.Prefix) error {
 		return fmt.Errorf("unsupported prefix: %v != %v", "ibc", string(mp.KeyPrefix))
 	}
 	return nil
-}
-
-func (k Keeper) proxyStore(ctx sdk.Context, upstreamClientID string) sdk.KVStore {
-	return storeprefix.NewStore(ctx.KVStore(k.ibcStoreKey), []byte(upstreamClientID+"/"))
-}
-
-func (k Keeper) proxyClientStore(ctx sdk.Context, upstreamClientID string, counterpartyClientIdentifier string) sdk.KVStore {
-	clientPrefix := append([]byte("clients/"+counterpartyClientIdentifier), '/')
-	return storeprefix.NewStore(k.proxyStore(ctx, upstreamClientID), clientPrefix)
 }

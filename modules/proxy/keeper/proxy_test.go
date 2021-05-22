@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"github.com/cosmos/ibc-go/modules/core/04-channel/types"
 	"github.com/cosmos/ibc-go/modules/core/exported"
 	ibctesting "github.com/datachainlab/ibc-proxy/testing"
 )
@@ -21,7 +22,8 @@ func (suite *KeeperTestSuite) TestConnection1() {
 	suite.Require().NoError(err)
 
 	ppair := ibctesting.ProxyPair{{suite.chainC, clientAC, clientCB}, nil}
-	suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAC, clientBA, ppair)
+	connA, connB := suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAC, clientBA, ibctesting.TransferVersion, ppair)
+	suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, types.UNORDERED, ppair)
 }
 
 // A -> B, B(C) -> A
@@ -40,7 +42,8 @@ func (suite *KeeperTestSuite) TestConnection2() {
 	suite.Require().NoError(err)
 
 	ppair := ibctesting.ProxyPair{nil, {suite.chainC, clientBC, clientCA}}
-	suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAB, clientBC, ppair)
+	connA, connB := suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAB, clientBC, ibctesting.TransferVersion, ppair)
+	suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, types.UNORDERED, ppair)
 }
 
 // A(C) -> B, B(D) -> A
@@ -59,5 +62,6 @@ func (suite *KeeperTestSuite) TestConnection3() {
 	suite.Require().NoError(err)
 
 	ppair := ibctesting.ProxyPair{{suite.chainC, clientAC, clientCB}, {suite.chainD, clientBD, clientDA}}
-	suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAC, clientBD, ppair)
+	connA, connB := suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAC, clientBD, ibctesting.TransferVersion, ppair)
+	suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, types.UNORDERED, ppair)
 }

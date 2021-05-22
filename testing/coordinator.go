@@ -49,7 +49,7 @@ func NewCoordinator(t *testing.T, n int) *Coordinator {
 func (coord *Coordinator) Setup(
 	chainA, chainB *TestChain, order channeltypes.Order,
 ) (string, string, *TestConnection, *TestConnection, TestChannel, TestChannel) {
-	clientA, clientB, connA, connB := coord.SetupClientConnections(chainA, chainB, exported.Tendermint)
+	clientA, clientB, connA, connB := coord.SetupClientConnections(chainA, chainB, exported.Tendermint, TransferVersion)
 
 	// channels can also be referenced through the returned connections
 	channelA, channelB := coord.CreateMockChannels(chainA, chainB, connA, connB, order)
@@ -79,11 +79,12 @@ func (coord *Coordinator) SetupClients(
 func (coord *Coordinator) SetupClientConnections(
 	chainA, chainB *TestChain,
 	clientType string,
+	nextChannelVersion string,
 ) (string, string, *TestConnection, *TestConnection) {
 
 	clientA, clientB := coord.SetupClients(chainA, chainB, clientType)
 
-	connA, connB := coord.CreateConnection(chainA, chainB, clientA, clientB)
+	connA, connB := coord.CreateConnection(chainA, chainB, clientA, clientB, nextChannelVersion)
 
 	return clientA, clientB, connA, connB
 }
@@ -146,9 +147,10 @@ func (coord *Coordinator) UpdateClient(
 func (coord *Coordinator) CreateConnection(
 	chainA, chainB *TestChain,
 	clientA, clientB string,
+	nextChannelVersion string,
 ) (*TestConnection, *TestConnection) {
 
-	connA, connB, err := coord.ConnOpenInit(chainA, chainB, clientA, clientB)
+	connA, connB, err := coord.ConnOpenInit(chainA, chainB, clientA, clientB, nextChannelVersion)
 	require.NoError(coord.t, err)
 
 	err = coord.ConnOpenTry(chainB, chainA, connB, connA)
@@ -397,10 +399,10 @@ func (coord *Coordinator) CommitNBlocks(chain *TestChain, n uint64) {
 // application state.
 func (coord *Coordinator) ConnOpenInit(
 	source, counterparty *TestChain,
-	clientID, counterpartyClientID string,
+	clientID, counterpartyClientID, nextChannelVersion string,
 ) (*TestConnection, *TestConnection, error) {
-	sourceConnection := source.AddTestConnection(clientID, counterpartyClientID)
-	counterpartyConnection := counterparty.AddTestConnection(counterpartyClientID, clientID)
+	sourceConnection := source.AddTestConnection(clientID, counterpartyClientID, nextChannelVersion)
+	counterpartyConnection := counterparty.AddTestConnection(counterpartyClientID, clientID, nextChannelVersion)
 
 	// initialize connection on source
 	if err := source.ConnectionOpenInit(counterparty, sourceConnection, counterpartyConnection); err != nil {
@@ -423,10 +425,10 @@ func (coord *Coordinator) ConnOpenInit(
 // using the OpenInit handshake call.
 func (coord *Coordinator) ConnOpenInitOnBothChains(
 	source, counterparty *TestChain,
-	clientID, counterpartyClientID string,
+	clientID, counterpartyClientID, nextChannelVersion string,
 ) (*TestConnection, *TestConnection, error) {
-	sourceConnection := source.AddTestConnection(clientID, counterpartyClientID)
-	counterpartyConnection := counterparty.AddTestConnection(counterpartyClientID, clientID)
+	sourceConnection := source.AddTestConnection(clientID, counterpartyClientID, nextChannelVersion)
+	counterpartyConnection := counterparty.AddTestConnection(counterpartyClientID, clientID, nextChannelVersion)
 
 	// initialize connection on source
 	if err := source.ConnectionOpenInit(counterparty, sourceConnection, counterpartyConnection); err != nil {

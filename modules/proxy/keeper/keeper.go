@@ -4,12 +4,16 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	storeprefix "github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	connectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
+	channeltypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
 	commitmenttypes "github.com/cosmos/ibc-go/modules/core/23-commitment/types"
 	host "github.com/cosmos/ibc-go/modules/core/24-host"
 	"github.com/cosmos/ibc-go/modules/core/exported"
+
 	"github.com/datachainlab/ibc-proxy/modules/proxy/types"
 )
 
@@ -43,6 +47,19 @@ func NewKeeper(cdc codec.BinaryCodec, proxyStoreKey, ibcStoreKey sdk.StoreKey, c
 // Prefix
 func (k Keeper) GetCommitmentPrefix() exported.Prefix {
 	return commitmenttypes.NewMerklePrefix([]byte(k.proxyStoreKey.Name()))
+}
+
+func (k Keeper) ProxyCommitmentStore(ctx sdk.Context, upstreamClientID string) sdk.KVStore {
+	return storeprefix.NewStore(ctx.KVStore(k.ibcStoreKey), []byte(upstreamClientID+"/"))
+}
+
+func (k Keeper) ProxyCommitmentClientStore(ctx sdk.Context, upstreamClientID string, counterpartyClientIdentifier string) sdk.KVStore {
+	clientPrefix := append([]byte("clients/"+counterpartyClientIdentifier), '/')
+	return storeprefix.NewStore(k.ProxyCommitmentStore(ctx, upstreamClientID), clientPrefix)
+}
+
+func (k Keeper) ProxyStore(ctx sdk.Context, upstreamClientID string) sdk.KVStore {
+	return storeprefix.NewStore(ctx.KVStore(k.proxyStoreKey), []byte(upstreamClientID+"/"))
 }
 
 func (k Keeper) EnableProxy(ctx sdk.Context, clientID string) error {
@@ -84,4 +101,45 @@ func (k Keeper) IsBound(ctx sdk.Context, portID string) bool {
 func (k Keeper) BindPort(ctx sdk.Context, portID string) error {
 	cap := k.portKeeper.BindPort(ctx, portID)
 	return k.ClaimCapability(ctx, cap, host.PortPath(portID))
+}
+
+// GetConnection returns a connection with a particular identifier
+func (k Keeper) GetConnection(ctx sdk.Context, upstreamClientID, connectionID string) (connectiontypes.ConnectionEnd, bool) {
+	store := k.ProxyStore(ctx, upstreamClientID)
+	bz := store.Get(host.ConnectionKey(connectionID))
+	if bz == nil {
+		return connectiontypes.ConnectionEnd{}, false
+	}
+
+	var connection connectiontypes.ConnectionEnd
+	k.cdc.MustUnmarshal(bz, &connection)
+
+	return connection, true
+}
+
+// SetConnection sets a connection to the store
+func (k Keeper) SetConnection(ctx sdk.Context, upstreamClientID, connectionID string, connection connectiontypes.ConnectionEnd) {
+	store := k.ProxyStore(ctx, upstreamClientID)
+	bz := k.cdc.MustMarshal(&connection)
+	store.Set(host.ConnectionKey(connectionID), bz)
+}
+
+// GetChannel returns a channel with a particular identifier binded to a specific port
+func (k Keeper) GetChannel(ctx sdk.Context, upstreamClientID, portID, channelID string) (channeltypes.Channel, bool) {
+	store := k.ProxyStore(ctx, upstreamClientID)
+	bz := store.Get(host.ChannelKey(portID, channelID))
+	if bz == nil {
+		return channeltypes.Channel{}, false
+	}
+
+	var channel channeltypes.Channel
+	k.cdc.MustUnmarshal(bz, &channel)
+	return channel, true
+}
+
+// SetChannel sets a channel to the store
+func (k Keeper) SetChannel(ctx sdk.Context, upstreamClientID, portID, channelID string, channel channeltypes.Channel) {
+	store := k.ProxyStore(ctx, upstreamClientID)
+	bz := k.cdc.MustMarshal(&channel)
+	store.Set(host.ChannelKey(portID, channelID), bz)
 }

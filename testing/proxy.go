@@ -38,7 +38,7 @@ func (coord *Coordinator) SetupProxy(
 	// A: downstream, B: proxy
 
 	clientA, clientB := coord.SetupClients(downstream, proxy, exported.Tendermint)
-	connA, connB := coord.CreateConnection(downstream, proxy, clientA, clientB)
+	connA, connB := coord.CreateConnection(downstream, proxy, clientA, clientB, proxytypes.Version)
 	chanA, _ := coord.CreateChannel(downstream, proxy, connA, connB, proxytypes.PortID, proxytypes.PortID, types.UNORDERED)
 
 	// begin proxy handshake
@@ -81,10 +81,11 @@ func (chain *TestChain) UpdateProxyClient(proxy *TestChain, proxyClientID string
 func (coord *Coordinator) CreateConnectionWithProxy(
 	chainA, chainB *TestChain,
 	clientA, clientB string,
+	nextChannelVersion string,
 	proxies ProxyPair,
 ) (*TestConnection, *TestConnection) {
 
-	connA, connB, err := coord.ConnOpenInitWithProxy(chainA, chainB, clientA, clientB, proxies)
+	connA, connB, err := coord.ConnOpenInitWithProxy(chainA, chainB, clientA, clientB, nextChannelVersion, proxies)
 	require.NoError(coord.t, err)
 
 	err = coord.ConnOpenTryWithProxy(chainB, chainA, connB, connA, proxies.Swap())
@@ -97,6 +98,28 @@ func (coord *Coordinator) CreateConnectionWithProxy(
 	require.NoError(coord.t, err)
 
 	return connA, connB
+}
+
+func (coord *Coordinator) CreateChannelWithProxy(
+	chainA, chainB *TestChain,
+	connA, connB *TestConnection,
+	sourcePortID, counterpartyPortID string,
+	order channeltypes.Order,
+	proxies ProxyPair,
+) (*TestChannel, *TestChannel) {
+	channelA, channelB, err := coord.ChanOpenInitWithProxy(chainA, chainB, connA, connB, sourcePortID, counterpartyPortID, order, proxies)
+	require.NoError(coord.t, err)
+
+	err = coord.ChanOpenTryWithProxy(chainB, chainA, channelB, channelA, connB, connA, order, proxies.Swap())
+	require.NoError(coord.t, err)
+
+	err = coord.ChanOpenAckWithProxy(chainA, chainB, channelA, channelB, connA, connB, order, proxies)
+	require.NoError(coord.t, err)
+
+	err = coord.ChanOpenConfirmWithProxy(chainB, chainA, channelB, channelA, connB, connA, order, proxies.Swap())
+	require.NoError(coord.t, err)
+
+	return &channelA, &channelB
 }
 
 type ProxyInfo struct {
@@ -114,14 +137,14 @@ func (pair ProxyPair) Swap() ProxyPair {
 
 func (coord *Coordinator) ConnOpenInitWithProxy(
 	source, counterparty *TestChain,
-	clientID, counterpartyClientID string, proxies ProxyPair,
+	clientID, counterpartyClientID, nextChannelVersion string, proxies ProxyPair,
 ) (*TestConnection, *TestConnection, error) {
 	if proxies[1] == nil {
-		return coord.ConnOpenInit(source, counterparty, clientID, counterpartyClientID)
+		return coord.ConnOpenInit(source, counterparty, clientID, counterpartyClientID, nextChannelVersion)
 	}
 
-	sourceConnection := source.AddTestConnection(clientID, counterpartyClientID)
-	counterpartyConnection := counterparty.AddTestConnection(counterpartyClientID, clientID)
+	sourceConnection := source.AddTestConnection(clientID, counterpartyClientID, nextChannelVersion)
+	counterpartyConnection := counterparty.AddTestConnection(counterpartyClientID, clientID, nextChannelVersion)
 
 	// initialize connection on source
 	if err := source.ConnectionOpenInit(counterparty, sourceConnection, counterpartyConnection); err != nil {
@@ -290,8 +313,6 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 			return err
 		}
 		coord.CommitBlock(source)
-		// XXX
-		coord.CommitBlock(source)
 
 		{ // callerA calls connOpenAck with proxied proof
 			client, proofClient := proxy.QueryProxiedClientStateProof(counterpartyConnection.ClientID, proxies[0].UpstreamClientID)
@@ -398,6 +419,233 @@ func (coord *Coordinator) ConnOpenConfirmWithProxy(
 	}
 }
 
+func (coord *Coordinator) ChanOpenInitWithProxy(
+	source, counterparty *TestChain,
+	connection, counterpartyConnection *TestConnection,
+	sourcePortID, counterpartyPortID string,
+	order channeltypes.Order,
+	proxies ProxyPair,
+) (TestChannel, TestChannel, error) {
+	if proxies[1] == nil {
+		return coord.ChanOpenInit(source, counterparty, connection, counterpartyConnection, sourcePortID, counterpartyPortID, order)
+	}
+
+	sourceChannel := source.AddTestChannel(connection, sourcePortID)
+	counterpartyChannel := counterparty.AddTestChannel(counterpartyConnection, counterpartyPortID)
+
+	// NOTE: only creation of a capability for a transfer or mock port is supported
+	// Other applications must bind to the port in InitGenesis or modify this code.
+	source.CreatePortCapability(sourceChannel.PortID)
+	coord.IncrementTime()
+
+	// initialize channel on source
+	if err := source.ChanOpenInit(sourceChannel, counterpartyChannel, order, connection.ID); err != nil {
+		return sourceChannel, counterpartyChannel, err
+	}
+	coord.IncrementTime()
+
+	// update source client on counterparty connection
+	if err := coord.UpdateClient(
+		proxies[1].Chain, source,
+		proxies[1].UpstreamClientID, exported.Tendermint,
+	); err != nil {
+		return sourceChannel, counterpartyChannel, err
+	}
+
+	return sourceChannel, counterpartyChannel, nil
+}
+
+func (coord *Coordinator) ChanOpenTryWithProxy(
+	source, counterparty *TestChain,
+	sourceChannel, counterpartyChannel TestChannel,
+	sourceConnection, counterpartyConnection *TestConnection,
+	order channeltypes.Order,
+	proxies ProxyPair,
+) error {
+	if proxies[0] == nil {
+		if err := source.ChanOpenTry(counterparty, sourceChannel, counterpartyChannel, order, sourceConnection.ID); err != nil {
+			return err
+		}
+		coord.IncrementTime()
+	} else {
+		// source: downstream, counterparty: upstream
+		proxy := proxies[0].Chain
+
+		proofInit, proofHeight := counterparty.QueryProof(host.ChannelKey(counterpartyChannel.PortID, counterpartyChannel.ID))
+
+		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ChanOpenTry(
+			proxy.GetContext(),
+			proxies[0].UpstreamClientID,
+			order,
+			[]string{counterpartyConnection.ID},
+			sourceChannel.PortID,
+			sourceChannel.ID,
+			channeltypes.NewCounterparty(counterpartyChannel.PortID, counterpartyChannel.ID),
+			sourceChannel.Version,
+			counterpartyChannel.Version,
+			proofInit, proofHeight,
+		)
+		if err != nil {
+			return err
+		}
+		coord.CommitBlock(proxy)
+		coord.CommitBlock(proxy)
+
+		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
+			return err
+		}
+		coord.CommitBlock(source)
+
+		{
+			proof, proofHeight := proxy.QueryProxiedChannelStateProof(counterpartyChannel.PortID, counterpartyChannel.ID, proxies[0].UpstreamClientID)
+			msg := channeltypes.NewMsgChannelOpenTry(
+				sourceChannel.PortID,
+				"",
+				sourceChannel.Version, order,
+				[]string{sourceConnection.ID},
+				counterpartyChannel.PortID, counterpartyChannel.ID, counterpartyChannel.Version,
+				proof, proofHeight,
+				source.SenderAccount.GetAddress().String(),
+			)
+			if _, err := source.SendMsgs(msg); err != nil {
+				return err
+			}
+			coord.CommitBlock(source)
+		}
+	}
+
+	if proxies[1] == nil {
+		return coord.UpdateClient(
+			counterparty, source, counterpartyConnection.ClientID, exported.Tendermint,
+		)
+	} else {
+		return coord.UpdateClient(
+			proxies[1].Chain, source, proxies[1].UpstreamClientID, exported.Tendermint,
+		)
+	}
+}
+
+func (coord *Coordinator) ChanOpenAckWithProxy(
+	source, counterparty *TestChain,
+	sourceChannel, counterpartyChannel TestChannel,
+	sourceConnection, counterpartyConnection *TestConnection,
+	order channeltypes.Order,
+	proxies ProxyPair,
+) error {
+	if proxies[0] == nil {
+		if err := source.ChanOpenAck(counterparty, sourceChannel, counterpartyChannel); err != nil {
+			return err
+		}
+		coord.IncrementTime()
+	} else {
+		// source: downstream, counterparty: upstream
+		proxy := proxies[0].Chain
+
+		proofTry, proofHeight := counterparty.QueryProof(host.ChannelKey(counterpartyChannel.PortID, counterpartyChannel.ID))
+
+		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ChanOpenAck(
+			proxy.GetContext(),
+			proxies[0].UpstreamClientID,
+			order,
+			[]string{counterpartyConnection.ID},
+			sourceChannel.PortID, sourceChannel.ID,
+			channeltypes.NewCounterparty(counterpartyChannel.PortID, counterpartyChannel.ID),
+			sourceChannel.Version,
+			counterpartyChannel.Version,
+			proofTry, proofHeight,
+		)
+		if err != nil {
+			return err
+		}
+		coord.CommitBlock(proxy)
+		coord.CommitBlock(proxy)
+
+		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
+			return err
+		}
+		coord.CommitBlock(source)
+
+		{
+			proof, proofHeight := proxy.QueryProxiedChannelStateProof(counterpartyChannel.PortID, counterpartyChannel.ID, proxies[0].UpstreamClientID)
+			msg := channeltypes.NewMsgChannelOpenAck(
+				sourceChannel.PortID, sourceChannel.ID,
+				counterpartyChannel.ID, counterpartyChannel.Version,
+				proof, proofHeight,
+				source.SenderAccount.GetAddress().String(),
+			)
+			if _, err := source.SendMsgs(msg); err != nil {
+				return err
+			}
+			coord.CommitBlock(source)
+		}
+	}
+
+	if proxies[1] == nil {
+		return coord.UpdateClient(
+			counterparty, source, counterpartyConnection.ClientID, exported.Tendermint,
+		)
+	} else {
+		return coord.UpdateClient(
+			proxies[1].Chain, source, proxies[1].UpstreamClientID, exported.Tendermint,
+		)
+	}
+}
+
+func (coord *Coordinator) ChanOpenConfirmWithProxy(
+	source, counterparty *TestChain,
+	sourceChannel, counterpartyChannel TestChannel,
+	sourceConnection, counterpartyConnection *TestConnection,
+	order channeltypes.Order,
+	proxies ProxyPair,
+) error {
+
+	if proxies[0] == nil {
+		if err := source.ChanOpenConfirm(counterparty, sourceChannel, counterpartyChannel); err != nil {
+			return err
+		}
+		coord.IncrementTime()
+	} else {
+		// source: downstream, counterparty: upstream
+		proxy := proxies[0].Chain
+
+		proofAck, proofHeight := counterparty.QueryProof(host.ChannelKey(counterpartyChannel.PortID, counterpartyChannel.ID))
+
+		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ChanOpenConfirm(
+			proxy.GetContext(),
+			proxies[0].UpstreamClientID,
+			sourceChannel.ID,
+			counterpartyChannel.PortID, counterpartyChannel.ID,
+			proofAck, proofHeight,
+		)
+		if err != nil {
+			return err
+		}
+		coord.CommitBlock(proxy)
+		coord.CommitBlock(proxy)
+
+		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
+			return err
+		}
+		coord.CommitBlock(source)
+
+		{
+			proof, proofHeight := proxy.QueryProxiedChannelStateProof(counterpartyChannel.PortID, counterpartyChannel.ID, proxies[0].UpstreamClientID)
+
+			msg := channeltypes.NewMsgChannelOpenConfirm(
+				sourceChannel.PortID, sourceChannel.ID,
+				proof, proofHeight,
+				source.SenderAccount.GetAddress().String(),
+			)
+			if _, err := source.SendMsgs(msg); err != nil {
+				return err
+			}
+			coord.CommitBlock(source)
+		}
+	}
+
+	return nil
+}
+
 func (chain *TestChain) QueryProxiedClientStateProof(clientID string, upstreamClientID string) (exported.ClientState, []byte) {
 	// retrieve client state to provide proof for
 	clientState, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetClientStateCommitment(
@@ -431,6 +679,11 @@ func (chain *TestChain) QueryProxiedConsensusStateProof(clientID string, upstrea
 func (chain *TestChain) QueryProxiedConnectionStateProof(connectionID string, upstreamClientID string) ([]byte, clienttypes.Height) {
 	connectionKey := withProxyPrefix(upstreamClientID, host.ConnectionKey(connectionID))
 	return chain.QueryProof(connectionKey)
+}
+
+func (chain *TestChain) QueryProxiedChannelStateProof(portID string, channelID string, upstreamClientID string) ([]byte, clienttypes.Height) {
+	channelKey := withProxyPrefix(upstreamClientID, host.ChannelKey(portID, channelID))
+	return chain.QueryProof(channelKey)
 }
 
 func withProxyPrefix(upstreamClientID string, key []byte) []byte {
