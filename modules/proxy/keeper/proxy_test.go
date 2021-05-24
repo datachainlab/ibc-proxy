@@ -48,7 +48,8 @@ func (suite *KeeperTestSuite) TestConnection2() {
 
 	ppair := ibctesting.ProxyPair{nil, {suite.chainC, clientBC, clientCA}}
 	connA, connB := suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAB, clientBC, ibctesting.TransferVersion, ppair)
-	suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, types.UNORDERED, ppair)
+	chanA, chanB := suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, types.UNORDERED, ppair)
+	suite.testHandleMsgTransfer(connA, connB, chanA, chanB, ppair)
 }
 
 // A(C) -> B, B(D) -> A
@@ -76,10 +77,8 @@ func (suite *KeeperTestSuite) testHandleMsgTransfer(connA, connB *ibctesting.Tes
 	coinToSendToB := sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(100))
 
 	msg := transfertypes.NewMsgTransfer(chanA.PortID, chanA.ID, coinToSendToB, suite.chainA.SenderAccount.GetAddress().String(), suite.chainB.SenderAccount.GetAddress().String(), timeoutHeight, 0)
-	_, err := suite.chainA.SendMsgs(msg)
+	err := suite.coordinator.SendPacketWithProxy(suite.chainA, suite.chainB, connA, connB, proxies, msg)
 	suite.Require().NoError(err) // message committed
-
-	suite.coordinator.CommitBlock(suite.chainA)
 
 	// relay send
 	fungibleTokenPacket := transfertypes.NewFungibleTokenPacketData(coinToSendToB.Denom, coinToSendToB.Amount.Uint64(), suite.chainA.SenderAccount.GetAddress().String(), suite.chainB.SenderAccount.GetAddress().String())
@@ -87,7 +86,7 @@ func (suite *KeeperTestSuite) testHandleMsgTransfer(connA, connB *ibctesting.Tes
 	// ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
 
 	err = suite.coordinator.RecvPacketWithProxy(
-		suite.chainB, suite.chainA, chanB, chanA, connB, connA, packet, proxies.Swap(),
+		suite.chainB, suite.chainA, connB, connA, packet, proxies.Swap(),
 	)
 	suite.Require().NoError(err) // relay committed
 }

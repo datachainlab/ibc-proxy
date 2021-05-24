@@ -51,7 +51,8 @@ func NewProxyStore(cdc codec.BinaryCodec, store sdk.KVStore) ProxyStore {
 }
 
 func (s ProxyStore) Get(key []byte) []byte {
-	if !strings.HasPrefix(string(key), host.KeyConsensusStatePrefix+"/") {
+	k := string(key)
+	if !strings.HasPrefix(k, host.KeyConsensusStatePrefix+"/") || strings.HasSuffix(k, "/processedTime") {
 		return s.KVStore.Get(key)
 	}
 	v := s.KVStore.Get(key)

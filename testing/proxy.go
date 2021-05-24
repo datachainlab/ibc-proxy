@@ -3,6 +3,7 @@ package ibctesting
 import (
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	connectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 	"github.com/cosmos/ibc-go/modules/core/04-channel/types"
@@ -654,19 +655,87 @@ func (coord *Coordinator) ChanOpenConfirmWithProxy(
 	}
 }
 
+func (coord *Coordinator) SendPacketWithProxy(
+	source, counterparty *TestChain, // source: packet sender, counterparty: packet receiver
+	sourceConnection, counterpartyConnection *TestConnection,
+	proxies ProxyPair,
+	msgs ...sdk.Msg,
+) error {
+	if _, err := source.SendMsgs(msgs...); err != nil {
+		return err
+	}
+	coord.CommitBlock(source)
+
+	if proxies[1] == nil {
+		return coord.UpdateClient(
+			counterparty, source, counterpartyConnection.ClientID, exported.Tendermint,
+		)
+	} else {
+		return coord.UpdateClient(
+			proxies[1].Chain, source, proxies[1].UpstreamClientID, exported.Tendermint,
+		)
+	}
+}
+
 func (coord *Coordinator) RecvPacketWithProxy(
 	source, counterparty *TestChain, // source: packet receiver, counterparty: packet sender
-	sourceChannel, counterpartyChannel *TestChannel,
 	sourceConnection, counterpartyConnection *TestConnection,
 	packet channeltypes.Packet, proxies ProxyPair,
 ) error {
 	if proxies[0] == nil {
-		if err := coord.UpdateClient(source, counterparty, sourceConnection.ClientID, exported.Tendermint); err != nil {
-			return err
-		}
 		if err := counterparty.recvPacket(coord, source, counterpartyConnection.ClientID, packet); err != nil {
 			return err
 		}
+	} else {
+		// source: downstream, counterparty: upstream
+		proxy := proxies[0].Chain
+		proof, proofHeight := counterparty.QueryProof(host.PacketCommitmentKey(packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence()))
+		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.RecvPacket(
+			proxy.GetContext(),
+			proxies[0].UpstreamClientID,
+			packet, proof, proofHeight,
+		)
+		if err != nil {
+			return err
+		}
+		coord.CommitBlock(proxy)
+		coord.CommitBlock(proxy)
+
+		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
+			return err
+		}
+		coord.CommitBlock(source)
+
+		// relay the packet to the source chain
+		{
+			proof, proofHeight := proxy.QueryProxiedPacketCommitmentProof(packet.SourcePort, packet.SourceChannel, packet.Sequence, proxies[0].UpstreamClientID)
+			recvMsg := channeltypes.NewMsgRecvPacket(packet, proof, proofHeight, source.SenderAccount.GetAddress().String())
+			if _, err := source.SendMsgs(recvMsg); err != nil {
+				return err
+			}
+			coord.CommitBlock(source)
+		}
+	}
+
+	if proxies[1] == nil {
+		return coord.UpdateClient(
+			counterparty, source, counterpartyConnection.ClientID, exported.Tendermint,
+		)
+	} else {
+		return coord.UpdateClient(
+			proxies[1].Chain, source, proxies[1].UpstreamClientID, exported.Tendermint,
+		)
+	}
+}
+
+func (coord *Coordinator) AcknowledgePacketWithProxy(
+	source, counterparty *TestChain, // source: packet receiver, counterparty: packet sender
+	sourceChannel, counterpartyChannel TestChannel,
+	sourceConnection, counterpartyConnection *TestConnection,
+	packet channeltypes.Packet, proxies ProxyPair,
+) error {
+	if proxies[0] == nil {
+		panic("not implemented")
 	} else {
 		panic("not implemented")
 	}
@@ -739,6 +808,11 @@ func (chain *TestChain) QueryProxiedConnectionStateProof(connectionID string, up
 func (chain *TestChain) QueryProxiedChannelStateProof(portID string, channelID string, upstreamClientID string) ([]byte, clienttypes.Height) {
 	channelKey := withProxyPrefix(upstreamClientID, host.ChannelKey(portID, channelID))
 	return chain.QueryProof(channelKey)
+}
+
+func (chain *TestChain) QueryProxiedPacketCommitmentProof(sourcePort, sourceChannel string, packetSequence uint64, upstreamClientID string) ([]byte, clienttypes.Height) {
+	packetCommitmentKey := withProxyPrefix(upstreamClientID, host.PacketCommitmentKey(sourcePort, sourceChannel, packetSequence))
+	return chain.QueryProof(packetCommitmentKey)
 }
 
 func withProxyPrefix(upstreamClientID string, key []byte) []byte {
