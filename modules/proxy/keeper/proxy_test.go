@@ -1,7 +1,11 @@
 package keeper_test
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	transfertypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	"github.com/cosmos/ibc-go/modules/core/04-channel/types"
+	channeltypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
 	"github.com/cosmos/ibc-go/modules/core/exported"
 	ibctesting "github.com/datachainlab/ibc-proxy/testing"
 )
@@ -23,7 +27,8 @@ func (suite *KeeperTestSuite) TestConnection1() {
 
 	ppair := ibctesting.ProxyPair{{suite.chainC, clientAC, clientCB}, nil}
 	connA, connB := suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAC, clientBA, ibctesting.TransferVersion, ppair)
-	suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, types.UNORDERED, ppair)
+	chanA, chanB := suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED, ppair)
+	suite.testHandleMsgTransfer(connA, connB, chanA, chanB, ppair)
 }
 
 // A -> B, B(C) -> A
@@ -63,5 +68,26 @@ func (suite *KeeperTestSuite) TestConnection3() {
 
 	ppair := ibctesting.ProxyPair{{suite.chainC, clientAC, clientCB}, {suite.chainD, clientBD, clientDA}}
 	connA, connB := suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAC, clientBD, ibctesting.TransferVersion, ppair)
-	suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, types.UNORDERED, ppair)
+	suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED, ppair)
+}
+
+func (suite *KeeperTestSuite) testHandleMsgTransfer(connA, connB *ibctesting.TestConnection, chanA, chanB *ibctesting.TestChannel, proxies ibctesting.ProxyPair) {
+	timeoutHeight := clienttypes.NewHeight(0, 110)
+	coinToSendToB := sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(100))
+
+	msg := transfertypes.NewMsgTransfer(chanA.PortID, chanA.ID, coinToSendToB, suite.chainA.SenderAccount.GetAddress().String(), suite.chainB.SenderAccount.GetAddress().String(), timeoutHeight, 0)
+	_, err := suite.chainA.SendMsgs(msg)
+	suite.Require().NoError(err) // message committed
+
+	suite.coordinator.CommitBlock(suite.chainA)
+
+	// relay send
+	fungibleTokenPacket := transfertypes.NewFungibleTokenPacketData(coinToSendToB.Denom, coinToSendToB.Amount.Uint64(), suite.chainA.SenderAccount.GetAddress().String(), suite.chainB.SenderAccount.GetAddress().String())
+	packet := channeltypes.NewPacket(fungibleTokenPacket.GetBytes(), 1, chanA.PortID, chanA.ID, chanB.PortID, chanB.ID, timeoutHeight, 0)
+	// ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
+
+	err = suite.coordinator.RecvPacketWithProxy(
+		suite.chainB, suite.chainA, chanB, chanA, connB, connA, packet, proxies.Swap(),
+	)
+	suite.Require().NoError(err) // relay committed
 }

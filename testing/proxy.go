@@ -643,6 +643,61 @@ func (coord *Coordinator) ChanOpenConfirmWithProxy(
 		}
 	}
 
+	if proxies[1] == nil {
+		return coord.UpdateClient(
+			counterparty, source, counterpartyConnection.ClientID, exported.Tendermint,
+		)
+	} else {
+		return coord.UpdateClient(
+			proxies[1].Chain, source, proxies[1].UpstreamClientID, exported.Tendermint,
+		)
+	}
+}
+
+func (coord *Coordinator) RecvPacketWithProxy(
+	source, counterparty *TestChain, // source: packet receiver, counterparty: packet sender
+	sourceChannel, counterpartyChannel *TestChannel,
+	sourceConnection, counterpartyConnection *TestConnection,
+	packet channeltypes.Packet, proxies ProxyPair,
+) error {
+	if proxies[0] == nil {
+		if err := coord.UpdateClient(source, counterparty, sourceConnection.ClientID, exported.Tendermint); err != nil {
+			return err
+		}
+		if err := counterparty.recvPacket(coord, source, counterpartyConnection.ClientID, packet); err != nil {
+			return err
+		}
+	} else {
+		panic("not implemented")
+	}
+
+	if proxies[1] == nil {
+		return coord.UpdateClient(
+			counterparty, source, counterpartyConnection.ClientID, exported.Tendermint,
+		)
+	} else {
+		return coord.UpdateClient(
+			proxies[1].Chain, source, proxies[1].UpstreamClientID, exported.Tendermint,
+		)
+	}
+}
+
+// source: packet sender, counterparty: packet receiver
+func (chain *TestChain) recvPacket(coord *Coordinator, counterparty *TestChain, sourceClient string, packet channeltypes.Packet) error {
+	// get proof of packet commitment on source
+	packetKey := host.PacketCommitmentKey(packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence())
+	proof, proofHeight := chain.QueryProof(packetKey)
+
+	// Increment time and commit block so that 5 second delay period passes between send and receive
+	coord.IncrementTime()
+	coord.CommitBlock(chain, counterparty)
+
+	recvMsg := channeltypes.NewMsgRecvPacket(packet, proof, proofHeight, counterparty.SenderAccount.GetAddress().String())
+	if err := counterparty.sendMsgs(recvMsg); err != nil {
+		return err
+	}
+
+	coord.IncrementTime()
 	return nil
 }
 
