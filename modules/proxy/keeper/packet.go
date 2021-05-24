@@ -83,3 +83,57 @@ func (k Keeper) RecvPacket(
 
 	return nil
 }
+
+func (k Keeper) AcknowledgePacket(
+	ctx sdk.Context,
+	upstreamClientID string,
+	packet exported.PacketI,
+	acknowledgement []byte,
+	proof []byte,
+	proofHeight exported.Height,
+) error {
+	channel, found := k.GetChannel(ctx, upstreamClientID, packet.GetDestPort(), packet.GetDestChannel())
+	if !found {
+		return sdkerrors.Wrapf(
+			channeltypes.ErrChannelNotFound,
+			"port ID (%s) channel ID (%s)", packet.GetDestPort(), packet.GetDestChannel(),
+		)
+	}
+
+	// if channel.State != channeltypes.OPEN {
+	// 	return sdkerrors.Wrapf(
+	// 		channeltypes.ErrInvalidChannelState,
+	// 		"channel state is not OPEN (got %s)", channel.State.String(),
+	// 	)
+	// }
+
+	// Connection must be OPEN to receive a packet. It is possible for connection to not yet be open if packet was
+	// sent optimistically before connection and channel handshake completed. However, to receive a packet,
+	// connection and channel must both be open
+	connectionEnd, found := k.connectionKeeper.GetConnection(ctx, channel.ConnectionHops[0])
+	if !found {
+		return sdkerrors.Wrap(connectiontypes.ErrConnectionNotFound, channel.ConnectionHops[0])
+	}
+
+	if connectionEnd.GetState() != int32(connectiontypes.OPEN) {
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrInvalidConnectionState,
+			"connection state is not OPEN (got %s)", connectiontypes.State(connectionEnd.GetState()).String(),
+		)
+	}
+
+	if err := k.VerifyPacketAcknowledgement(
+		ctx,
+		upstreamClientID,
+		connectionEnd,
+		proofHeight, proof,
+		packet.GetDestPort(), packet.GetDestChannel(), packet.GetSequence(),
+		acknowledgement,
+	); err != nil {
+		return err
+	}
+
+	// TODO persists an acknowledgement
+
+	return nil
+}

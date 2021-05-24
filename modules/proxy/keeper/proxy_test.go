@@ -69,7 +69,9 @@ func (suite *KeeperTestSuite) TestConnection3() {
 
 	ppair := ibctesting.ProxyPair{{suite.chainC, clientAC, clientCB}, {suite.chainD, clientBD, clientDA}}
 	connA, connB := suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAC, clientBD, ibctesting.TransferVersion, ppair)
-	suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED, ppair)
+	chanA, chanB := suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED, ppair)
+	_, _ = chanA, chanB
+	// suite.testHandleMsgTransfer(connA, connB, chanA, chanB, ppair)
 }
 
 func (suite *KeeperTestSuite) testHandleMsgTransfer(connA, connB *ibctesting.TestConnection, chanA, chanB *ibctesting.TestChannel, proxies ibctesting.ProxyPair) {

@@ -739,7 +739,33 @@ func (coord *Coordinator) AcknowledgePacketWithProxy(
 			return err
 		}
 	} else {
-		panic("not implemented")
+		// source: downstream, counterparty: upstream
+		proxy := proxies[0].Chain
+		proof, proofHeight := counterparty.QueryProof(host.PacketAcknowledgementKey(packet.GetDestPort(), packet.GetDestChannel(), packet.GetSequence()))
+		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.AcknowledgePacket(
+			proxy.GetContext(),
+			proxies[0].UpstreamClientID,
+			packet, ack, proof, proofHeight,
+		)
+		if err != nil {
+			return err
+		}
+		coord.CommitBlock(proxy)
+		coord.CommitBlock(proxy)
+
+		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
+			return err
+		}
+		coord.CommitBlock(source)
+
+		{
+			proof, proofHeight := proxy.QueryProxiedAcknowledgementProof(packet.DestinationPort, packet.DestinationChannel, packet.Sequence, proxies[0].UpstreamClientID)
+			ackMsg := channeltypes.NewMsgAcknowledgement(packet, ack, proof, proofHeight, source.SenderAccount.GetAddress().String())
+			if _, err := source.SendMsgs(ackMsg); err != nil {
+				return err
+			}
+			coord.CommitBlock(source)
+		}
 	}
 
 	if proxies[1] == nil {
@@ -831,6 +857,11 @@ func (chain *TestChain) QueryProxiedChannelStateProof(portID string, channelID s
 func (chain *TestChain) QueryProxiedPacketCommitmentProof(sourcePort, sourceChannel string, packetSequence uint64, upstreamClientID string) ([]byte, clienttypes.Height) {
 	packetCommitmentKey := withProxyPrefix(upstreamClientID, host.PacketCommitmentKey(sourcePort, sourceChannel, packetSequence))
 	return chain.QueryProof(packetCommitmentKey)
+}
+
+func (chain *TestChain) QueryProxiedAcknowledgementProof(destPort, destChannel string, packetSequence uint64, upstreamClientID string) ([]byte, clienttypes.Height) {
+	ackCommitmentKey := withProxyPrefix(upstreamClientID, host.PacketAcknowledgementKey(destPort, destChannel, packetSequence))
+	return chain.QueryProof(ackCommitmentKey)
 }
 
 func withProxyPrefix(upstreamClientID string, key []byte) []byte {

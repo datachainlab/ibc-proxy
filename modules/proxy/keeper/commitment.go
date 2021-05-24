@@ -161,7 +161,7 @@ func (k Keeper) setPacketAcknowledgement(
 		return err
 	}
 	store := k.ProxyCommitmentStore(ctx, upstreamClientID)
-	store.Set(host.PacketAcknowledgementKey(portID, channelID, sequence), acknowledgement)
+	store.Set(host.PacketAcknowledgementKey(portID, channelID, sequence), channeltypes.CommitAcknowledgement(acknowledgement))
 	return nil
 }
 
