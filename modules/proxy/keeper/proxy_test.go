@@ -12,7 +12,7 @@ import (
 
 // A(C) -> B, B -> A
 // A: downstream, B: upstream, C: proxy
-func (suite *KeeperTestSuite) TestConnection1() {
+func (suite *KeeperTestSuite) TestOneSideProxy1() {
 	clientCB, err := suite.coordinator.InitProxy(suite.chainC, suite.chainB, exported.Tendermint)
 	suite.Require().NoError(err)
 
@@ -33,7 +33,7 @@ func (suite *KeeperTestSuite) TestConnection1() {
 
 // A -> B, B(C) -> A
 // A: upstream, B: downstream, C: proxy
-func (suite *KeeperTestSuite) TestConnection2() {
+func (suite *KeeperTestSuite) TestOneSideProxy2() {
 	clientCA, err := suite.coordinator.InitProxy(suite.chainC, suite.chainA, exported.Tendermint)
 	suite.Require().NoError(err)
 
@@ -54,7 +54,7 @@ func (suite *KeeperTestSuite) TestConnection2() {
 
 // A(C) -> B, B(D) -> A
 // A: upstream/downstream, B: downstream/upstream, C: proxy for A, D: proxy for B
-func (suite *KeeperTestSuite) TestConnection3() {
+func (suite *KeeperTestSuite) TestBothSideProxy() {
 	clientCB, err := suite.coordinator.InitProxy(suite.chainC, suite.chainB, exported.Tendermint)
 	suite.Require().NoError(err)
 
@@ -70,8 +70,7 @@ func (suite *KeeperTestSuite) TestConnection3() {
 	ppair := ibctesting.ProxyPair{{suite.chainC, clientAC, clientCB}, {suite.chainD, clientBD, clientDA}}
 	connA, connB := suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAC, clientBD, ibctesting.TransferVersion, ppair)
 	chanA, chanB := suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED, ppair)
-	_, _ = chanA, chanB
-	// suite.testHandleMsgTransfer(connA, connB, chanA, chanB, ppair)
+	suite.testHandleMsgTransfer(connA, connB, chanA, chanB, ppair)
 }
 
 func (suite *KeeperTestSuite) testHandleMsgTransfer(connA, connB *ibctesting.TestConnection, chanA, chanB *ibctesting.TestChannel, proxies ibctesting.ProxyPair) {

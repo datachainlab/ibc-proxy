@@ -48,16 +48,9 @@ func (k Keeper) RecvPacket(
 	// Connection must be OPEN to receive a packet. It is possible for connection to not yet be open if packet was
 	// sent optimistically before connection and channel handshake completed. However, to receive a packet,
 	// connection and channel must both be open
-	connectionEnd, found := k.connectionKeeper.GetConnection(ctx, channel.ConnectionHops[0])
+	connectionEnd, found := k.GetConnection(ctx, upstreamClientID, channel.ConnectionHops[0])
 	if !found {
 		return sdkerrors.Wrap(connectiontypes.ErrConnectionNotFound, channel.ConnectionHops[0])
-	}
-
-	if connectionEnd.GetState() != int32(connectiontypes.OPEN) {
-		return sdkerrors.Wrapf(
-			connectiontypes.ErrInvalidConnectionState,
-			"connection state is not OPEN (got %s)", connectiontypes.State(connectionEnd.GetState()).String(),
-		)
 	}
 
 	// check if packet timeouted by comparing it with the latest timestamp of the chain
@@ -100,26 +93,12 @@ func (k Keeper) AcknowledgePacket(
 		)
 	}
 
-	// if channel.State != channeltypes.OPEN {
-	// 	return sdkerrors.Wrapf(
-	// 		channeltypes.ErrInvalidChannelState,
-	// 		"channel state is not OPEN (got %s)", channel.State.String(),
-	// 	)
-	// }
-
 	// Connection must be OPEN to receive a packet. It is possible for connection to not yet be open if packet was
 	// sent optimistically before connection and channel handshake completed. However, to receive a packet,
 	// connection and channel must both be open
-	connectionEnd, found := k.connectionKeeper.GetConnection(ctx, channel.ConnectionHops[0])
+	connectionEnd, found := k.GetConnection(ctx, upstreamClientID, channel.ConnectionHops[0])
 	if !found {
 		return sdkerrors.Wrap(connectiontypes.ErrConnectionNotFound, channel.ConnectionHops[0])
-	}
-
-	if connectionEnd.GetState() != int32(connectiontypes.OPEN) {
-		return sdkerrors.Wrapf(
-			connectiontypes.ErrInvalidConnectionState,
-			"connection state is not OPEN (got %s)", connectiontypes.State(connectionEnd.GetState()).String(),
-		)
 	}
 
 	if err := k.VerifyPacketAcknowledgement(

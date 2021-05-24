@@ -30,13 +30,6 @@ func (k Keeper) ChanOpenTry(
 		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, connectionHops[0])
 	}
 
-	if connectionEnd.GetState() != int32(connectiontypes.OPEN) && connectionEnd.GetState() != int32(connectiontypes.TRYOPEN) {
-		return sdkerrors.Wrapf(
-			connectiontypes.ErrInvalidConnectionState,
-			"connection state is neither OPEN nor TRYOPEN (got %s)", connectiontypes.State(connectionEnd.GetState()).String(),
-		)
-	}
-
 	getVersions := connectionEnd.GetVersions()
 	if len(getVersions) != 1 {
 		return sdkerrors.Wrapf(
@@ -94,13 +87,6 @@ func (k Keeper) ChanOpenAck(
 	connectionEnd, found := k.GetConnection(ctx, upstreamClientID, connectionHops[0])
 	if !found {
 		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, connectionHops[0])
-	}
-
-	if connectionEnd.GetState() != int32(connectiontypes.OPEN) && connectionEnd.GetState() != int32(connectiontypes.TRYOPEN) {
-		return sdkerrors.Wrapf(
-			connectiontypes.ErrInvalidConnectionState,
-			"connection state is neither OPEN nor TRYOPEN (got %s)", connectiontypes.State(connectionEnd.GetState()).String(),
-		)
 	}
 
 	expectedCounterparty := channeltypes.NewCounterparty(portID, channelID)
