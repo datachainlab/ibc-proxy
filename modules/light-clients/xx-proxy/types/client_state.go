@@ -116,40 +116,40 @@ func (cs *ClientState) ZeroCustomFields() exported.ClientState {
 
 // State verification functions
 func (cs *ClientState) VerifyClientState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, counterpartyClientIdentifier string, proof []byte, clientState exported.ClientState) error {
-	return cs.GetProxyClientState().VerifyClientState(NewProxyStore(cdc, store), cdc, height, newMultiPrefix(prefix, cs.UpstreamClientId), counterpartyClientIdentifier, proof, clientState)
+	return cs.GetProxyClientState().VerifyClientState(NewProxyStore(cdc, store), cdc, height, newPrefix(cs.Prefix, prefix, cs.UpstreamClientId), counterpartyClientIdentifier, proof, clientState)
 }
 
 func (cs *ClientState) VerifyClientConsensusState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, counterpartyClientIdentifier string, consensusHeight exported.Height, prefix exported.Prefix, proof []byte, consensusState exported.ConsensusState) error {
-	return cs.GetProxyClientState().VerifyClientConsensusState(NewProxyStore(cdc, store), cdc, height, counterpartyClientIdentifier, consensusHeight, newMultiPrefix(prefix, cs.UpstreamClientId), proof, consensusState)
+	return cs.GetProxyClientState().VerifyClientConsensusState(NewProxyStore(cdc, store), cdc, height, counterpartyClientIdentifier, consensusHeight, newPrefix(cs.Prefix, prefix, cs.UpstreamClientId), proof, consensusState)
 }
 
 func (cs *ClientState) VerifyConnectionState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, proof []byte, connectionID string, connectionEnd exported.ConnectionI) error {
-	return cs.GetProxyClientState().VerifyConnectionState(NewProxyStore(cdc, store), cdc, height, newMultiPrefix(prefix, cs.UpstreamClientId), proof, connectionID, connectionEnd)
+	return cs.GetProxyClientState().VerifyConnectionState(NewProxyStore(cdc, store), cdc, height, newPrefix(cs.Prefix, prefix, cs.UpstreamClientId), proof, connectionID, connectionEnd)
 }
 
 func (cs *ClientState) VerifyChannelState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, proof []byte, portID string, channelID string, channel exported.ChannelI) error {
-	return cs.GetProxyClientState().VerifyChannelState(NewProxyStore(cdc, store), cdc, height, newMultiPrefix(prefix, cs.UpstreamClientId), proof, portID, channelID, channel)
+	return cs.GetProxyClientState().VerifyChannelState(NewProxyStore(cdc, store), cdc, height, newPrefix(cs.Prefix, prefix, cs.UpstreamClientId), proof, portID, channelID, channel)
 }
 
 func (cs *ClientState) VerifyPacketCommitment(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64, commitmentBytes []byte) error {
-	return cs.GetProxyClientState().VerifyPacketCommitment(NewProxyStore(cdc, store), cdc, height, currentTimestamp, delayPeriod, newMultiPrefix(prefix, cs.UpstreamClientId), proof, portID, channelID, sequence, commitmentBytes)
+	return cs.GetProxyClientState().VerifyPacketCommitment(NewProxyStore(cdc, store), cdc, height, currentTimestamp, delayPeriod, newPrefix(cs.Prefix, prefix, cs.UpstreamClientId), proof, portID, channelID, sequence, commitmentBytes)
 }
 
 func (cs *ClientState) VerifyPacketAcknowledgement(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64, acknowledgement []byte) error {
-	return cs.GetProxyClientState().VerifyPacketAcknowledgement(NewProxyStore(cdc, store), cdc, height, currentTimestamp, delayPeriod, newMultiPrefix(prefix, cs.UpstreamClientId), proof, portID, channelID, sequence, acknowledgement)
+	return cs.GetProxyClientState().VerifyPacketAcknowledgement(NewProxyStore(cdc, store), cdc, height, currentTimestamp, delayPeriod, newPrefix(cs.Prefix, prefix, cs.UpstreamClientId), proof, portID, channelID, sequence, acknowledgement)
 }
 
 func (cs *ClientState) VerifyPacketReceiptAbsence(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64) error {
-	return cs.GetProxyClientState().VerifyPacketReceiptAbsence(NewProxyStore(cdc, store), cdc, height, currentTimestamp, delayPeriod, newMultiPrefix(prefix, cs.UpstreamClientId), proof, portID, channelID, sequence)
+	return cs.GetProxyClientState().VerifyPacketReceiptAbsence(NewProxyStore(cdc, store), cdc, height, currentTimestamp, delayPeriod, newPrefix(cs.Prefix, prefix, cs.UpstreamClientId), proof, portID, channelID, sequence)
 }
 
 func (cs *ClientState) VerifyNextSequenceRecv(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, nextSequenceRecv uint64) error {
-	return cs.GetProxyClientState().VerifyNextSequenceRecv(NewProxyStore(cdc, store), cdc, height, currentTimestamp, delayPeriod, newMultiPrefix(prefix, cs.UpstreamClientId), proof, portID, channelID, nextSequenceRecv)
+	return cs.GetProxyClientState().VerifyNextSequenceRecv(NewProxyStore(cdc, store), cdc, height, currentTimestamp, delayPeriod, newPrefix(cs.Prefix, prefix, cs.UpstreamClientId), proof, portID, channelID, nextSequenceRecv)
 }
 
-func newMultiPrefix(prefix exported.Prefix, pathPrefix string) exported.Prefix {
+func newPrefix(proxyPrefix, upstreamPrefix exported.Prefix, upstreamClientID string) exported.Prefix {
 	return commitmenttypes.MultiPrefix{
-		Prefix:     prefix,
-		PathPrefix: []byte(pathPrefix),
+		Prefix:     proxyPrefix,
+		PathPrefix: append([]byte(upstreamClientID+"/"), upstreamPrefix.Bytes()...),
 	}
 }

@@ -14,6 +14,7 @@ import (
 func (k Keeper) RecvPacket(
 	ctx sdk.Context,
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 	packet exported.PacketI,
 	proof []byte,
 	proofHeight exported.Height,
@@ -64,6 +65,7 @@ func (k Keeper) RecvPacket(
 	if err := k.VerifyPacketCommitment(
 		ctx,
 		upstreamClientID,
+		upstreamPrefix,
 		connectionEnd,
 		proofHeight, proof,
 		packet.GetSourcePort(), packet.GetSourceChannel(), packet.GetSequence(),
@@ -80,6 +82,7 @@ func (k Keeper) RecvPacket(
 func (k Keeper) AcknowledgePacket(
 	ctx sdk.Context,
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 	packet exported.PacketI,
 	acknowledgement []byte,
 	proof []byte,
@@ -104,6 +107,7 @@ func (k Keeper) AcknowledgePacket(
 	if err := k.VerifyPacketAcknowledgement(
 		ctx,
 		upstreamClientID,
+		upstreamPrefix,
 		connectionEnd,
 		proofHeight, proof,
 		packet.GetDestPort(), packet.GetDestChannel(), packet.GetSequence(),

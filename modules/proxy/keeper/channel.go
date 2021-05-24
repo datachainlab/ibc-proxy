@@ -14,6 +14,7 @@ import (
 func (k Keeper) ChanOpenTry(
 	ctx sdk.Context,
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 	order channeltypes.Order,
 	connectionHops []string, // from upstream
 	portID,
@@ -56,7 +57,7 @@ func (k Keeper) ChanOpenTry(
 	)
 
 	if err := k.VerifyChannelState(
-		ctx, upstreamClientID, connectionEnd,
+		ctx, upstreamClientID, upstreamPrefix, connectionEnd,
 		proofHeight, proofInit,
 		counterparty.PortId, counterparty.ChannelId, expectedChannel,
 	); err != nil {
@@ -72,6 +73,7 @@ func (k Keeper) ChanOpenAck(
 	ctx sdk.Context,
 
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 	order channeltypes.Order,
 	connectionHops []string, // from upstream
 
@@ -96,7 +98,7 @@ func (k Keeper) ChanOpenAck(
 	)
 
 	if err := k.VerifyChannelState(
-		ctx, upstreamClientID, connectionEnd,
+		ctx, upstreamClientID, upstreamPrefix, connectionEnd,
 		proofHeight, proofTry,
 		counterparty.PortId, counterparty.ChannelId, expectedChannel,
 	); err != nil {
@@ -112,6 +114,7 @@ func (k Keeper) ChanOpenConfirm(
 	ctx sdk.Context,
 
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 
 	sourceChannelID string,
 	counterpartyPortID,
@@ -137,7 +140,7 @@ func (k Keeper) ChanOpenConfirm(
 	channel.State = channeltypes.OPEN
 
 	if err := k.VerifyChannelState(
-		ctx, upstreamClientID, connectionEnd,
+		ctx, upstreamClientID, upstreamPrefix, connectionEnd,
 		proofHeight, proofAck,
 		counterpartyPortID, counterpartyChannelID, channel,
 	); err != nil {

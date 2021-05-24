@@ -15,6 +15,7 @@ func (k Keeper) ConnOpenTry(
 
 	connectionID string, // the connection ID corresponding to B on A
 	upstreamClientID string, // the client ID corresponding to A on P
+	upstreamPrefix exported.Prefix,
 	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to B on A (its state must be INIT)
 
 	clientState exported.ClientState, // clientState that chainA has for chainB or proxy
@@ -39,20 +40,20 @@ func (k Keeper) ConnOpenTry(
 	}
 
 	// Check that ChainA stored the clientState provided in the msg
-	if err := k.VerifyClientState(ctx, upstreamClientID, proxyConnection, proofHeight, proofClient, clientState); err != nil {
+	if err := k.VerifyClientState(ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, proofClient, clientState); err != nil {
 		return err
 	}
 
 	// Ensure that ChainB stored expected connectionEnd in its state during ConnOpenTry
 	if err := k.VerifyConnectionState(
-		ctx, upstreamClientID, proxyConnection, proofHeight, proofInit, connectionID,
+		ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, proofInit, connectionID,
 	); err != nil {
 		return err
 	}
 
 	// Check that ChainA stored the correct ConsensusState of chainB or proxy at the given consensusHeight
 	if err := k.VerifyClientConsensusState(
-		ctx, upstreamClientID, proxyConnection, proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
+		ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
 	); err != nil {
 		return err
 	}
@@ -67,6 +68,7 @@ func (k Keeper) ConnOpenACK(
 	ctx sdk.Context,
 	connectionID string, // connectionID corresponding to B on A
 	upstreamClientID string, // clientID corresponding to B on P
+	upstreamPrefix exported.Prefix,
 	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to A on B (its state must be TRYOPEN)
 	clientState exported.ClientState, // client state for chainA on chainB
 	version *connectiontypes.Version, // version that ChainB chose in ConnOpenTry
@@ -91,20 +93,20 @@ func (k Keeper) ConnOpenACK(
 	}
 
 	// Check that ChainB stored the clientState provided in the msg
-	if err := k.VerifyClientState(ctx, upstreamClientID, proxyConnection, proofHeight, proofClient, clientState); err != nil {
+	if err := k.VerifyClientState(ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, proofClient, clientState); err != nil {
 		return err
 	}
 
 	// Ensure that ChainB stored expected connectionEnd in its state during ConnOpenTry
 	if err := k.VerifyConnectionState(
-		ctx, upstreamClientID, proxyConnection, proofHeight, proofTry, connectionID,
+		ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, proofTry, connectionID,
 	); err != nil {
 		return err
 	}
 
 	// Ensure that ChainB has stored the correct ConsensusState for chainA at the consensusHeight
 	if err := k.VerifyClientConsensusState(
-		ctx, upstreamClientID, proxyConnection, proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
+		ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
 	); err != nil {
 		return err
 	}
@@ -119,6 +121,7 @@ func (k Keeper) ConnOpenConfirm(
 	ctx sdk.Context,
 	connectionID string, // the connection ID corresponding to A on B
 	upstreamClientID string, // the client ID corresponding to A
+	upstreamPrefix exported.Prefix,
 	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to A on B (its state must be OPEN)
 	proofAck []byte, // proof that connection opened on ChainA during ConnOpenAck
 	proofHeight exported.Height, // height that relayer constructed proofAck
@@ -139,7 +142,7 @@ func (k Keeper) ConnOpenConfirm(
 
 	// Ensure that ChainB stored expected connectionEnd in its state during ConnOpenTry
 	if err := k.VerifyConnectionState(
-		ctx, upstreamClientID, proxyConnection, proofHeight, proofAck, connectionID,
+		ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, proofAck, connectionID,
 	); err != nil {
 		return err
 	}

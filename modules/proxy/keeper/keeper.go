@@ -49,17 +49,17 @@ func (k Keeper) GetCommitmentPrefix() exported.Prefix {
 	return commitmenttypes.NewMerklePrefix([]byte(k.proxyStoreKey.Name()))
 }
 
-func (k Keeper) ProxyCommitmentStore(ctx sdk.Context, upstreamClientID string) sdk.KVStore {
-	return storeprefix.NewStore(ctx.KVStore(k.ibcStoreKey), []byte(upstreamClientID+"/"))
+func (k Keeper) ProxyCommitmentStore(ctx sdk.Context, upstreamPrefix exported.Prefix, upstreamClientID string) sdk.KVStore {
+	return storeprefix.NewStore(ctx.KVStore(k.proxyStoreKey), append([]byte(upstreamClientID+"/"), string(upstreamPrefix.Bytes())+"/"...))
 }
 
-func (k Keeper) ProxyCommitmentClientStore(ctx sdk.Context, upstreamClientID string, counterpartyClientIdentifier string) sdk.KVStore {
+func (k Keeper) ProxyCommitmentClientStore(ctx sdk.Context, upstreamPrefix exported.Prefix, upstreamClientID string, counterpartyClientIdentifier string) sdk.KVStore {
 	clientPrefix := append([]byte("clients/"+counterpartyClientIdentifier), '/')
-	return storeprefix.NewStore(k.ProxyCommitmentStore(ctx, upstreamClientID), clientPrefix)
+	return storeprefix.NewStore(k.ProxyCommitmentStore(ctx, upstreamPrefix, upstreamClientID), clientPrefix)
 }
 
 func (k Keeper) ProxyStore(ctx sdk.Context, upstreamClientID string) sdk.KVStore {
-	return storeprefix.NewStore(ctx.KVStore(k.proxyStoreKey), []byte(upstreamClientID+"/"))
+	return storeprefix.NewStore(ctx.KVStore(k.proxyStoreKey), []byte("/proxy/"+upstreamClientID+"/"))
 }
 
 func (k Keeper) EnableProxy(ctx sdk.Context, clientID string) error {

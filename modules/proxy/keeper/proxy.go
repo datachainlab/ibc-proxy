@@ -16,6 +16,7 @@ import (
 func (k Keeper) VerifyClientState(
 	ctx sdk.Context,
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 	counterpartyConnection exported.ConnectionI, // upstream
 	height exported.Height,
 	proof []byte,
@@ -28,13 +29,13 @@ func (k Keeper) VerifyClientState(
 
 	if err := targetClient.VerifyClientState(
 		k.clientKeeper.ClientStore(ctx, upstreamClientID), k.cdc, height,
-		counterpartyConnection.GetCounterparty().GetPrefix(), counterpartyConnection.GetClientID(), proof, clientState); err != nil {
+		upstreamPrefix, counterpartyConnection.GetClientID(), proof, clientState); err != nil {
 		return sdkerrors.Wrapf(err, "failed client state verification for target client: %s", upstreamClientID)
 	}
 
 	return k.setClientStateCommitment(
 		ctx,
-		counterpartyConnection.GetCounterparty().GetPrefix(),
+		upstreamPrefix,
 		counterpartyConnection.GetClientID(),
 		upstreamClientID,
 		clientState,
@@ -44,6 +45,7 @@ func (k Keeper) VerifyClientState(
 func (k Keeper) VerifyClientConsensusState(
 	ctx sdk.Context,
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 	connection exported.ConnectionI,
 	height exported.Height,
 	consensusHeight exported.Height,
@@ -57,14 +59,14 @@ func (k Keeper) VerifyClientConsensusState(
 
 	if err := targetClient.VerifyClientConsensusState(
 		k.clientKeeper.ClientStore(ctx, upstreamClientID), k.cdc, height,
-		connection.GetClientID(), consensusHeight, connection.GetCounterparty().GetPrefix(), proof, consensusState,
+		connection.GetClientID(), consensusHeight, upstreamPrefix, proof, consensusState,
 	); err != nil {
 		return sdkerrors.Wrapf(err, "failed consensus state verification for client (%s)", upstreamClientID)
 	}
 
 	return k.setClientConsensusStateCommitment(
 		ctx,
-		connection.GetCounterparty().GetPrefix(),
+		upstreamPrefix,
 		connection.GetClientID(),
 		upstreamClientID,
 		consensusHeight,
@@ -75,6 +77,7 @@ func (k Keeper) VerifyClientConsensusState(
 func (k Keeper) VerifyConnectionState(
 	ctx sdk.Context,
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 	proxyConnection connectiontypes.ConnectionEnd,
 	height exported.Height,
 	proof []byte,
@@ -86,15 +89,14 @@ func (k Keeper) VerifyConnectionState(
 	}
 	if err := targetClient.VerifyConnectionState(
 		k.clientKeeper.ClientStore(ctx, upstreamClientID), k.cdc, height,
-		proxyConnection.GetCounterparty().GetPrefix(), proof, connectionID, proxyConnection,
+		upstreamPrefix, proof, connectionID, proxyConnection,
 	); err != nil {
 		return sdkerrors.Wrapf(err, "failed connection state verification for client (%s)", upstreamClientID)
 	}
 
 	return k.setConnectionStateCommitment(
 		ctx,
-		proxyConnection.GetCounterparty().GetPrefix(),
-		proxyConnection.GetClientID(),
+		upstreamPrefix,
 		upstreamClientID,
 		connectionID,
 		proxyConnection,
@@ -104,6 +106,7 @@ func (k Keeper) VerifyConnectionState(
 func (k Keeper) VerifyChannelState(
 	ctx sdk.Context,
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 	proxyConnection exported.ConnectionI,
 	height exported.Height,
 	proof []byte,
@@ -118,7 +121,7 @@ func (k Keeper) VerifyChannelState(
 
 	if err := targetClient.VerifyChannelState(
 		k.clientKeeper.ClientStore(ctx, upstreamClientID), k.cdc, height,
-		proxyConnection.GetCounterparty().GetPrefix(), proof,
+		upstreamPrefix, proof,
 		portID, channelID, channel,
 	); err != nil {
 		return sdkerrors.Wrapf(err, "failed channel state verification for client (%s)", upstreamClientID)
@@ -126,8 +129,7 @@ func (k Keeper) VerifyChannelState(
 
 	return k.setChannelStateCommitment(
 		ctx,
-		proxyConnection.GetCounterparty().GetPrefix(),
-		proxyConnection.GetCounterparty().GetClientID(),
+		upstreamPrefix,
 		upstreamClientID,
 		portID,
 		channelID,
@@ -140,6 +142,7 @@ func (k Keeper) VerifyChannelState(
 func (k Keeper) VerifyPacketCommitment(
 	ctx sdk.Context,
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 	proxyConnection exported.ConnectionI,
 	height exported.Height,
 	proof []byte,
@@ -156,7 +159,7 @@ func (k Keeper) VerifyPacketCommitment(
 	if err := targetClient.VerifyPacketCommitment(
 		k.clientKeeper.ClientStore(ctx, upstreamClientID), k.cdc, height,
 		uint64(ctx.BlockTime().UnixNano()), proxyConnection.GetDelayPeriod(),
-		proxyConnection.GetCounterparty().GetPrefix(), proof, portID, channelID,
+		upstreamPrefix, proof, portID, channelID,
 		sequence, commitmentBytes,
 	); err != nil {
 		return sdkerrors.Wrapf(err, "failed packet commitment verification for client (%s)", proxyConnection.GetClientID())
@@ -164,8 +167,7 @@ func (k Keeper) VerifyPacketCommitment(
 
 	return k.setPacketCommitment(
 		ctx,
-		proxyConnection.GetCounterparty().GetPrefix(),
-		proxyConnection.GetCounterparty().GetClientID(),
+		upstreamPrefix,
 		upstreamClientID,
 		portID,
 		channelID,
@@ -179,6 +181,7 @@ func (k Keeper) VerifyPacketCommitment(
 func (k Keeper) VerifyPacketAcknowledgement(
 	ctx sdk.Context,
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 	proxyConnection exported.ConnectionI,
 	height exported.Height,
 	proof []byte,
@@ -195,7 +198,7 @@ func (k Keeper) VerifyPacketAcknowledgement(
 	if err := targetClient.VerifyPacketAcknowledgement(
 		k.clientKeeper.ClientStore(ctx, upstreamClientID), k.cdc, height,
 		uint64(ctx.BlockTime().UnixNano()), proxyConnection.GetDelayPeriod(),
-		proxyConnection.GetCounterparty().GetPrefix(), proof, portID, channelID,
+		upstreamPrefix, proof, portID, channelID,
 		sequence, acknowledgement,
 	); err != nil {
 		return sdkerrors.Wrapf(err, "failed packet acknowledgement verification for client (%s)", proxyConnection.GetClientID())
@@ -203,8 +206,7 @@ func (k Keeper) VerifyPacketAcknowledgement(
 
 	return k.setPacketAcknowledgement(
 		ctx,
-		proxyConnection.GetCounterparty().GetPrefix(),
-		proxyConnection.GetCounterparty().GetClientID(),
+		upstreamPrefix,
 		upstreamClientID,
 		portID,
 		channelID,
@@ -219,6 +221,7 @@ func (k Keeper) VerifyPacketAcknowledgement(
 func (k Keeper) VerifyPacketReceiptAbsence(
 	ctx sdk.Context,
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 	proxyConnection exported.ConnectionI,
 	height exported.Height,
 	proof []byte,
@@ -234,7 +237,7 @@ func (k Keeper) VerifyPacketReceiptAbsence(
 	if err := targetClient.VerifyPacketReceiptAbsence(
 		k.clientKeeper.ClientStore(ctx, upstreamClientID), k.cdc, height,
 		uint64(ctx.BlockTime().UnixNano()), proxyConnection.GetDelayPeriod(),
-		proxyConnection.GetCounterparty().GetPrefix(), proof, portID, channelID,
+		upstreamPrefix, proof, portID, channelID,
 		sequence,
 	); err != nil {
 		return sdkerrors.Wrapf(err, "failed packet receipt absence verification for client (%s)", proxyConnection.GetClientID())
@@ -242,8 +245,7 @@ func (k Keeper) VerifyPacketReceiptAbsence(
 
 	return k.setPacketReceiptAbsence(
 		ctx,
-		proxyConnection.GetCounterparty().GetPrefix(),
-		proxyConnection.GetCounterparty().GetClientID(),
+		upstreamPrefix,
 		upstreamClientID,
 		portID,
 		channelID,
@@ -256,6 +258,7 @@ func (k Keeper) VerifyPacketReceiptAbsence(
 func (k Keeper) VerifyNextSequenceRecv(
 	ctx sdk.Context,
 	upstreamClientID string,
+	upstreamPrefix exported.Prefix,
 	proxyConnection exported.ConnectionI,
 	height exported.Height,
 	proof []byte,
@@ -271,7 +274,7 @@ func (k Keeper) VerifyNextSequenceRecv(
 	if err := targetClient.VerifyNextSequenceRecv(
 		k.clientKeeper.ClientStore(ctx, upstreamClientID), k.cdc, height,
 		uint64(ctx.BlockTime().UnixNano()), proxyConnection.GetDelayPeriod(),
-		proxyConnection.GetCounterparty().GetPrefix(), proof, portID, channelID,
+		upstreamPrefix, proof, portID, channelID,
 		nextSequenceRecv,
 	); err != nil {
 		return sdkerrors.Wrapf(err, "failed next sequence receive verification for client (%s)", proxyConnection.GetClientID())
@@ -279,8 +282,7 @@ func (k Keeper) VerifyNextSequenceRecv(
 
 	return k.setNextSequenceRecv(
 		ctx,
-		proxyConnection.GetCounterparty().GetPrefix(),
-		proxyConnection.GetCounterparty().GetClientID(),
+		upstreamPrefix,
 		upstreamClientID,
 		portID,
 		channelID,

@@ -8,6 +8,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
+	commitmenttypes "github.com/cosmos/ibc-go/modules/core/23-commitment/types"
 	host "github.com/cosmos/ibc-go/modules/core/24-host"
 	"github.com/cosmos/ibc-go/modules/core/exported"
 	proxytypes "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-proxy/types"
@@ -26,7 +27,7 @@ func (k Keeper) OnRecvPacket(
 	if err != nil {
 		return channeltypes.NewErrorAcknowledgement(fmt.Sprintf("failed to OnRecvProxyRequest: %s", err.Error()))
 	}
-	ackData := types.NewProxyRequestAcknowledgement(types.OK, *upState)
+	ackData := types.NewProxyRequestAcknowledgement(types.OK, k.GetCommitmentPrefix().(commitmenttypes.MerklePrefix), *upState)
 	return channeltypes.NewResultAcknowledgement(k.cdc.MustMarshal(&ackData))
 }
 

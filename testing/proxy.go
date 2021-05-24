@@ -8,11 +8,13 @@ import (
 	connectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 	"github.com/cosmos/ibc-go/modules/core/04-channel/types"
 	channeltypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
+	commitmenttypes "github.com/cosmos/ibc-go/modules/core/23-commitment/types"
 	host "github.com/cosmos/ibc-go/modules/core/24-host"
 	"github.com/cosmos/ibc-go/modules/core/exported"
 	proxytypes "github.com/datachainlab/ibc-proxy/modules/proxy/types"
 	"github.com/datachainlab/ibc-proxy/testing/simapp"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func (coord *Coordinator) InitProxy(
@@ -127,6 +129,7 @@ type ProxyInfo struct {
 	Chain            *TestChain
 	ClientID         string
 	UpstreamClientID string
+	UpstreamPrefix   exported.Prefix
 }
 
 type ProxyPair [2]*ProxyInfo
@@ -206,6 +209,7 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 			proxy.GetContext(),
 			counterpartyConnection.ID,
 			proxies[0].UpstreamClientID,
+			proxies[0].UpstreamPrefix,
 			proxyConnection,
 			counterpartyClient, proofInit, proofClient, proofConsensus, proofHeight, consensusHeight, consensusState,
 		)
@@ -221,9 +225,9 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 		coord.CommitBlock(source)
 
 		{
-			client, proofClient := proxy.QueryProxiedClientStateProof(counterpartyConnection.ClientID, proxies[0].UpstreamClientID)
-			proofInit, proofHeight := proxy.QueryProxiedConnectionStateProof(counterpartyConnection.ID, proxies[0].UpstreamClientID)
-			proofConsensus, consensusHeight := proxy.QueryProxiedConsensusStateProof(counterpartyConnection.ClientID, proxies[0].UpstreamClientID)
+			client, proofClient := proxy.QueryProxiedClientStateProof(counterpartyConnection.ClientID, proxies[0].UpstreamPrefix, proxies[0].UpstreamClientID)
+			proofInit, proofHeight := proxy.QueryProxiedConnectionStateProof(counterpartyConnection.ID, proxies[0].UpstreamPrefix, proxies[0].UpstreamClientID)
+			proofConsensus, consensusHeight := proxy.QueryProxiedConsensusStateProof(counterpartyConnection.ClientID, proxies[0].UpstreamPrefix, proxies[0].UpstreamClientID)
 
 			msg := connectiontypes.NewMsgConnectionOpenTry(
 				"", sourceConnection.ClientID, counterpartyConnection.ID, counterpartyConnection.ClientID, client, // testing doesn't use flexible selection
@@ -293,6 +297,7 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 				proxy.GetContext(),
 				counterpartyConnection.ID,
 				proxies[0].UpstreamClientID,
+				proxies[0].UpstreamPrefix,
 				proxyConnection,
 				counterpartyClient,
 				ConnectionVersion,
@@ -316,9 +321,9 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 		coord.CommitBlock(source)
 
 		{ // callerA calls connOpenAck with proxied proof
-			client, proofClient := proxy.QueryProxiedClientStateProof(counterpartyConnection.ClientID, proxies[0].UpstreamClientID)
-			proofTry, proofHeight := proxy.QueryProxiedConnectionStateProof(counterpartyConnection.ID, proxies[0].UpstreamClientID)
-			proofConsensus, consensusHeight := proxy.QueryProxiedConsensusStateProof(counterpartyConnection.ClientID, proxies[0].UpstreamClientID)
+			client, proofClient := proxy.QueryProxiedClientStateProof(counterpartyConnection.ClientID, proxies[0].UpstreamPrefix, proxies[0].UpstreamClientID)
+			proofTry, proofHeight := proxy.QueryProxiedConnectionStateProof(counterpartyConnection.ID, proxies[0].UpstreamPrefix, proxies[0].UpstreamClientID)
+			proofConsensus, consensusHeight := proxy.QueryProxiedConsensusStateProof(counterpartyConnection.ClientID, proxies[0].UpstreamPrefix, proxies[0].UpstreamClientID)
 
 			msg := connectiontypes.NewMsgConnectionOpenAck(
 				sourceConnection.ID, counterpartyConnection.ID, client, // testing doesn't use flexible selection
@@ -379,6 +384,7 @@ func (coord *Coordinator) ConnOpenConfirmWithProxy(
 				proxy.GetContext(),
 				counterpartyConnection.ID,
 				proxies[0].UpstreamClientID,
+				proxies[0].UpstreamPrefix,
 				proxyConnection,
 				proofAck,
 				proofHeight,
@@ -396,7 +402,7 @@ func (coord *Coordinator) ConnOpenConfirmWithProxy(
 		coord.CommitBlock(source)
 
 		{
-			proofAck, proofHeight := proxy.QueryProxiedConnectionStateProof(counterpartyConnection.ID, proxies[0].UpstreamClientID)
+			proofAck, proofHeight := proxy.QueryProxiedConnectionStateProof(counterpartyConnection.ID, proxies[0].UpstreamPrefix, proxies[0].UpstreamClientID)
 
 			msg := connectiontypes.NewMsgConnectionOpenConfirm(
 				sourceConnection.ID, proofAck, proofHeight,
@@ -477,6 +483,7 @@ func (coord *Coordinator) ChanOpenTryWithProxy(
 		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ChanOpenTry(
 			proxy.GetContext(),
 			proxies[0].UpstreamClientID,
+			proxies[0].UpstreamPrefix,
 			order,
 			[]string{counterpartyConnection.ID},
 			sourceChannel.PortID,
@@ -498,7 +505,7 @@ func (coord *Coordinator) ChanOpenTryWithProxy(
 		coord.CommitBlock(source)
 
 		{
-			proof, proofHeight := proxy.QueryProxiedChannelStateProof(counterpartyChannel.PortID, counterpartyChannel.ID, proxies[0].UpstreamClientID)
+			proof, proofHeight := proxy.QueryProxiedChannelStateProof(counterpartyChannel.PortID, counterpartyChannel.ID, proxies[0].UpstreamPrefix, proxies[0].UpstreamClientID)
 			msg := channeltypes.NewMsgChannelOpenTry(
 				sourceChannel.PortID,
 				"",
@@ -547,6 +554,7 @@ func (coord *Coordinator) ChanOpenAckWithProxy(
 		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ChanOpenAck(
 			proxy.GetContext(),
 			proxies[0].UpstreamClientID,
+			proxies[0].UpstreamPrefix,
 			order,
 			[]string{counterpartyConnection.ID},
 			sourceChannel.PortID, sourceChannel.ID,
@@ -567,7 +575,7 @@ func (coord *Coordinator) ChanOpenAckWithProxy(
 		coord.CommitBlock(source)
 
 		{
-			proof, proofHeight := proxy.QueryProxiedChannelStateProof(counterpartyChannel.PortID, counterpartyChannel.ID, proxies[0].UpstreamClientID)
+			proof, proofHeight := proxy.QueryProxiedChannelStateProof(counterpartyChannel.PortID, counterpartyChannel.ID, proxies[0].UpstreamPrefix, proxies[0].UpstreamClientID)
 			msg := channeltypes.NewMsgChannelOpenAck(
 				sourceChannel.PortID, sourceChannel.ID,
 				counterpartyChannel.ID, counterpartyChannel.Version,
@@ -614,6 +622,7 @@ func (coord *Coordinator) ChanOpenConfirmWithProxy(
 		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ChanOpenConfirm(
 			proxy.GetContext(),
 			proxies[0].UpstreamClientID,
+			proxies[0].UpstreamPrefix,
 			sourceChannel.ID,
 			counterpartyChannel.PortID, counterpartyChannel.ID,
 			proofAck, proofHeight,
@@ -630,7 +639,7 @@ func (coord *Coordinator) ChanOpenConfirmWithProxy(
 		coord.CommitBlock(source)
 
 		{
-			proof, proofHeight := proxy.QueryProxiedChannelStateProof(counterpartyChannel.PortID, counterpartyChannel.ID, proxies[0].UpstreamClientID)
+			proof, proofHeight := proxy.QueryProxiedChannelStateProof(counterpartyChannel.PortID, counterpartyChannel.ID, proxies[0].UpstreamPrefix, proxies[0].UpstreamClientID)
 
 			msg := channeltypes.NewMsgChannelOpenConfirm(
 				sourceChannel.PortID, sourceChannel.ID,
@@ -693,6 +702,7 @@ func (coord *Coordinator) RecvPacketWithProxy(
 		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.RecvPacket(
 			proxy.GetContext(),
 			proxies[0].UpstreamClientID,
+			proxies[0].UpstreamPrefix,
 			packet, proof, proofHeight,
 		)
 		if err != nil {
@@ -708,7 +718,7 @@ func (coord *Coordinator) RecvPacketWithProxy(
 
 		// relay the packet to the source chain
 		{
-			proof, proofHeight := proxy.QueryProxiedPacketCommitmentProof(packet.SourcePort, packet.SourceChannel, packet.Sequence, proxies[0].UpstreamClientID)
+			proof, proofHeight := proxy.QueryProxiedPacketCommitmentProof(packet.SourcePort, packet.SourceChannel, packet.Sequence, proxies[0].UpstreamPrefix, proxies[0].UpstreamClientID)
 			recvMsg := channeltypes.NewMsgRecvPacket(packet, proof, proofHeight, source.SenderAccount.GetAddress().String())
 			if _, err := source.SendMsgs(recvMsg); err != nil {
 				return err
@@ -745,6 +755,7 @@ func (coord *Coordinator) AcknowledgePacketWithProxy(
 		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.AcknowledgePacket(
 			proxy.GetContext(),
 			proxies[0].UpstreamClientID,
+			proxies[0].UpstreamPrefix,
 			packet, ack, proof, proofHeight,
 		)
 		if err != nil {
@@ -759,7 +770,7 @@ func (coord *Coordinator) AcknowledgePacketWithProxy(
 		coord.CommitBlock(source)
 
 		{
-			proof, proofHeight := proxy.QueryProxiedAcknowledgementProof(packet.DestinationPort, packet.DestinationChannel, packet.Sequence, proxies[0].UpstreamClientID)
+			proof, proofHeight := proxy.QueryProxiedAcknowledgementProof(packet.DestinationPort, packet.DestinationChannel, packet.Sequence, proxies[0].UpstreamPrefix, proxies[0].UpstreamClientID)
 			ackMsg := channeltypes.NewMsgAcknowledgement(packet, ack, proof, proofHeight, source.SenderAccount.GetAddress().String())
 			if _, err := source.SendMsgs(ackMsg); err != nil {
 				return err
@@ -814,56 +825,82 @@ func (chain *TestChain) acknowledgePacket(coord *Coordinator, counterparty *Test
 	return nil
 }
 
-func (chain *TestChain) QueryProxiedClientStateProof(clientID string, upstreamClientID string) (exported.ClientState, []byte) {
+func (chain *TestChain) QueryProxiedClientStateProof(clientID string, upstreamPrefix exported.Prefix, upstreamClientID string) (exported.ClientState, []byte) {
 	// retrieve client state to provide proof for
 	clientState, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetClientStateCommitment(
 		chain.GetContext(),
+		upstreamPrefix,
 		clientID,
 		upstreamClientID,
 	)
 	require.True(chain.t, found)
 
-	clientKey := withProxyPrefix(upstreamClientID, host.FullClientStateKey(clientID))
+	clientKey := withProxyPrefix(upstreamPrefix, upstreamClientID, host.FullClientStateKey(clientID))
 
-	proofClient, _ := chain.QueryProof(clientKey)
+	proofClient, _ := chain.QueryProxiedProof(clientKey)
 
 	return clientState, proofClient
 }
 
-func (chain *TestChain) QueryProxiedConsensusStateProof(clientID string, upstreamClientID string) ([]byte, clienttypes.Height) {
+func (chain *TestChain) QueryProxiedConsensusStateProof(clientID string, upstreamPrefix exported.Prefix, upstreamClientID string) ([]byte, clienttypes.Height) {
 	clientState, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetClientStateCommitment(
 		chain.GetContext(),
+		upstreamPrefix,
 		clientID,
 		upstreamClientID,
 	)
 	require.True(chain.t, found)
 	consensusHeight := clientState.GetLatestHeight().(clienttypes.Height)
-	consensusKey := withProxyPrefix(upstreamClientID, host.FullConsensusStateKey(clientID, consensusHeight))
-	proofConsensus, _ := chain.QueryProof(consensusKey)
+	consensusKey := withProxyPrefix(upstreamPrefix, upstreamClientID, host.FullConsensusStateKey(clientID, consensusHeight))
+	proofConsensus, _ := chain.QueryProxiedProof(consensusKey)
 
 	return proofConsensus, consensusHeight
 }
 
-func (chain *TestChain) QueryProxiedConnectionStateProof(connectionID string, upstreamClientID string) ([]byte, clienttypes.Height) {
-	connectionKey := withProxyPrefix(upstreamClientID, host.ConnectionKey(connectionID))
-	return chain.QueryProof(connectionKey)
+func (chain *TestChain) QueryProxiedConnectionStateProof(connectionID string, upstreamPrefix exported.Prefix, upstreamClientID string) ([]byte, clienttypes.Height) {
+	connectionKey := withProxyPrefix(upstreamPrefix, upstreamClientID, host.ConnectionKey(connectionID))
+	return chain.QueryProxiedProof(connectionKey)
 }
 
-func (chain *TestChain) QueryProxiedChannelStateProof(portID string, channelID string, upstreamClientID string) ([]byte, clienttypes.Height) {
-	channelKey := withProxyPrefix(upstreamClientID, host.ChannelKey(portID, channelID))
-	return chain.QueryProof(channelKey)
+func (chain *TestChain) QueryProxiedChannelStateProof(portID string, channelID string, upstreamPrefix exported.Prefix, upstreamClientID string) ([]byte, clienttypes.Height) {
+	channelKey := withProxyPrefix(upstreamPrefix, upstreamClientID, host.ChannelKey(portID, channelID))
+	return chain.QueryProxiedProof(channelKey)
 }
 
-func (chain *TestChain) QueryProxiedPacketCommitmentProof(sourcePort, sourceChannel string, packetSequence uint64, upstreamClientID string) ([]byte, clienttypes.Height) {
-	packetCommitmentKey := withProxyPrefix(upstreamClientID, host.PacketCommitmentKey(sourcePort, sourceChannel, packetSequence))
-	return chain.QueryProof(packetCommitmentKey)
+func (chain *TestChain) QueryProxiedPacketCommitmentProof(sourcePort, sourceChannel string, packetSequence uint64, upstreamPrefix exported.Prefix, upstreamClientID string) ([]byte, clienttypes.Height) {
+	packetCommitmentKey := withProxyPrefix(upstreamPrefix, upstreamClientID, host.PacketCommitmentKey(sourcePort, sourceChannel, packetSequence))
+	return chain.QueryProxiedProof(packetCommitmentKey)
 }
 
-func (chain *TestChain) QueryProxiedAcknowledgementProof(destPort, destChannel string, packetSequence uint64, upstreamClientID string) ([]byte, clienttypes.Height) {
-	ackCommitmentKey := withProxyPrefix(upstreamClientID, host.PacketAcknowledgementKey(destPort, destChannel, packetSequence))
-	return chain.QueryProof(ackCommitmentKey)
+func (chain *TestChain) QueryProxiedAcknowledgementProof(destPort, destChannel string, packetSequence uint64, upstreamPrefix exported.Prefix, upstreamClientID string) ([]byte, clienttypes.Height) {
+	ackCommitmentKey := withProxyPrefix(upstreamPrefix, upstreamClientID, host.PacketAcknowledgementKey(destPort, destChannel, packetSequence))
+	return chain.QueryProxiedProof(ackCommitmentKey)
 }
 
-func withProxyPrefix(upstreamClientID string, key []byte) []byte {
-	return append([]byte(upstreamClientID+"/"), key...)
+func withProxyPrefix(upstreamPrefix exported.Prefix, upstreamClientID string, key []byte) []byte {
+	return append(append([]byte(upstreamClientID+"/"), string(upstreamPrefix.Bytes())+"/"...), key...)
+}
+
+// QueryProof performs an abci query with the given key and returns the proto encoded merkle proof
+// for the query and the height at which the proof will succeed on a tendermint verifier.
+func (chain *TestChain) QueryProxiedProof(key []byte) ([]byte, clienttypes.Height) {
+	res := chain.App.Query(abci.RequestQuery{
+		Path:   fmt.Sprintf("store/%s/key", proxytypes.StoreKey),
+		Height: chain.App.LastBlockHeight() - 1,
+		Data:   key,
+		Prove:  true,
+	})
+
+	merkleProof, err := commitmenttypes.ConvertProofs(res.ProofOps)
+	require.NoError(chain.t, err)
+
+	proof, err := chain.App.AppCodec().Marshal(&merkleProof)
+	require.NoError(chain.t, err)
+
+	revision := clienttypes.ParseChainID(chain.ChainID)
+
+	// proof height + 1 is returned as the proof created corresponds to the height the proof
+	// was created in the IAVL tree. Tendermint and subsequently the clients that rely on it
+	// have heights 1 above the IAVL tree. Thus we return proof height + 1
+	return proof, clienttypes.NewHeight(revision, uint64(res.Height)+1)
 }

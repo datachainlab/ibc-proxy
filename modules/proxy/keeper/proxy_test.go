@@ -25,7 +25,7 @@ func (suite *KeeperTestSuite) TestOneSideProxy1() {
 	clientAC, err := suite.coordinator.SetupProxy(suite.chainA, suite.chainC, clientCB)
 	suite.Require().NoError(err)
 
-	ppair := ibctesting.ProxyPair{{suite.chainC, clientAC, clientCB}, nil}
+	ppair := ibctesting.ProxyPair{{suite.chainC, clientAC, clientCB, suite.chainB.GetPrefix()}, nil}
 	connA, connB := suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAC, clientBA, ibctesting.TransferVersion, ppair)
 	chanA, chanB := suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED, ppair)
 	suite.testHandleMsgTransfer(connA, connB, chanA, chanB, ppair)
@@ -46,7 +46,7 @@ func (suite *KeeperTestSuite) TestOneSideProxy2() {
 	clientBC, err := suite.coordinator.SetupProxy(suite.chainB, suite.chainC, clientCA)
 	suite.Require().NoError(err)
 
-	ppair := ibctesting.ProxyPair{nil, {suite.chainC, clientBC, clientCA}}
+	ppair := ibctesting.ProxyPair{nil, {suite.chainC, clientBC, clientCA, suite.chainA.GetPrefix()}}
 	connA, connB := suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAB, clientBC, ibctesting.TransferVersion, ppair)
 	chanA, chanB := suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, types.UNORDERED, ppair)
 	suite.testHandleMsgTransfer(connA, connB, chanA, chanB, ppair)
@@ -67,7 +67,7 @@ func (suite *KeeperTestSuite) TestBothSideProxy() {
 	clientBD, err := suite.coordinator.SetupProxy(suite.chainB, suite.chainD, clientDA)
 	suite.Require().NoError(err)
 
-	ppair := ibctesting.ProxyPair{{suite.chainC, clientAC, clientCB}, {suite.chainD, clientBD, clientDA}}
+	ppair := ibctesting.ProxyPair{{suite.chainC, clientAC, clientCB, suite.chainB.GetPrefix()}, {suite.chainD, clientBD, clientDA, suite.chainA.GetPrefix()}}
 	connA, connB := suite.coordinator.CreateConnectionWithProxy(suite.chainA, suite.chainB, clientAC, clientBD, ibctesting.TransferVersion, ppair)
 	chanA, chanB := suite.coordinator.CreateChannelWithProxy(suite.chainA, suite.chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED, ppair)
 	suite.testHandleMsgTransfer(connA, connB, chanA, chanB, ppair)
