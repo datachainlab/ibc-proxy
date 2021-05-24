@@ -83,10 +83,15 @@ func (suite *KeeperTestSuite) testHandleMsgTransfer(connA, connB *ibctesting.Tes
 	// relay send
 	fungibleTokenPacket := transfertypes.NewFungibleTokenPacketData(coinToSendToB.Denom, coinToSendToB.Amount.Uint64(), suite.chainA.SenderAccount.GetAddress().String(), suite.chainB.SenderAccount.GetAddress().String())
 	packet := channeltypes.NewPacket(fungibleTokenPacket.GetBytes(), 1, chanA.PortID, chanA.ID, chanB.PortID, chanB.ID, timeoutHeight, 0)
-	// ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
+	ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
 
 	err = suite.coordinator.RecvPacketWithProxy(
 		suite.chainB, suite.chainA, connB, connA, packet, proxies.Swap(),
 	)
 	suite.Require().NoError(err) // relay committed
+
+	err = suite.coordinator.AcknowledgePacketWithProxy(
+		suite.chainA, suite.chainB, chanA, chanB, connA, connB, packet, ack.Acknowledgement(), proxies,
+	)
+	suite.Require().NoError(err) // ack committed
 }

@@ -729,13 +729,15 @@ func (coord *Coordinator) RecvPacketWithProxy(
 }
 
 func (coord *Coordinator) AcknowledgePacketWithProxy(
-	source, counterparty *TestChain, // source: packet receiver, counterparty: packet sender
-	sourceChannel, counterpartyChannel TestChannel,
+	source, counterparty *TestChain, // source: ack receiver, counterparty: ack sender
+	sourceChannel, counterpartyChannel *TestChannel,
 	sourceConnection, counterpartyConnection *TestConnection,
-	packet channeltypes.Packet, proxies ProxyPair,
+	packet channeltypes.Packet, ack []byte, proxies ProxyPair,
 ) error {
 	if proxies[0] == nil {
-		panic("not implemented")
+		if err := source.acknowledgePacket(coord, counterparty, sourceConnection.ClientID, packet, ack); err != nil {
+			return err
+		}
 	} else {
 		panic("not implemented")
 	}
@@ -765,7 +767,23 @@ func (chain *TestChain) recvPacket(coord *Coordinator, counterparty *TestChain, 
 	if err := counterparty.sendMsgs(recvMsg); err != nil {
 		return err
 	}
+	coord.IncrementTime()
+	return nil
+}
 
+// source: packet sender / ack receiver, counterparty: packet receiver / ack sender
+func (chain *TestChain) acknowledgePacket(coord *Coordinator, counterparty *TestChain, sourceClient string, packet channeltypes.Packet, ack []byte) error {
+	// get proof of acknowledgement on counterparty
+	packetKey := host.PacketAcknowledgementKey(packet.GetDestPort(), packet.GetDestChannel(), packet.GetSequence())
+	proof, proofHeight := counterparty.QueryProof(packetKey)
+
+	coord.IncrementTime()
+	coord.CommitBlock(chain, counterparty)
+
+	ackMsg := channeltypes.NewMsgAcknowledgement(packet, ack, proof, proofHeight, chain.SenderAccount.GetAddress().String())
+	if err := chain.sendMsgs(ackMsg); err != nil {
+		return err
+	}
 	coord.IncrementTime()
 	return nil
 }
