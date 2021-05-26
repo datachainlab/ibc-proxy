@@ -120,6 +120,10 @@ func (k Keeper) OnRecvProxyRequest(
 	packet channeltypes.Packet,
 	data types.ProxyRequestPacketData,
 ) (*types.UpstreamState, error) {
+	if !k.IsProxyEnabled(ctx, data.UpstreamClientId) {
+		return nil, fmt.Errorf("proxy is not enabled for clientID '%v'", data.UpstreamClientId)
+	}
+
 	clientState, found := k.clientKeeper.GetClientState(ctx, data.UpstreamClientId)
 	if !found {
 		return nil, sdkerrors.Wrapf(clienttypes.ErrClientNotFound, "client '%v' not found", data.UpstreamClientId)
