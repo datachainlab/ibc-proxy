@@ -21,7 +21,7 @@ func (coord *Coordinator) InitProxy(
 	source, counterparty *TestChain,
 	clientType string,
 ) (clientID string, err error) {
-	clientID, err = coord.CreateClient(source, counterparty, clientType)
+	clientID, err = coord.CreateMultiVClient(source, counterparty, clientType)
 	if err != nil {
 		return clientID, err
 	}
@@ -173,7 +173,7 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 	proxies ProxyPair,
 ) error {
 	if proxies[0] == nil {
-		if err := source.ConnectionOpenTry(counterparty, sourceConnection, counterpartyConnection); err != nil {
+		if err := source.ConnectionOpenTryWithProxy(counterparty, sourceConnection, counterpartyConnection, *proxies[1]); err != nil {
 			return err
 		}
 		coord.IncrementTime()
@@ -193,17 +193,30 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 			DefaultDelayPeriod,
 		)
 
-		counterpartyClient, proofClient := counterparty.QueryClientStateProof(counterpartyConnection.ClientID)
+		var (
+			counterpartyClient exported.ClientState
+			proofClient        []byte
+			consensusState     exported.ConsensusState
+			proofConsensus     []byte
+			consensusHeight    clienttypes.Height
+		)
 
-		connectionKey := host.ConnectionKey(counterpartyConnection.ID)
-		proofInit, proofHeight := counterparty.QueryProof(connectionKey)
-
-		proofConsensus, consensusHeight := counterparty.QueryConsensusStateProof(counterpartyConnection.ClientID)
-
-		consensusState, found := counterparty.GetConsensusState(counterpartyConnection.ClientID, consensusHeight)
-		if !found {
-			return fmt.Errorf("consensusState '%v-%v' not found", counterpartyConnection.ClientID, consensusHeight)
+		if proxies[1] == nil {
+			var found bool
+			counterpartyClient, proofClient = counterparty.QueryClientStateProof(counterpartyConnection.ClientID)
+			proofConsensus, consensusHeight = counterparty.QueryConsensusStateProof(counterpartyConnection.ClientID)
+			consensusState, found = counterparty.GetConsensusState(counterpartyConnection.ClientID, consensusHeight)
+			if !found {
+				return fmt.Errorf("consensusState '%v-%v' not found", counterpartyConnection.ClientID, consensusHeight)
+			}
+		} else {
+			counterpartyProxy := *proxies[1]
+			head := counterparty.QueryMultiVHeadProof(counterpartyConnection.ClientID)
+			counterpartyClient, proofClient = counterparty.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
+			consensusState, proofConsensus, consensusHeight = counterparty.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
 		}
+
+		proofInit, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
 
 		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ConnOpenTry(
 			proxy.GetContext(),
@@ -260,7 +273,7 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 	proxies ProxyPair,
 ) error {
 	if proxies[0] == nil {
-		if err := source.ConnectionOpenAck(counterparty, sourceConnection, counterpartyConnection); err != nil {
+		if err := source.ConnectionOpenAckWithProxy(counterparty, sourceConnection, counterpartyConnection, *proxies[1]); err != nil {
 			return err
 		}
 		coord.IncrementTime()
@@ -281,17 +294,30 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 		)
 
 		{
-			counterpartyClient, proofClient := counterparty.QueryClientStateProof(counterpartyConnection.ClientID)
+			var (
+				counterpartyClient exported.ClientState
+				proofClient        []byte
+				consensusState     exported.ConsensusState
+				proofConsensus     []byte
+				consensusHeight    clienttypes.Height
+			)
 
-			connectionKey := host.ConnectionKey(counterpartyConnection.ID)
-			proofTry, proofHeight := counterparty.QueryProof(connectionKey)
-
-			proofConsensus, consensusHeight := counterparty.QueryConsensusStateProof(counterpartyConnection.ClientID)
-
-			consensusState, found := counterparty.GetConsensusState(counterpartyConnection.ClientID, consensusHeight)
-			if !found {
-				return fmt.Errorf("consensusState '%v-%v' not found", counterpartyConnection.ClientID, consensusHeight)
+			if proxies[1] == nil {
+				var found bool
+				counterpartyClient, proofClient = counterparty.QueryClientStateProof(counterpartyConnection.ClientID)
+				proofConsensus, consensusHeight = counterparty.QueryConsensusStateProof(counterpartyConnection.ClientID)
+				consensusState, found = counterparty.GetConsensusState(counterpartyConnection.ClientID, consensusHeight)
+				if !found {
+					return fmt.Errorf("consensusState '%v-%v' not found", counterpartyConnection.ClientID, consensusHeight)
+				}
+			} else {
+				counterpartyProxy := *proxies[1]
+				head := counterparty.QueryMultiVHeadProof(counterpartyConnection.ClientID)
+				counterpartyClient, proofClient = counterparty.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
+				consensusState, proofConsensus, consensusHeight = counterparty.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
 			}
+
+			proofTry, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
 
 			err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ConnOpenACK(
 				proxy.GetContext(),

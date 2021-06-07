@@ -15,17 +15,8 @@ message ProxyRequestPacketData {
 
 message ProxyRequestAcknowledgement {
   Status status = 1;
-  ibc.core.commitment.v1.MerklePrefix prefix = 2;
-  UpstreamState upstream_state = 3;
-}
-
-message UpstreamState {
-  option (gogoproto.goproto_getters) = false;
-
-  ibc.core.client.v1.Height height           = 1
-      [(gogoproto.moretags) = "yaml:\"height\"", (gogoproto.nullable) = false];
-  google.protobuf.Any client_state = 2;
-  google.protobuf.Any consensus_state = 3;
+  ibc.core.commitment.v1.MerklePrefix proxy_prefix = 2;
+  ibc.core.commitment.v1.MerklePrefix ibc_prefix = 3;
 }
 
 enum Status {

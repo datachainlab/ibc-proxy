@@ -148,8 +148,8 @@ github.com/cpuguy83/go-md2man/v2 v2.0.0/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsr
 github.com/creack/pty v1.1.7/go.mod h1:lj5s0c3V2DBrqTV7llrYr5NG6My20zk30Fl46Y7DoTY=
 github.com/danieljoos/wincred v1.0.2 h1:zf4bhty2iLuwgjgpraD2E9UbvO+fe54XXGJbOwe23fU=
 github.com/danieljoos/wincred v1.0.2/go.mod h1:SnuYRW9lp1oJrZX/dXJqr0cPK5gYXqx3EJbmjhLdK9U=
-github.com/datachainlab/ibc-go v0.0.0-20210521155629-ad5d94de28c4 h1:KHoJadENWV9T7DV/Rpo74e/L1xSKp/XJnCz1v5KlfVc=
-github.com/datachainlab/ibc-go v0.0.0-20210521155629-ad5d94de28c4/go.mod h1:NU4IARjXt3Hj5xcju207SWjDMpqMx3CHUXejGe0EXfY=
+github.com/datachainlab/ibc-go v0.0.0-20210614083531-e8e25aabc360 h1:vwo5KVzMUlBo7hQrwZVIFMXAWJfR8pSqimRTtH1fGM4=
+github.com/datachainlab/ibc-go v0.0.0-20210614083531-e8e25aabc360/go.mod h1:NU4IARjXt3Hj5xcju207SWjDMpqMx3CHUXejGe0EXfY=
 github.com/davecgh/go-spew v0.0.0-20171005155431-ecdeabc65495/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

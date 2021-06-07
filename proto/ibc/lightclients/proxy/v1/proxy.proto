@@ -15,9 +15,8 @@ message ClientState {
   google.protobuf.Any proxy_client_state = 2; // client state corresponding to proxy
 
   // commitment merkle prefix of the proxy chain.
-  ibc.core.commitment.v1.MerklePrefix prefix = 3;
-  google.protobuf.Any upstream_client_state = 4; // client state corresponding to upstream
-  google.protobuf.Any upstream_consensus_state = 5; // consensus state corresponding to upstream
+  ibc.core.commitment.v1.MerklePrefix proxy_prefix = 3;
+  ibc.core.commitment.v1.MerklePrefix ibc_prefix = 4;
 }
 
 message ConsensusState {

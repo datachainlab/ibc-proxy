@@ -23,11 +23,11 @@ func (k Keeper) OnRecvPacket(
 	if err := k.cdc.Unmarshal(packet.Data, &data); err != nil {
 		return channeltypes.NewErrorAcknowledgement(fmt.Sprintf("cannot unmarshal proxy packet data: %s", err.Error()))
 	}
-	upState, err := k.OnRecvProxyRequest(ctx, packet, data)
+	err := k.OnRecvProxyRequest(ctx, packet, data)
 	if err != nil {
 		return channeltypes.NewErrorAcknowledgement(fmt.Sprintf("failed to OnRecvProxyRequest: %s", err.Error()))
 	}
-	ackData := types.NewProxyRequestAcknowledgement(types.OK, k.GetCommitmentPrefix().(commitmenttypes.MerklePrefix), *upState)
+	ackData := types.NewProxyRequestAcknowledgement(types.OK, k.GetProxyCommitmentPrefix().(commitmenttypes.MerklePrefix), k.GetIBCCommitmentPrefix().(commitmenttypes.MerklePrefix))
 	return channeltypes.NewResultAcknowledgement(k.cdc.MustMarshal(&ackData))
 }
 
@@ -119,34 +119,12 @@ func (k Keeper) OnRecvProxyRequest(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
 	data types.ProxyRequestPacketData,
-) (*types.UpstreamState, error) {
+) error {
 	if !k.IsProxyEnabled(ctx, data.UpstreamClientId) {
-		return nil, fmt.Errorf("proxy is not enabled for clientID '%v'", data.UpstreamClientId)
+		return fmt.Errorf("proxy is not enabled for clientID '%v'", data.UpstreamClientId)
 	}
-
-	clientState, found := k.clientKeeper.GetClientState(ctx, data.UpstreamClientId)
-	if !found {
-		return nil, sdkerrors.Wrapf(clienttypes.ErrClientNotFound, "client '%v' not found", data.UpstreamClientId)
-	}
-	height := clientState.GetLatestHeight()
-	consensusState, found := k.clientKeeper.GetClientConsensusState(ctx, data.UpstreamClientId, height)
-	if !found {
-		return nil, sdkerrors.Wrapf(clienttypes.ErrConsensusStateNotFound, "consensusState '%v %v' not found", data.UpstreamClientId, height.String())
-	}
-
-	anyClientState, err := clienttypes.PackClientState(clientState)
-	if err != nil {
-		return nil, err
-	}
-	anyConsensusState, err := clienttypes.PackConsensusState(consensusState)
-	if err != nil {
-		return nil, err
-	}
-
 	// TODO should the keeper save the downstream channel info and the proxy clientID to store?
-
-	upState := types.NewUpstreamState(height.(clienttypes.Height), anyClientState, anyConsensusState)
-	return &upState, nil
+	return nil
 }
 
 // caller: downstream
@@ -196,9 +174,8 @@ func (k Keeper) OnProxyRequestAcknowledgement(ctx sdk.Context, packet channeltyp
 		return errors.New("fatal error")
 	}
 	clientState.ProxyClientState = anyProxyClientState
-	clientState.Prefix = ack.Prefix
-	clientState.UpstreamClientState = ack.UpstreamState.ClientState
-	clientState.UpstreamConsensusState = ack.UpstreamState.ConsensusState
+	clientState.ProxyPrefix = ack.ProxyPrefix
+	clientState.IbcPrefix = ack.IbcPrefix
 
 	consensusState := proxytypes.NewConsensusState(anyProxyConsensusState)
 
