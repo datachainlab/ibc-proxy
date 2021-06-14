@@ -3,7 +3,6 @@ package types
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	ics23 "github.com/confio/ics23/go"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -58,6 +57,9 @@ func (cs *ClientState) Status(
 }
 
 func (cs *ClientState) Validate() error {
+	if cs.Base == nil {
+		return errors.New("Base cannot be nil")
+	}
 	return cs.GetBaseClientState().Validate()
 }
 
@@ -163,8 +165,6 @@ func (cs *ClientState) VerifyClientState(store sdk.KVStore, cdc codec.BinaryCode
 		return err
 	}
 
-	log.Println("head proof is passed")
-
 	// step2. verify state with nodes
 
 	for _, p := range mproof.Proofs[1 : len(mproof.Proofs)-1] {
@@ -222,33 +222,7 @@ func (cs *ClientState) VerifyClientState(store sdk.KVStore, cdc codec.BinaryCode
 		return err
 	}
 
-	log.Println("leaf proof is passed")
-
 	return nil
-}
-
-func unpackProxyClientState(cdc codec.BinaryCodec, anyClientState *types.Any) (*proxytypes.ClientState, error) {
-	var clientState exported.ClientState
-	if err := cdc.UnpackAny(anyClientState, &clientState); err != nil {
-		return nil, err
-	}
-	s, ok := clientState.(*proxytypes.ClientState)
-	if !ok {
-		return nil, fmt.Errorf("the type of proxyClientState must be %T", &proxytypes.ClientState{})
-	}
-	return s, nil
-}
-
-func unpackProxyConsensusState(cdc codec.BinaryCodec, anyConsensusState *types.Any) (*proxytypes.ConsensusState, error) {
-	var consensusState exported.ConsensusState
-	if err := cdc.UnpackAny(anyConsensusState, &consensusState); err != nil {
-		return nil, err
-	}
-	s, ok := consensusState.(*proxytypes.ConsensusState)
-	if !ok {
-		return nil, fmt.Errorf("the type of proxyConsensusState must be %T", &proxytypes.ConsensusState{})
-	}
-	return s, nil
 }
 
 // the type of proof must be Any
@@ -389,4 +363,28 @@ func (cs *ClientState) VerifyPacketReceiptAbsence(store sdk.KVStore, cdc codec.B
 
 func (cs *ClientState) VerifyNextSequenceRecv(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, nextSequenceRecv uint64) error {
 	return cs.GetBaseClientState().VerifyNextSequenceRecv(store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, nextSequenceRecv)
+}
+
+func unpackProxyClientState(cdc codec.BinaryCodec, anyClientState *types.Any) (*proxytypes.ClientState, error) {
+	var clientState exported.ClientState
+	if err := cdc.UnpackAny(anyClientState, &clientState); err != nil {
+		return nil, err
+	}
+	s, ok := clientState.(*proxytypes.ClientState)
+	if !ok {
+		return nil, fmt.Errorf("the type of proxyClientState must be %T", &proxytypes.ClientState{})
+	}
+	return s, nil
+}
+
+func unpackProxyConsensusState(cdc codec.BinaryCodec, anyConsensusState *types.Any) (*proxytypes.ConsensusState, error) {
+	var consensusState exported.ConsensusState
+	if err := cdc.UnpackAny(anyConsensusState, &consensusState); err != nil {
+		return nil, err
+	}
+	s, ok := consensusState.(*proxytypes.ConsensusState)
+	if !ok {
+		return nil, fmt.Errorf("the type of proxyConsensusState must be %T", &proxytypes.ConsensusState{})
+	}
+	return s, nil
 }
