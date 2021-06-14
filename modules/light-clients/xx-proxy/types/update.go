@@ -12,9 +12,7 @@ import (
 
 // Update and Misbehaviour functions
 func (cs ClientState) CheckHeaderAndUpdateState(ctx sdk.Context, cdc codec.BinaryCodec, clientStore sdk.KVStore, header exported.Header) (exported.ClientState, exported.ConsensusState, error) {
-	// XXX hack the store
-	ps := NewProxyStore(cdc, clientStore)
-	clientState, consensusState, err := cs.GetProxyClientState().CheckHeaderAndUpdateState(ctx, cdc, ps, header)
+	clientState, consensusState, err := cs.GetProxyClientState().CheckHeaderAndUpdateState(ctx, cdc, NewProxyStore(cdc, clientStore), header)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -54,12 +52,14 @@ func (cs *ClientState) CheckSubstituteAndUpdateState(ctx sdk.Context, cdc codec.
 	return cs, nil
 }
 
+// ProxyStore provides the proxy for the underlying store
+// if the key of consensus state is given, get the client state from proxy client state
 type ProxyStore struct {
 	sdk.KVStore
 	cdc codec.BinaryCodec
 }
 
-var _ sdk.KVStore = ProxyStore{}
+var _ sdk.KVStore = (*ProxyStore)(nil)
 
 func NewProxyStore(cdc codec.BinaryCodec, store sdk.KVStore) ProxyStore {
 	return ProxyStore{cdc: cdc, KVStore: store}
