@@ -82,8 +82,8 @@ func (cs *ClientState) Initialize(ctx sdk.Context, cdc codec.BinaryCodec, client
 }
 
 // Genesis function
-func (cs *ClientState) ExportMetadata(_ sdk.KVStore) []exported.GenesisMetadata {
-	panic("not implemented") // TODO: Implement
+func (cs *ClientState) ExportMetadata(store sdk.KVStore) []exported.GenesisMetadata {
+	return cs.GetProxyClientState().ExportMetadata(store)
 }
 
 // Upgrade functions
@@ -93,14 +93,14 @@ func (cs *ClientState) ExportMetadata(_ sdk.KVStore) []exported.GenesisMetadata 
 // This is to ensure that no premature upgrades occur, since upgrade plans committed to by the counterparty
 // may be cancelled or modified before the last planned height.
 func (cs *ClientState) VerifyUpgradeAndUpdateState(ctx sdk.Context, cdc codec.BinaryCodec, store sdk.KVStore, newClient exported.ClientState, newConsState exported.ConsensusState, proofUpgradeClient []byte, proofUpgradeConsState []byte) (exported.ClientState, exported.ConsensusState, error) {
-	panic("not implemented") // TODO: Implement
+	return cs.GetProxyClientState().VerifyUpgradeAndUpdateState(ctx, cdc, store, newClient, newConsState, proofUpgradeClient, proofUpgradeConsState)
 }
 
 // Utility function that zeroes out any client customizable fields in client state
 // Ledger enforced fields are maintained while all custom fields are zero values
 // Used to verify upgrades
 func (cs *ClientState) ZeroCustomFields() exported.ClientState {
-	panic("not implemented") // TODO: Implement
+	return cs.GetProxyClientState().ZeroCustomFields()
 }
 
 // IBC verification function

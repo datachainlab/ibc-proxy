@@ -31,12 +31,27 @@ func (cs ClientState) CheckHeaderAndUpdateState(ctx sdk.Context, cdc codec.Binar
 	return &cs, proxyConsensusState, nil
 }
 
-func (cs *ClientState) CheckMisbehaviourAndUpdateState(_ sdk.Context, _ codec.BinaryCodec, _ sdk.KVStore, _ exported.Misbehaviour) (exported.ClientState, error) {
-	panic("not implemented") // TODO: Implement
+func (cs *ClientState) CheckMisbehaviourAndUpdateState(ctx sdk.Context, cdc codec.BinaryCodec, store sdk.KVStore, misbehaviour exported.Misbehaviour) (exported.ClientState, error) {
+	clientState, err := cs.GetProxyClientState().CheckMisbehaviourAndUpdateState(ctx, cdc, store, misbehaviour)
+	if err != nil {
+		return nil, err
+	}
+	anyClientState, err := clienttypes.PackClientState(clientState)
+	if err != nil {
+		return nil, err
+	}
+	cs.ProxyClientState = anyClientState
+	return cs, nil
 }
 
 func (cs *ClientState) CheckSubstituteAndUpdateState(ctx sdk.Context, cdc codec.BinaryCodec, subjectClientStore sdk.KVStore, substituteClientStore sdk.KVStore, substituteClient exported.ClientState, height exported.Height) (exported.ClientState, error) {
-	panic("not implemented") // TODO: Implement
+	clientState, err := cs.GetProxyClientState().CheckSubstituteAndUpdateState(ctx, cdc, subjectClientStore, substituteClientStore, substituteClient, height)
+	anyClientState, err := clienttypes.PackClientState(clientState)
+	if err != nil {
+		return nil, err
+	}
+	cs.ProxyClientState = anyClientState
+	return cs, nil
 }
 
 type ProxyStore struct {
