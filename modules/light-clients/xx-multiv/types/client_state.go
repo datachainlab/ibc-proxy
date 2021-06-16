@@ -127,11 +127,15 @@ func (cs *ClientState) VerifyClientState(store sdk.KVStore, cdc codec.BinaryCode
 		return fmt.Errorf("unexpected proofs length: %v", l)
 	}
 
-	h, ok := mproof.Proofs[0].Proof.(*Proof_Head)
+	h, ok := mproof.Proofs[0].Proof.(*Proof_Branch)
 	if !ok {
-		return fmt.Errorf("first element must be %v, but got %v", &Proof_Head{}, mproof.Proofs[0].Proof)
+		return fmt.Errorf("first element must be %v, but got %v", &Proof_Branch{}, mproof.Proofs[0].Proof)
 	}
-	head := h.Head
+	head := h.Branch
+	if !head.ProofHeight.EQ(height) {
+		return fmt.Errorf("first proof's height must be %v, but got %v", height, head.ProofHeight)
+	}
+
 	l, ok := mproof.Proofs[len(mproof.Proofs)-1].Proof.(*Proof_LeafClient)
 	if !ok {
 		return fmt.Errorf("last element must be %v, but got %v", &Proof_LeafClient{}, mproof.Proofs[len(mproof.Proofs)-1].Proof)
@@ -243,11 +247,14 @@ func (cs *ClientState) VerifyClientConsensusState(store sdk.KVStore, cdc codec.B
 		return fmt.Errorf("unexpected proofs length: %v", l)
 	}
 
-	h, ok := mproof.Proofs[0].Proof.(*Proof_Head)
+	h, ok := mproof.Proofs[0].Proof.(*Proof_Branch)
 	if !ok {
-		return fmt.Errorf("first element must be %v, but got %v", &Proof_Head{}, mproof.Proofs[0].Proof)
+		return fmt.Errorf("first element must be %v, but got %v", &Proof_Branch{}, mproof.Proofs[0].Proof)
 	}
-	head := h.Head
+	head := h.Branch
+	if !head.ProofHeight.EQ(height) {
+		return fmt.Errorf("first proof's height must be %v, but got %v", height, head.ProofHeight)
+	}
 	l, ok := mproof.Proofs[len(mproof.Proofs)-1].Proof.(*Proof_LeafConsensus)
 	if !ok {
 		return fmt.Errorf("last element must be %v, but got %v", &Proof_LeafConsensus{}, mproof.Proofs[len(mproof.Proofs)-1].Proof)

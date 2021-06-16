@@ -100,47 +100,6 @@ func (m *MultiProof) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MultiProof proto.InternalMessageInfo
 
-type HeadProof struct {
-	ClientProof     []byte        `protobuf:"bytes,1,opt,name=client_proof,json=clientProof,proto3" json:"client_proof,omitempty"`
-	ClientState     *types.Any    `protobuf:"bytes,2,opt,name=client_state,json=clientState,proto3" json:"client_state,omitempty"`
-	ConsensusProof  []byte        `protobuf:"bytes,3,opt,name=consensus_proof,json=consensusProof,proto3" json:"consensus_proof,omitempty"`
-	ConsensusState  *types.Any    `protobuf:"bytes,4,opt,name=consensus_state,json=consensusState,proto3" json:"consensus_state,omitempty"`
-	ConsensusHeight types1.Height `protobuf:"bytes,5,opt,name=consensus_height,json=consensusHeight,proto3" json:"consensus_height"`
-}
-
-func (m *HeadProof) Reset()         { *m = HeadProof{} }
-func (m *HeadProof) String() string { return proto.CompactTextString(m) }
-func (*HeadProof) ProtoMessage()    {}
-func (*HeadProof) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fbf389ffd2358a46, []int{2}
-}
-func (m *HeadProof) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *HeadProof) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_HeadProof.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *HeadProof) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HeadProof.Merge(m, src)
-}
-func (m *HeadProof) XXX_Size() int {
-	return m.Size()
-}
-func (m *HeadProof) XXX_DiscardUnknown() {
-	xxx_messageInfo_HeadProof.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HeadProof proto.InternalMessageInfo
-
 type BranchProof struct {
 	ClientProof     []byte        `protobuf:"bytes,1,opt,name=client_proof,json=clientProof,proto3" json:"client_proof,omitempty"`
 	ClientState     *types.Any    `protobuf:"bytes,2,opt,name=client_state,json=clientState,proto3" json:"client_state,omitempty"`
@@ -154,7 +113,7 @@ func (m *BranchProof) Reset()         { *m = BranchProof{} }
 func (m *BranchProof) String() string { return proto.CompactTextString(m) }
 func (*BranchProof) ProtoMessage()    {}
 func (*BranchProof) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fbf389ffd2358a46, []int{3}
+	return fileDescriptor_fbf389ffd2358a46, []int{2}
 }
 func (m *BranchProof) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -185,7 +144,6 @@ var xxx_messageInfo_BranchProof proto.InternalMessageInfo
 
 type Proof struct {
 	// Types that are valid to be assigned to Proof:
-	//	*Proof_Head
 	//	*Proof_Branch
 	//	*Proof_LeafClient
 	//	*Proof_LeafConsensus
@@ -196,7 +154,7 @@ func (m *Proof) Reset()         { *m = Proof{} }
 func (m *Proof) String() string { return proto.CompactTextString(m) }
 func (*Proof) ProtoMessage()    {}
 func (*Proof) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fbf389ffd2358a46, []int{4}
+	return fileDescriptor_fbf389ffd2358a46, []int{3}
 }
 func (m *Proof) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -231,20 +189,16 @@ type isProof_Proof interface {
 	Size() int
 }
 
-type Proof_Head struct {
-	Head *HeadProof `protobuf:"bytes,1,opt,name=head,proto3,oneof" json:"head,omitempty"`
-}
 type Proof_Branch struct {
-	Branch *BranchProof `protobuf:"bytes,2,opt,name=branch,proto3,oneof" json:"branch,omitempty"`
+	Branch *BranchProof `protobuf:"bytes,1,opt,name=branch,proto3,oneof" json:"branch,omitempty"`
 }
 type Proof_LeafClient struct {
-	LeafClient *LeafClientProof `protobuf:"bytes,3,opt,name=leafClient,proto3,oneof" json:"leafClient,omitempty"`
+	LeafClient *LeafClientProof `protobuf:"bytes,2,opt,name=leafClient,proto3,oneof" json:"leafClient,omitempty"`
 }
 type Proof_LeafConsensus struct {
-	LeafConsensus *LeafConsensusProof `protobuf:"bytes,4,opt,name=leafConsensus,proto3,oneof" json:"leafConsensus,omitempty"`
+	LeafConsensus *LeafConsensusProof `protobuf:"bytes,3,opt,name=leafConsensus,proto3,oneof" json:"leafConsensus,omitempty"`
 }
 
-func (*Proof_Head) isProof_Proof()          {}
 func (*Proof_Branch) isProof_Proof()        {}
 func (*Proof_LeafClient) isProof_Proof()    {}
 func (*Proof_LeafConsensus) isProof_Proof() {}
@@ -252,13 +206,6 @@ func (*Proof_LeafConsensus) isProof_Proof() {}
 func (m *Proof) GetProof() isProof_Proof {
 	if m != nil {
 		return m.Proof
-	}
-	return nil
-}
-
-func (m *Proof) GetHead() *HeadProof {
-	if x, ok := m.GetProof().(*Proof_Head); ok {
-		return x.Head
 	}
 	return nil
 }
@@ -287,7 +234,6 @@ func (m *Proof) GetLeafConsensus() *LeafConsensusProof {
 // XXX_OneofWrappers is for the internal use of the proto package.
 func (*Proof) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
-		(*Proof_Head)(nil),
 		(*Proof_Branch)(nil),
 		(*Proof_LeafClient)(nil),
 		(*Proof_LeafConsensus)(nil),
@@ -303,7 +249,7 @@ func (m *LeafClientProof) Reset()         { *m = LeafClientProof{} }
 func (m *LeafClientProof) String() string { return proto.CompactTextString(m) }
 func (*LeafClientProof) ProtoMessage()    {}
 func (*LeafClientProof) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fbf389ffd2358a46, []int{5}
+	return fileDescriptor_fbf389ffd2358a46, []int{4}
 }
 func (m *LeafClientProof) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -342,7 +288,7 @@ func (m *LeafConsensusProof) Reset()         { *m = LeafConsensusProof{} }
 func (m *LeafConsensusProof) String() string { return proto.CompactTextString(m) }
 func (*LeafConsensusProof) ProtoMessage()    {}
 func (*LeafConsensusProof) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fbf389ffd2358a46, []int{6}
+	return fileDescriptor_fbf389ffd2358a46, []int{5}
 }
 func (m *LeafConsensusProof) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -374,7 +320,6 @@ var xxx_messageInfo_LeafConsensusProof proto.InternalMessageInfo
 func init() {
 	proto.RegisterType((*ClientState)(nil), "ibc.lightclients.multiv.v1.ClientState")
 	proto.RegisterType((*MultiProof)(nil), "ibc.lightclients.multiv.v1.MultiProof")
-	proto.RegisterType((*HeadProof)(nil), "ibc.lightclients.multiv.v1.HeadProof")
 	proto.RegisterType((*BranchProof)(nil), "ibc.lightclients.multiv.v1.BranchProof")
 	proto.RegisterType((*Proof)(nil), "ibc.lightclients.multiv.v1.Proof")
 	proto.RegisterType((*LeafClientProof)(nil), "ibc.lightclients.multiv.v1.LeafClientProof")
@@ -386,44 +331,42 @@ func init() {
 }
 
 var fileDescriptor_fbf389ffd2358a46 = []byte{
-	// 585 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x55, 0x4d, 0x8b, 0xd3, 0x40,
-	0x18, 0x4e, 0xfa, 0x25, 0xbe, 0xa9, 0xae, 0x84, 0x1e, 0x6a, 0x0f, 0xe9, 0x6e, 0x41, 0x5a, 0x90,
-	0xce, 0xd0, 0x7a, 0x10, 0x95, 0x3d, 0x6c, 0xf7, 0x60, 0x41, 0x0b, 0x12, 0xc1, 0x83, 0x17, 0x99,
-	0xa4, 0xd3, 0x24, 0x90, 0x64, 0x4a, 0x32, 0x2d, 0xed, 0x3f, 0xf0, 0xe8, 0x4f, 0x10, 0xff, 0x84,
-	0x77, 0x4f, 0x7b, 0xdc, 0xa3, 0x27, 0x91, 0xf6, 0xe4, 0xbf, 0x90, 0xcc, 0x4c, 0x3f, 0xd6, 0x5d,
-	0x23, 0xba, 0x78, 0xd9, 0xdb, 0x7c, 0x3c, 0xcf, 0xf3, 0x7e, 0x3c, 0xef, 0x30, 0xd0, 0x0e, 0x1c,
-	0x17, 0x87, 0x81, 0xe7, 0x73, 0x37, 0x0c, 0x68, 0xcc, 0x53, 0x1c, 0xcd, 0x42, 0x1e, 0xcc, 0xf1,
-	0xbc, 0xa7, 0x56, 0x68, 0x9a, 0x30, 0xce, 0xcc, 0x46, 0xe0, 0xb8, 0x68, 0x1f, 0x88, 0xd4, 0xf5,
-	0xbc, 0xd7, 0xa8, 0x79, 0xcc, 0x63, 0x02, 0x86, 0xb3, 0x95, 0x64, 0x34, 0xee, 0x7b, 0x8c, 0x79,
-	0x21, 0xc5, 0x62, 0xe7, 0xcc, 0x26, 0x98, 0xc4, 0x4b, 0x75, 0xd5, 0xcc, 0xa2, 0xba, 0x2c, 0xa1,
-	0x58, 0x8a, 0x65, 0xd1, 0xe4, 0x4a, 0x01, 0xda, 0x3b, 0x00, 0x8b, 0xa2, 0x80, 0x47, 0x1b, 0xd0,
-	0x76, 0x27, 0x81, 0xad, 0x63, 0x30, 0x4e, 0x05, 0xf1, 0x35, 0x27, 0x9c, 0x9a, 0x1d, 0x28, 0x39,
-	0x24, 0xa5, 0x75, 0xfd, 0x50, 0xef, 0x18, 0xfd, 0x1a, 0x92, 0x29, 0xa0, 0x4d, 0x0a, 0xe8, 0x24,
-	0x5e, 0xda, 0x02, 0xf1, 0xb4, 0xf4, 0xfe, 0x63, 0x53, 0x6b, 0x8d, 0x00, 0x46, 0x59, 0x19, 0xaf,
-	0x12, 0xc6, 0x26, 0xe6, 0x13, 0xa8, 0x4c, 0xb3, 0x45, 0x5a, 0xd7, 0x0f, 0x8b, 0x1d, 0xa3, 0x7f,
-	0x84, 0x7e, 0x5f, 0x34, 0x12, 0x14, 0x5b, 0x11, 0x94, 0xdc, 0xa7, 0x02, 0xdc, 0x1e, 0x52, 0x32,
-	0x96, 0x72, 0x47, 0x50, 0x95, 0xb4, 0x77, 0x02, 0x24, 0x92, 0xaa, 0xda, 0x86, 0x3c, 0x93, 0x90,
-	0xc7, 0x5b, 0x48, 0x9a, 0xe5, 0x5f, 0x2f, 0xe4, 0xe4, 0xad, 0x88, 0xb2, 0xd0, 0x36, 0x1c, 0xb8,
-	0x2c, 0x4e, 0x69, 0x9c, 0xce, 0x52, 0x25, 0x5f, 0x14, 0xf2, 0x77, 0xb7, 0xc7, 0x32, 0xc2, 0xf1,
-	0x3e, 0x50, 0x06, 0x29, 0xe5, 0x04, 0xd9, 0xd1, 0x65, 0x9c, 0x17, 0x70, 0x6f, 0x47, 0xf7, 0x69,
-	0xd6, 0x8a, 0x7a, 0x59, 0xf0, 0x1b, 0xa2, 0x39, 0x99, 0x47, 0x48, 0x59, 0x37, 0xef, 0xa1, 0xa1,
-	0x40, 0x0c, 0x4a, 0x67, 0xdf, 0x9a, 0x9a, 0xbd, 0x0b, 0x2c, 0x8f, 0x55, 0x93, 0x7e, 0x14, 0xc0,
-	0x18, 0x24, 0x24, 0x76, 0xfd, 0x9b, 0xd3, 0xa6, 0x53, 0xa8, 0x0a, 0xf5, 0xbf, 0x6d, 0x91, 0x21,
-	0x58, 0xf2, 0xe8, 0xca, 0x5e, 0x57, 0xae, 0xd7, 0xeb, 0xcf, 0x05, 0x28, 0xcb, 0x02, 0x9f, 0x41,
-	0xc9, 0xa7, 0x64, 0xac, 0x5e, 0xc6, 0x83, 0xbc, 0xc9, 0xde, 0x4e, 0xf0, 0x50, 0xb3, 0x05, 0xc9,
-	0x3c, 0x81, 0x8a, 0x23, 0x1c, 0x53, 0x9d, 0x6f, 0xe7, 0xd1, 0xf7, 0xbc, 0x1d, 0x6a, 0xb6, 0x22,
-	0x9a, 0x23, 0x80, 0x90, 0x92, 0x89, 0x7c, 0xac, 0xc2, 0x04, 0xa3, 0xff, 0x30, 0x4f, 0xe6, 0xe5,
-	0x16, 0xbd, 0x91, 0xda, 0x13, 0x30, 0xdf, 0xc0, 0x1d, 0xb1, 0xdb, 0x54, 0xad, 0xdc, 0x42, 0x7f,
-	0x54, 0xbc, 0x60, 0xfb, 0x50, 0xb3, 0x2f, 0xca, 0x0c, 0x6e, 0x41, 0x59, 0x58, 0xd2, 0x4a, 0xe0,
-	0xe0, 0x97, 0x0c, 0xcc, 0x9a, 0xba, 0x53, 0x13, 0x2a, 0x37, 0x97, 0xac, 0x2f, 0xfc, 0x83, 0xf5,
-	0xca, 0xad, 0x2f, 0x3a, 0x98, 0x97, 0x93, 0xfc, 0x8f, 0x71, 0xaf, 0x1c, 0xb9, 0xe2, 0xb5, 0x46,
-	0x6e, 0x40, 0xce, 0x56, 0x96, 0x7e, 0xbe, 0xb2, 0xf4, 0xef, 0x2b, 0x4b, 0xff, 0xb0, 0xb6, 0xb4,
-	0xf3, 0xb5, 0xa5, 0x7d, 0x5d, 0x5b, 0xda, 0xdb, 0xe7, 0x5e, 0xc0, 0xfd, 0x99, 0x83, 0x5c, 0x16,
-	0xe1, 0x31, 0xe1, 0xc4, 0xf5, 0x49, 0x10, 0x87, 0xc4, 0xc1, 0x81, 0xe3, 0x76, 0xa7, 0x09, 0x5b,
-	0x2c, 0x71, 0xc4, 0xc6, 0xb3, 0x90, 0xa6, 0xf2, 0x47, 0xea, 0x6e, 0xbe, 0xa4, 0xc5, 0xa2, 0xab,
-	0x7e, 0x25, 0xbe, 0x9c, 0xd2, 0xd4, 0xa9, 0x88, 0xb7, 0xf8, 0xe8, 0x67, 0x00, 0x00, 0x00, 0xff,
-	0xff, 0x86, 0x12, 0xa5, 0xd3, 0xbd, 0x06, 0x00, 0x00,
+	// 553 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x54, 0xbb, 0x8e, 0xd3, 0x40,
+	0x14, 0xb5, 0xf3, 0x42, 0xba, 0x0e, 0x2c, 0xb2, 0x52, 0x84, 0x14, 0xce, 0x6e, 0x9a, 0x44, 0x42,
+	0x99, 0x51, 0x42, 0x81, 0x40, 0xda, 0x62, 0xb3, 0x05, 0x91, 0x20, 0x12, 0x32, 0x12, 0x05, 0xcd,
+	0x6a, 0xec, 0x9d, 0x38, 0x96, 0x6c, 0x4f, 0x64, 0x4f, 0xa2, 0xe4, 0x0f, 0x28, 0xf9, 0x04, 0xbe,
+	0x85, 0x6a, 0xcb, 0x2d, 0xa9, 0x10, 0x4a, 0x2a, 0x7e, 0x81, 0x0a, 0x79, 0xee, 0xe4, 0xb1, 0x2c,
+	0x04, 0x04, 0xda, 0x6e, 0x66, 0x7c, 0xce, 0xb9, 0xe7, 0xde, 0x33, 0x1e, 0x68, 0x87, 0x9e, 0x4f,
+	0xa3, 0x30, 0x98, 0x48, 0x3f, 0x0a, 0x79, 0x22, 0x33, 0x1a, 0xcf, 0x22, 0x19, 0xce, 0xe9, 0xbc,
+	0xa7, 0x57, 0x64, 0x9a, 0x0a, 0x29, 0xec, 0x46, 0xe8, 0xf9, 0x64, 0x1f, 0x48, 0xf4, 0xe7, 0x79,
+	0xaf, 0x51, 0x0b, 0x44, 0x20, 0x14, 0x8c, 0xe6, 0x2b, 0x64, 0x34, 0x1e, 0x05, 0x42, 0x04, 0x11,
+	0xa7, 0x6a, 0xe7, 0xcd, 0xc6, 0x94, 0x25, 0x4b, 0xfd, 0xa9, 0x99, 0x57, 0xf5, 0x45, 0xca, 0x29,
+	0x8a, 0xe5, 0xd5, 0x70, 0xa5, 0x01, 0xed, 0x1d, 0x40, 0xc4, 0x71, 0x28, 0xe3, 0x0d, 0x68, 0xbb,
+	0x43, 0x60, 0xeb, 0x14, 0xac, 0x73, 0x45, 0x7c, 0x23, 0x99, 0xe4, 0x76, 0x07, 0x4a, 0x1e, 0xcb,
+	0x78, 0xdd, 0x3c, 0x36, 0x3b, 0x56, 0xbf, 0x46, 0xd0, 0x02, 0xd9, 0x58, 0x20, 0x67, 0xc9, 0xd2,
+	0x55, 0x88, 0xe7, 0xa5, 0xf7, 0x1f, 0x9b, 0x46, 0x6b, 0x04, 0x30, 0xca, 0xdb, 0x78, 0x9d, 0x0a,
+	0x31, 0xb6, 0x9f, 0x41, 0x65, 0x9a, 0x2f, 0xb2, 0xba, 0x79, 0x5c, 0xec, 0x58, 0xfd, 0x13, 0xf2,
+	0xfb, 0xa6, 0x89, 0xa2, 0xb8, 0x9a, 0xa0, 0xe5, 0xbe, 0x15, 0xc0, 0x1a, 0xa4, 0x2c, 0xf1, 0x27,
+	0x28, 0x78, 0x02, 0x55, 0x24, 0x5e, 0x28, 0x98, 0xb2, 0x55, 0x75, 0x2d, 0x3c, 0x43, 0xc8, 0xd3,
+	0x2d, 0x24, 0xcb, 0x3b, 0xa8, 0x17, 0x0e, 0x38, 0xd7, 0x44, 0x6c, 0xb5, 0x0d, 0x47, 0xbe, 0x48,
+	0x32, 0x9e, 0x64, 0xb3, 0x4c, 0xcb, 0x17, 0x95, 0xfc, 0x83, 0xed, 0x31, 0x56, 0x38, 0xdd, 0x07,
+	0x62, 0x91, 0xd2, 0x81, 0x22, 0x3b, 0x3a, 0xd6, 0x39, 0x87, 0xaa, 0x52, 0xbf, 0x98, 0xf0, 0x7c,
+	0x10, 0xf5, 0xb2, 0xe2, 0x36, 0xd4, 0x68, 0xf2, 0x84, 0x88, 0x0e, 0x6e, 0xde, 0x23, 0x43, 0x85,
+	0x18, 0x94, 0xae, 0xbe, 0x34, 0x0d, 0xd7, 0x52, 0x2c, 0x3c, 0xb2, 0x5f, 0xc2, 0xc3, 0x9d, 0x07,
+	0x2d, 0x54, 0xf9, 0x4b, 0xa1, 0x9d, 0x7b, 0x3c, 0xd6, 0xb3, 0xfe, 0x6e, 0x42, 0x19, 0x1b, 0x3c,
+	0x83, 0x8a, 0xa7, 0x86, 0xae, 0x63, 0x6f, 0x1f, 0x8a, 0x6d, 0x2f, 0x9e, 0xa1, 0xe1, 0x6a, 0xa2,
+	0x3d, 0x02, 0x88, 0x38, 0x1b, 0xe3, 0x55, 0xd2, 0x19, 0x3c, 0x3e, 0x24, 0xf3, 0x6a, 0x8b, 0xde,
+	0x48, 0xed, 0x09, 0xd8, 0x6f, 0xe1, 0xbe, 0xda, 0x6d, 0x8c, 0xab, 0x64, 0xac, 0x3e, 0xf9, 0xa3,
+	0xe2, 0x8d, 0xe4, 0x86, 0x86, 0x7b, 0x53, 0x66, 0x70, 0x0f, 0xca, 0x6a, 0xaa, 0xad, 0x14, 0x8e,
+	0x7e, 0x72, 0x60, 0xd7, 0xf4, 0x37, 0x7d, 0xc9, 0x70, 0x73, 0x2b, 0xbd, 0xc2, 0x3f, 0xa4, 0xa7,
+	0x07, 0xfe, 0xc9, 0x04, 0xfb, 0xb6, 0xc9, 0x3b, 0xac, 0xfb, 0xcb, 0x5b, 0x53, 0xfc, 0xaf, 0x5b,
+	0x33, 0x60, 0x57, 0x2b, 0xc7, 0xbc, 0x5e, 0x39, 0xe6, 0xd7, 0x95, 0x63, 0x7e, 0x58, 0x3b, 0xc6,
+	0xf5, 0xda, 0x31, 0x3e, 0xaf, 0x1d, 0xe3, 0xdd, 0x8b, 0x20, 0x94, 0x93, 0x99, 0x47, 0x7c, 0x11,
+	0xd3, 0x4b, 0x26, 0x99, 0x3f, 0x61, 0x61, 0x12, 0x31, 0x8f, 0x86, 0x9e, 0xdf, 0x9d, 0xa6, 0x62,
+	0xb1, 0xa4, 0xb1, 0xb8, 0x9c, 0x45, 0x3c, 0xc3, 0xf7, 0xb2, 0xbb, 0x79, 0x30, 0x17, 0x8b, 0xae,
+	0x7e, 0x33, 0xe5, 0x72, 0xca, 0x33, 0xaf, 0xa2, 0x7e, 0xa7, 0x27, 0x3f, 0x02, 0x00, 0x00, 0xff,
+	0xff, 0xb7, 0x1c, 0x71, 0xa8, 0x5b, 0x05, 0x00, 0x00,
 }
 
 func (m *ClientState) Marshal() (dAtA []byte, err error) {
@@ -494,77 +437,6 @@ func (m *MultiProof) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i--
 			dAtA[i] = 0xa
 		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *HeadProof) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *HeadProof) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *HeadProof) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size, err := m.ConsensusHeight.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintMultiv(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x2a
-	if m.ConsensusState != nil {
-		{
-			size, err := m.ConsensusState.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintMultiv(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.ConsensusProof) > 0 {
-		i -= len(m.ConsensusProof)
-		copy(dAtA[i:], m.ConsensusProof)
-		i = encodeVarintMultiv(dAtA, i, uint64(len(m.ConsensusProof)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if m.ClientState != nil {
-		{
-			size, err := m.ClientState.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintMultiv(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.ClientProof) > 0 {
-		i -= len(m.ClientProof)
-		copy(dAtA[i:], m.ClientProof)
-		i = encodeVarintMultiv(dAtA, i, uint64(len(m.ClientProof)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -682,27 +554,6 @@ func (m *Proof) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Proof_Head) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Proof_Head) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.Head != nil {
-		{
-			size, err := m.Head.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintMultiv(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
 func (m *Proof_Branch) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
@@ -720,7 +571,7 @@ func (m *Proof_Branch) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i = encodeVarintMultiv(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -741,7 +592,7 @@ func (m *Proof_LeafClient) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i = encodeVarintMultiv(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x12
 	}
 	return len(dAtA) - i, nil
 }
@@ -762,7 +613,7 @@ func (m *Proof_LeafConsensus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i = encodeVarintMultiv(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x1a
 	}
 	return len(dAtA) - i, nil
 }
@@ -895,33 +746,6 @@ func (m *MultiProof) Size() (n int) {
 	return n
 }
 
-func (m *HeadProof) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.ClientProof)
-	if l > 0 {
-		n += 1 + l + sovMultiv(uint64(l))
-	}
-	if m.ClientState != nil {
-		l = m.ClientState.Size()
-		n += 1 + l + sovMultiv(uint64(l))
-	}
-	l = len(m.ConsensusProof)
-	if l > 0 {
-		n += 1 + l + sovMultiv(uint64(l))
-	}
-	if m.ConsensusState != nil {
-		l = m.ConsensusState.Size()
-		n += 1 + l + sovMultiv(uint64(l))
-	}
-	l = m.ConsensusHeight.Size()
-	n += 1 + l + sovMultiv(uint64(l))
-	return n
-}
-
 func (m *BranchProof) Size() (n int) {
 	if m == nil {
 		return 0
@@ -963,18 +787,6 @@ func (m *Proof) Size() (n int) {
 	return n
 }
 
-func (m *Proof_Head) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Head != nil {
-		l = m.Head.Size()
-		n += 1 + l + sovMultiv(uint64(l))
-	}
-	return n
-}
 func (m *Proof_Branch) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1195,229 +1007,6 @@ func (m *MultiProof) Unmarshal(dAtA []byte) error {
 			}
 			m.Proofs = append(m.Proofs, &Proof{})
 			if err := m.Proofs[len(m.Proofs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipMultiv(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *HeadProof) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowMultiv
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: HeadProof: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: HeadProof: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClientProof", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowMultiv
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClientProof = append(m.ClientProof[:0], dAtA[iNdEx:postIndex]...)
-			if m.ClientProof == nil {
-				m.ClientProof = []byte{}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClientState", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowMultiv
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ClientState == nil {
-				m.ClientState = &types.Any{}
-			}
-			if err := m.ClientState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ConsensusProof", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowMultiv
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ConsensusProof = append(m.ConsensusProof[:0], dAtA[iNdEx:postIndex]...)
-			if m.ConsensusProof == nil {
-				m.ConsensusProof = []byte{}
-			}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ConsensusState", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowMultiv
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ConsensusState == nil {
-				m.ConsensusState = &types.Any{}
-			}
-			if err := m.ConsensusState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ConsensusHeight", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowMultiv
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ConsensusHeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1729,41 +1318,6 @@ func (m *Proof) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Head", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowMultiv
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthMultiv
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			v := &HeadProof{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			m.Proof = &Proof_Head{v}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Branch", wireType)
 			}
 			var msglen int
@@ -1797,7 +1351,7 @@ func (m *Proof) Unmarshal(dAtA []byte) error {
 			}
 			m.Proof = &Proof_Branch{v}
 			iNdEx = postIndex
-		case 3:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LeafClient", wireType)
 			}
@@ -1832,7 +1386,7 @@ func (m *Proof) Unmarshal(dAtA []byte) error {
 			}
 			m.Proof = &Proof_LeafClient{v}
 			iNdEx = postIndex
-		case 4:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LeafConsensus", wireType)
 			}

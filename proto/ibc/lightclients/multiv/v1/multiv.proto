@@ -20,16 +20,6 @@ message MultiProof {
   repeated Proof proofs = 1;
 }
 
-message HeadProof {
-  option (gogoproto.goproto_getters) = false;
-
-  bytes client_proof = 1;
-  google.protobuf.Any client_state = 2;
-  bytes consensus_proof = 3;
-  google.protobuf.Any consensus_state = 4;
-  ibc.core.client.v1.Height consensus_height = 5 [(gogoproto.nullable) = false];
-}
-
 message BranchProof {
   option (gogoproto.goproto_getters) = false;
 
@@ -43,10 +33,9 @@ message BranchProof {
 
 message Proof {
   oneof proof {
-    HeadProof head = 1;
-    BranchProof branch = 2;
-    LeafClientProof leafClient = 3;
-    LeafConsensusProof leafConsensus = 4;
+    BranchProof branch = 1;
+    LeafClientProof leafClient = 2;
+    LeafConsensusProof leafConsensus = 3;
   }
 }
 

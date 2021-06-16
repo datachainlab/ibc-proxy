@@ -80,7 +80,7 @@ func (chain *TestChain) ConnectionOpenTryWithProxy(
 	connection, counterpartyConnection *TestConnection,
 	counterpartyProxy ProxyInfo,
 ) error {
-	head := counterparty.QueryMultiVHeadProof(counterpartyConnection.ClientID)
+	head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
 	upstreamClientState, proofClient := chain.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
 	_, proofConsensus, upstreamConsensusHeight := chain.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
 	proofInit, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
@@ -105,7 +105,7 @@ func (chain *TestChain) ConnectionOpenAckWithProxy(
 	connection, counterpartyConnection *TestConnection,
 	counterpartyProxy ProxyInfo,
 ) error {
-	head := counterparty.QueryMultiVHeadProof(counterpartyConnection.ClientID)
+	head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
 	upstreamClientState, proofClient := chain.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
 	_, proofConsensus, upstreamConsensusHeight := chain.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
 	proofTry, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
@@ -120,13 +120,13 @@ func (chain *TestChain) ConnectionOpenAckWithProxy(
 	return chain.sendMsgs(msg)
 }
 
-func (chain *TestChain) QueryAnyClientStateProof(clientID string) (*codectypes.Any, []byte) {
-	cs, proof := chain.QueryClientStateProof(clientID)
+func (chain *TestChain) QueryAnyClientStateProof(clientID string) (*codectypes.Any, exported.Height, []byte) {
+	cs, proof, proofHeight := chain.queryClientStateProof(clientID, chain.App.LastBlockHeight()-1)
 	any, err := clienttypes.PackClientState(cs)
 	if err != nil {
 		panic(err)
 	}
-	return any, proof
+	return any, proofHeight, proof
 }
 
 func (chain *TestChain) QueryAnyConsensusStateProof(clientID string) (*codectypes.Any, []byte, clienttypes.Height) {
@@ -142,20 +142,21 @@ func (chain *TestChain) QueryAnyConsensusStateProof(clientID string) (*codectype
 	return any, proof, consensusHeight
 }
 
-func (chain *TestChain) QueryMultiVHeadProof(clientID string) *multivtypes.HeadProof {
-	proxyClientState, proxyProofClient := chain.QueryAnyClientStateProof(clientID)
+func (chain *TestChain) QueryMultiVBranchProof(clientID string) *multivtypes.BranchProof {
+	proxyClientState, proofHeight, proxyProofClient := chain.QueryAnyClientStateProof(clientID)
 	proxyConsensusState, proxyProofConsensus, consensusHeight := chain.QueryAnyConsensusStateProof(clientID)
 
-	return &multivtypes.HeadProof{
+	return &multivtypes.BranchProof{
 		ClientProof:     proxyProofClient,
 		ClientState:     proxyClientState,
 		ConsensusProof:  proxyProofConsensus,
 		ConsensusState:  proxyConsensusState,
 		ConsensusHeight: consensusHeight,
+		ProofHeight:     proofHeight.(clienttypes.Height),
 	}
 }
 
-func (chain *TestChain) QueryMultiVLeafClientProof(head *multivtypes.HeadProof, upstreamClientID string, proxy ProxyInfo) (exported.ClientState, []byte) {
+func (chain *TestChain) QueryMultiVLeafClientProof(head *multivtypes.BranchProof, upstreamClientID string, proxy ProxyInfo) (exported.ClientState, []byte) {
 	cs, err := clienttypes.UnpackClientState(head.ClientState)
 	if err != nil {
 		panic(err)
@@ -167,11 +168,11 @@ func (chain *TestChain) QueryMultiVLeafClientProof(head *multivtypes.HeadProof, 
 		Proof:       upstreamClientProof,
 		ProofHeight: upstreamProofHeight,
 	}
-	proofClient := chain.makeClientStateProof(head, leafClient)
+	proofClient := chain.makeClientStateProof(leafClient, head)
 	return upstreamClientState, proofClient
 }
 
-func (chain *TestChain) QueryMultiVLeafConsensusProof(head *multivtypes.HeadProof, upstreamClientID string, proxy ProxyInfo) (exported.ConsensusState, []byte, clienttypes.Height) {
+func (chain *TestChain) QueryMultiVLeafConsensusProof(head *multivtypes.BranchProof, upstreamClientID string, proxy ProxyInfo) (exported.ConsensusState, []byte, clienttypes.Height) {
 	cs, err := clienttypes.UnpackClientState(head.ClientState)
 	if err != nil {
 		panic(err)
@@ -183,7 +184,7 @@ func (chain *TestChain) QueryMultiVLeafConsensusProof(head *multivtypes.HeadProo
 		ProofHeight:     upstreamProofHeight,
 		ConsensusHeight: upstreamConsensusHeight,
 	}
-	proofConsensus := chain.makeConsensusStateProof(head, leafConsensus)
+	proofConsensus := chain.makeConsensusStateProof(leafConsensus, head)
 	consensusState, found := proxy.Chain.GetConsensusState(proxy.UpstreamClientID, upstreamConsensusHeight)
 	if !found {
 		panic("consensusState not found")
@@ -192,15 +193,11 @@ func (chain *TestChain) QueryMultiVLeafConsensusProof(head *multivtypes.HeadProo
 }
 
 func (chain *TestChain) makeClientStateProof(
-	head *multivtypes.HeadProof,
 	leafClient *multivtypes.LeafClientProof,
 	branches ...*multivtypes.BranchProof,
 ) []byte {
 	var mp multivtypes.MultiProof
 
-	mp.Proofs = append(mp.Proofs, &multivtypes.Proof{
-		Proof: &multivtypes.Proof_Head{Head: head},
-	})
 	for _, branch := range branches {
 		mp.Proofs = append(mp.Proofs, &multivtypes.Proof{
 			Proof: &multivtypes.Proof_Branch{Branch: branch},
@@ -222,15 +219,11 @@ func (chain *TestChain) makeClientStateProof(
 }
 
 func (chain *TestChain) makeConsensusStateProof(
-	head *multivtypes.HeadProof,
 	leafConsensus *multivtypes.LeafConsensusProof,
 	branches ...*multivtypes.BranchProof,
 ) []byte {
 	var mp multivtypes.MultiProof
 
-	mp.Proofs = append(mp.Proofs, &multivtypes.Proof{
-		Proof: &multivtypes.Proof_Head{Head: head},
-	})
 	for _, branch := range branches {
 		mp.Proofs = append(mp.Proofs, &multivtypes.Proof{
 			Proof: &multivtypes.Proof_Branch{Branch: branch},

@@ -211,7 +211,7 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 			}
 		} else {
 			counterpartyProxy := *proxies[1]
-			head := counterparty.QueryMultiVHeadProof(counterpartyConnection.ClientID)
+			head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
 			counterpartyClient, proofClient = counterparty.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
 			consensusState, proofConsensus, consensusHeight = counterparty.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
 		}
@@ -312,7 +312,7 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 				}
 			} else {
 				counterpartyProxy := *proxies[1]
-				head := counterparty.QueryMultiVHeadProof(counterpartyConnection.ClientID)
+				head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
 				counterpartyClient, proofClient = counterparty.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
 				consensusState, proofConsensus, consensusHeight = counterparty.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
 			}
