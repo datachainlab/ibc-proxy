@@ -10,6 +10,12 @@ import (
 	ibctesting "github.com/datachainlab/ibc-proxy/testing"
 )
 
+func (suite *KeeperTestSuite) TestMultiV() {
+	clientBA, err := suite.coordinator.CreateMultiVClient(suite.chainB, suite.chainA, exported.Tendermint)
+	suite.Require().NoError(err)
+	suite.Require().NoError(suite.coordinator.UpdateClient(suite.chainB, suite.chainA, clientBA, exported.Tendermint))
+}
+
 // A(C) -> B, B -> A
 // A: downstream, B: upstream, C: proxy
 func (suite *KeeperTestSuite) TestOneSideProxy1() {
@@ -18,7 +24,7 @@ func (suite *KeeperTestSuite) TestOneSideProxy1() {
 
 	// XXX increment the sequence...
 	suite.coordinator.CreateClient(suite.chainB, suite.chainA, exported.Tendermint)
-	clientBA, err := suite.coordinator.CreateClient(suite.chainB, suite.chainA, exported.Tendermint)
+	clientBA, err := suite.coordinator.CreateMultiVClient(suite.chainB, suite.chainA, exported.Tendermint)
 	suite.Require().NoError(err)
 
 	// setup proxy
@@ -39,7 +45,7 @@ func (suite *KeeperTestSuite) TestOneSideProxy2() {
 
 	// XXX increment the sequence...
 	suite.coordinator.CreateClient(suite.chainA, suite.chainB, exported.Tendermint)
-	clientAB, err := suite.coordinator.CreateClient(suite.chainA, suite.chainB, exported.Tendermint)
+	clientAB, err := suite.coordinator.CreateMultiVClient(suite.chainA, suite.chainB, exported.Tendermint)
 	suite.Require().NoError(err)
 
 	// downstream creates a proxy client

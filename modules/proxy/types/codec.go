@@ -4,6 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/ibc-go/modules/core/exported"
+	multivtypes "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-multiv/types"
 	proxytypes "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-proxy/types"
 )
 
@@ -12,6 +13,7 @@ import (
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*exported.ClientState)(nil), &proxytypes.ClientState{})
 	registry.RegisterImplementations((*exported.ConsensusState)(nil), &proxytypes.ConsensusState{})
+	multivtypes.RegisterInterfaces(registry)
 }
 
 var (

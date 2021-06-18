@@ -1,0 +1,55 @@
+syntax = "proto3";
+package ibc.lightclients.multiv.v1;
+
+option go_package = "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-multiv/types";
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/any.proto";
+import "ibc/core/client/v1/client.proto";
+import "ibc/core/commitment/v1/commitment.proto";
+
+message ClientState {
+  option (gogoproto.goproto_getters) = false;
+
+  google.protobuf.Any base = 1;
+}
+
+message MultiProof {
+  option (gogoproto.goproto_getters) = false;
+
+  repeated Proof proofs = 1;
+}
+
+message BranchProof {
+  option (gogoproto.goproto_getters) = false;
+
+  bytes client_proof = 1;
+  google.protobuf.Any client_state = 2;
+  bytes consensus_proof = 3;
+  google.protobuf.Any consensus_state = 4;
+  ibc.core.client.v1.Height proof_height = 5 [(gogoproto.nullable) = false];
+  ibc.core.client.v1.Height consensus_height = 6 [(gogoproto.nullable) = false];
+}
+
+message Proof {
+  oneof proof {
+    BranchProof branch = 1;
+    LeafClientProof leafClient = 2;
+    LeafConsensusProof leafConsensus = 3;
+  }
+}
+
+message LeafClientProof {
+  option (gogoproto.goproto_getters) = false;
+
+  bytes proof = 1;
+  ibc.core.client.v1.Height proof_height = 2 [(gogoproto.nullable) = false];
+}
+
+message LeafConsensusProof {
+  option (gogoproto.goproto_getters) = false;
+
+  bytes proof = 1;
+  ibc.core.client.v1.Height proof_height = 2 [(gogoproto.nullable) = false];
+  ibc.core.client.v1.Height consensus_height = 3 [(gogoproto.nullable) = false];
+}
