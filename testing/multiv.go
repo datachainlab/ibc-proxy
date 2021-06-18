@@ -72,17 +72,18 @@ func (chain *TestChain) UpdateMultiVClient(
 }
 
 // chain: c1, counterparty: c0, counterpartyProxy: p0
-// c0 -> p0 -> c1
-// c1 -> c0
-// proof-tree: c1 -> c0 (head)-> p0 (leaf)-> c1
+// verification:
+// 	c0 -> p0 -> c1
+// 	c1 -> c0
+// multi-proof: c1 -> c0 (head)-> p0 (leaf)-> c1
 func (chain *TestChain) ConnectionOpenTryWithProxy(
 	counterparty *TestChain,
 	connection, counterpartyConnection *TestConnection,
 	counterpartyProxy ProxyInfo,
 ) error {
 	head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
-	upstreamClientState, proofClient := chain.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
-	_, proofConsensus, upstreamConsensusHeight := chain.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
+	upstreamClientState, proofClient := counterpartyProxy.Chain.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID)
+	_, proofConsensus, upstreamConsensusHeight := counterpartyProxy.Chain.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID)
 	proofInit, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
 
 	msg := connectiontypes.NewMsgConnectionOpenTry(
@@ -97,17 +98,18 @@ func (chain *TestChain) ConnectionOpenTryWithProxy(
 }
 
 // chain: c0, counterparty: c1, counterpartyProxy: p1
-// c0 -> c1
-// c1 -> p1 -> c0
-// proof-tree: c0 -> c1 -> p1 -> c0
+// verification:
+// 	c0 -> c1
+// 	c1 -> p1 -> c0
+// multi-proof: c0 -> c1 (head)-> p1 (leaf)-> c0
 func (chain *TestChain) ConnectionOpenAckWithProxy(
 	counterparty *TestChain,
 	connection, counterpartyConnection *TestConnection,
 	counterpartyProxy ProxyInfo,
 ) error {
 	head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
-	upstreamClientState, proofClient := chain.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
-	_, proofConsensus, upstreamConsensusHeight := chain.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
+	upstreamClientState, proofClient := counterpartyProxy.Chain.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID)
+	_, proofConsensus, upstreamConsensusHeight := counterpartyProxy.Chain.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID)
 	proofTry, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
 
 	msg := connectiontypes.NewMsgConnectionOpenAck(
@@ -156,13 +158,13 @@ func (chain *TestChain) QueryMultiVBranchProof(clientID string) *multivtypes.Bra
 	}
 }
 
-func (chain *TestChain) QueryMultiVLeafClientProof(head *multivtypes.BranchProof, upstreamClientID string, proxy ProxyInfo) (exported.ClientState, []byte) {
+func (chain *TestChain) QueryMultiVLeafClientProof(head *multivtypes.BranchProof, upstreamClientID string) (exported.ClientState, []byte) {
 	cs, err := clienttypes.UnpackClientState(head.ClientState)
 	if err != nil {
 		panic(err)
 	}
 	h := cs.GetLatestHeight()
-	upstreamClientState, upstreamClientProof, upstreamProofHeight := proxy.Chain.queryClientStateProof(upstreamClientID, int64(h.GetRevisionHeight())-1)
+	upstreamClientState, upstreamClientProof, upstreamProofHeight := chain.queryClientStateProof(upstreamClientID, int64(h.GetRevisionHeight())-1)
 
 	leafClient := &multivtypes.LeafClientProof{
 		Proof:       upstreamClientProof,
@@ -172,20 +174,20 @@ func (chain *TestChain) QueryMultiVLeafClientProof(head *multivtypes.BranchProof
 	return upstreamClientState, proofClient
 }
 
-func (chain *TestChain) QueryMultiVLeafConsensusProof(head *multivtypes.BranchProof, upstreamClientID string, proxy ProxyInfo) (exported.ConsensusState, []byte, clienttypes.Height) {
+func (chain *TestChain) QueryMultiVLeafConsensusProof(head *multivtypes.BranchProof, upstreamClientID string) (exported.ConsensusState, []byte, clienttypes.Height) {
 	cs, err := clienttypes.UnpackClientState(head.ClientState)
 	if err != nil {
 		panic(err)
 	}
 	h := cs.GetLatestHeight()
-	upstreamConsensusProof, upstreamConsensusHeight, upstreamProofHeight := proxy.Chain.queryConsensusStateProof(proxy.UpstreamClientID, int64(h.GetRevisionHeight())-1)
+	upstreamConsensusProof, upstreamConsensusHeight, upstreamProofHeight := chain.queryConsensusStateProof(upstreamClientID, int64(h.GetRevisionHeight())-1)
 	leafConsensus := &multivtypes.LeafConsensusProof{
 		Proof:           upstreamConsensusProof,
 		ProofHeight:     upstreamProofHeight,
 		ConsensusHeight: upstreamConsensusHeight,
 	}
 	proofConsensus := chain.makeConsensusStateProof(leafConsensus, head)
-	consensusState, found := proxy.Chain.GetConsensusState(proxy.UpstreamClientID, upstreamConsensusHeight)
+	consensusState, found := chain.GetConsensusState(upstreamClientID, upstreamConsensusHeight)
 	if !found {
 		panic("consensusState not found")
 	}

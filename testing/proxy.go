@@ -210,10 +210,10 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 				return fmt.Errorf("consensusState '%v-%v' not found", counterpartyConnection.ClientID, consensusHeight)
 			}
 		} else {
-			counterpartyProxy := *proxies[1]
 			head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
-			counterpartyClient, proofClient = counterparty.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
-			consensusState, proofConsensus, consensusHeight = counterparty.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
+			counterpartyProxy := *proxies[1]
+			counterpartyClient, proofClient = counterpartyProxy.Chain.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID)
+			consensusState, proofConsensus, consensusHeight = counterpartyProxy.Chain.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID)
 		}
 
 		proofInit, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
@@ -311,10 +311,10 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 					return fmt.Errorf("consensusState '%v-%v' not found", counterpartyConnection.ClientID, consensusHeight)
 				}
 			} else {
-				counterpartyProxy := *proxies[1]
 				head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
-				counterpartyClient, proofClient = counterparty.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
-				consensusState, proofConsensus, consensusHeight = counterparty.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID, counterpartyProxy)
+				counterpartyProxy := *proxies[1]
+				counterpartyClient, proofClient = counterpartyProxy.Chain.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID)
+				consensusState, proofConsensus, consensusHeight = counterpartyProxy.Chain.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID)
 			}
 
 			proofTry, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
