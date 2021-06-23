@@ -43,6 +43,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/capability"
 	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
@@ -306,7 +307,7 @@ func NewSimApp(
 	ibcKeeper := ibckeeper.NewKeeper(
 		appCodec, keys[ibchost.StoreKey], app.GetSubspace(ibchost.ModuleName), app.StakingKeeper, app.UpgradeKeeper, scopedIBCKeeper,
 	)
-	app.IBCKeeper = applyPatchToIBCKeeper(*ibcKeeper, appCodec, keys[ibchost.StoreKey])
+	app.IBCKeeper = applyPatchToIBCKeeper(*ibcKeeper, appCodec, keys[ibchost.StoreKey], app.GetSubspace(ibchost.ModuleName))
 
 	app.IBCProxyKeeper = ibcproxykeeper.NewKeeper(
 		appCodec, keys[ibcproxytypes.StoreKey], keys[ibchost.StoreKey], app.IBCKeeper.ClientKeeper, app.IBCKeeper.ConnectionKeeper, app.IBCKeeper.ChannelKeeper, scopedIBCProxyKeeper, &app.IBCKeeper.PortKeeper,
@@ -491,9 +492,9 @@ func NewSimApp(
 	return app
 }
 
-func applyPatchToIBCKeeper(k ibckeeper.Keeper, cdc codec.BinaryCodec, key sdk.StoreKey) *ibckeeper.Keeper {
+func applyPatchToIBCKeeper(k ibckeeper.Keeper, cdc codec.BinaryCodec, key sdk.StoreKey, paramSpace paramtypes.Subspace) *ibckeeper.Keeper {
 	clientKeeper := ibcproxykeeper.NewClientKeeper(k.ClientKeeper)
-	k.ConnectionKeeper = ibcconnectionkeeper.NewKeeper(cdc, key, clientKeeper)
+	k.ConnectionKeeper = ibcconnectionkeeper.NewKeeper(cdc, key, paramSpace, clientKeeper)
 	return &k
 }
 

@@ -197,11 +197,11 @@ func (am AppModule) OnChanCloseConfirm(ctx sdk.Context, portID string, channelID
 // If the acknowledgement returned is successful, the state changes on callback are written,
 // otherwise the application state changes are discarded. In either case the packet is received
 // and the acknowledgement is written (in synchronous cases).
-func (am AppModule) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet) exported.Acknowledgement {
+func (am AppModule) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) exported.Acknowledgement {
 	return am.keeper.OnRecvPacket(ctx, packet)
 }
 
-func (am AppModule) OnAcknowledgementPacket(ctx sdk.Context, packet channeltypes.Packet, acknowledgement []byte) (*sdk.Result, error) {
+func (am AppModule) OnAcknowledgementPacket(ctx sdk.Context, packet channeltypes.Packet, acknowledgement []byte, relayer sdk.AccAddress) (*sdk.Result, error) {
 	var ack channeltypes.Acknowledgement
 	if err := types.ModuleCdc.UnmarshalJSON(acknowledgement, &ack); err != nil {
 		return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "cannot unmarshal ICS-20 transfer packet acknowledgement: %v", err)
@@ -216,6 +216,6 @@ func (am AppModule) OnAcknowledgementPacket(ctx sdk.Context, packet channeltypes
 	}, nil
 }
 
-func (am AppModule) OnTimeoutPacket(ctx sdk.Context, packet channeltypes.Packet) (*sdk.Result, error) {
+func (am AppModule) OnTimeoutPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) (*sdk.Result, error) {
 	panic("not implemented") // TODO: Implement
 }
