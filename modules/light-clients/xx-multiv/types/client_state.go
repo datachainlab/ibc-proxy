@@ -356,20 +356,20 @@ func (cs *ClientState) VerifyChannelState(store sdk.KVStore, cdc codec.BinaryCod
 	return cs.GetBaseClientState().VerifyChannelState(store, cdc, height, prefix, proof, portID, channelID, channel)
 }
 
-func (cs *ClientState) VerifyPacketCommitment(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64, commitmentBytes []byte) error {
-	return cs.GetBaseClientState().VerifyPacketCommitment(store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence, commitmentBytes)
+func (cs *ClientState) VerifyPacketCommitment(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64, commitmentBytes []byte) error {
+	return cs.GetBaseClientState().VerifyPacketCommitment(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence, commitmentBytes)
 }
 
-func (cs *ClientState) VerifyPacketAcknowledgement(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64, acknowledgement []byte) error {
-	return cs.GetBaseClientState().VerifyPacketAcknowledgement(store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence, acknowledgement)
+func (cs *ClientState) VerifyPacketAcknowledgement(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64, acknowledgement []byte) error {
+	return cs.GetBaseClientState().VerifyPacketAcknowledgement(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence, acknowledgement)
 }
 
-func (cs *ClientState) VerifyPacketReceiptAbsence(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64) error {
-	return cs.GetBaseClientState().VerifyPacketReceiptAbsence(store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence)
+func (cs *ClientState) VerifyPacketReceiptAbsence(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64) error {
+	return cs.GetBaseClientState().VerifyPacketReceiptAbsence(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence)
 }
 
-func (cs *ClientState) VerifyNextSequenceRecv(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, nextSequenceRecv uint64) error {
-	return cs.GetBaseClientState().VerifyNextSequenceRecv(store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, nextSequenceRecv)
+func (cs *ClientState) VerifyNextSequenceRecv(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, nextSequenceRecv uint64) error {
+	return cs.GetBaseClientState().VerifyNextSequenceRecv(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, nextSequenceRecv)
 }
 
 func unpackProxyClientState(cdc codec.BinaryCodec, anyClientState *types.Any) (*proxytypes.ClientState, error) {

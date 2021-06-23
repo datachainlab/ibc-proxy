@@ -21,6 +21,7 @@ type ClientKeeper interface {
 // ConnectionKeeper defines the expected IBC connection keeper
 type ConnectionKeeper interface {
 	GetConnection(ctx sdk.Context, connectionID string) (connection connectiontypes.ConnectionEnd, found bool)
+	GetMaxExpectedTimePerBlock(ctx sdk.Context) uint64
 }
 
 // ChannelKeeper defines the expected IBC channel keeper
