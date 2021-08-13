@@ -229,17 +229,9 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 		if err != nil {
 			return err
 		}
-		// if _, err := proxy.SendMsgs(msg); err != nil {
-		// 	return err
-		// }
-		_, err = proxy.App.(*simapp.SimApp).IBCProxyKeeper.ProxyConnectionOpenTry(
-			sdk.WrapSDKContext(proxy.GetContext()),
-			msg,
-		)
-		if err != nil {
+		if _, err := proxy.SendMsgs(msg); err != nil {
 			return err
 		}
-		coord.CommitBlock(proxy)
 		coord.CommitBlock(proxy)
 
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {

@@ -1,6 +1,7 @@
 package types
 
 import (
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	connectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
@@ -9,7 +10,8 @@ import (
 )
 
 var (
-	_ sdk.Msg = (*MsgProxyConnectionOpenTry)(nil)
+	_ sdk.Msg                            = (*MsgProxyConnectionOpenTry)(nil)
+	_ codectypes.UnpackInterfacesMessage = (*MsgProxyConnectionOpenTry)(nil)
 )
 
 func NewMsgProxyConnectionOpenTry(
@@ -61,4 +63,16 @@ func (msg MsgProxyConnectionOpenTry) GetSigners() []sdk.AccAddress {
 		panic(err)
 	}
 	return []sdk.AccAddress{accAddr}
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
+func (msg MsgProxyConnectionOpenTry) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var clientState exported.ClientState
+	err := unpacker.UnpackAny(msg.ClientState, &clientState)
+	if err != nil {
+		return err
+	}
+
+	var consensusState exported.ConsensusState
+	return unpacker.UnpackAny(msg.ConsensusState, &consensusState)
 }
