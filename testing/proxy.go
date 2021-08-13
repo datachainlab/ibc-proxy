@@ -217,31 +217,24 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 		}
 
 		proofInit, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
-
-		anyClient, err := clienttypes.PackClientState(counterpartyClient)
+		msg, err := proxytypes.NewMsgProxyConnectionOpenTry(
+			counterpartyConnection.ID,
+			proxies[0].UpstreamClientID,
+			proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
+			proxyConnection,
+			counterpartyClient,
+			consensusState,
+			proofInit, proofClient, proofConsensus, proofHeight, consensusHeight, proxy.SenderAccount.GetAddress().String(),
+		)
 		if err != nil {
-			panic(err)
+			return err
 		}
-		anyConsensus, err := clienttypes.PackConsensusState(consensusState)
-		if err != nil {
-			panic(err)
-		}
-		msg := proxytypes.MsgProxyConnectionOpenTry{
-			ConnectionId:     counterpartyConnection.ID,
-			UpstreamClientId: proxies[0].UpstreamClientID,
-			UpstreamPrefix:   proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
-			Connection:       proxyConnection,
-			ClientState:      anyClient,
-			ConsensusState:   anyConsensus,
-			ProofInit:        proofInit,
-			ProofClient:      proofClient,
-			ProofConsensus:   proofConsensus,
-			ProofHeight:      proofHeight,
-			ConsensusHeight:  consensusHeight,
-		}
+		// if _, err := proxy.SendMsgs(msg); err != nil {
+		// 	return err
+		// }
 		_, err = proxy.App.(*simapp.SimApp).IBCProxyKeeper.ProxyConnectionOpenTry(
 			sdk.WrapSDKContext(proxy.GetContext()),
-			&msg,
+			msg,
 		)
 		if err != nil {
 			return err

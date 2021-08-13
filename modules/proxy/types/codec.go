@@ -3,6 +3,7 @@ package types
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/ibc-go/modules/core/exported"
 	multivtypes "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-multiv/types"
 	proxytypes "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-proxy/types"
@@ -11,6 +12,7 @@ import (
 // RegisterInterfaces register the ibc transfer module interfaces to protobuf
 // Any.
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
+	registry.RegisterImplementations((*sdk.Msg)(nil), &MsgProxyConnectionOpenTry{})
 	registry.RegisterImplementations((*exported.ClientState)(nil), &proxytypes.ClientState{})
 	registry.RegisterImplementations((*exported.ConsensusState)(nil), &proxytypes.ConsensusState{})
 	multivtypes.RegisterInterfaces(registry)
