@@ -4,4 +4,31 @@ package ibc.proxy.v1;
 option go_package = "github.com/datachainlab/ibc-proxy/modules/proxy/types";
 
 import "gogoproto/gogo.proto";
+import "ibc/core/client/v1/client.proto";
+import "ibc/core/connection/v1/connection.proto";
 import "ibc/core/commitment/v1/commitment.proto";
+import "google/protobuf/any.proto";
+
+service Msg {
+  rpc ProxyConnectionOpenTry(MsgProxyConnectionOpenTry) returns (MsgProxyConnectionOpenTryResponse);
+}
+
+message MsgProxyConnectionOpenTry {
+  option (gogoproto.equal)           = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string connection_id = 1;
+  string upstream_client_id = 2;
+  ibc.core.commitment.v1.MerklePrefix upstream_prefix = 3 [(gogoproto.nullable) = false];
+  ibc.core.connection.v1.ConnectionEnd connection = 4 [(gogoproto.nullable) = false];
+  google.protobuf.Any client_state = 5;
+  google.protobuf.Any consensus_state = 6;
+  bytes proof_init = 7;
+  bytes proof_client = 8;
+  bytes proof_consensus = 9;
+  ibc.core.client.v1.Height proof_height = 10 [(gogoproto.nullable) = false];
+  ibc.core.client.v1.Height consensus_height = 11 [(gogoproto.nullable) = false];
+  string signer = 12;
+}
+
+message MsgProxyConnectionOpenTryResponse {}

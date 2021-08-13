@@ -21,4 +21,5 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.34.10
 	github.com/tendermint/tm-db v0.6.4
+	google.golang.org/grpc v1.37.0
 )

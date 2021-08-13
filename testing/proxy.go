@@ -218,13 +218,30 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 
 		proofInit, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
 
-		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ConnOpenTry(
-			proxy.GetContext(),
-			counterpartyConnection.ID,
-			proxies[0].UpstreamClientID,
-			proxies[0].UpstreamPrefix,
-			proxyConnection,
-			counterpartyClient, proofInit, proofClient, proofConsensus, proofHeight, consensusHeight, consensusState,
+		anyClient, err := clienttypes.PackClientState(counterpartyClient)
+		if err != nil {
+			panic(err)
+		}
+		anyConsensus, err := clienttypes.PackConsensusState(consensusState)
+		if err != nil {
+			panic(err)
+		}
+		msg := proxytypes.MsgProxyConnectionOpenTry{
+			ConnectionId:     counterpartyConnection.ID,
+			UpstreamClientId: proxies[0].UpstreamClientID,
+			UpstreamPrefix:   proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
+			Connection:       proxyConnection,
+			ClientState:      anyClient,
+			ConsensusState:   anyConsensus,
+			ProofInit:        proofInit,
+			ProofClient:      proofClient,
+			ProofConsensus:   proofConsensus,
+			ProofHeight:      proofHeight,
+			ConsensusHeight:  consensusHeight,
+		}
+		_, err = proxy.App.(*simapp.SimApp).IBCProxyKeeper.ProxyConnectionOpenTry(
+			sdk.WrapSDKContext(proxy.GetContext()),
+			&msg,
 		)
 		if err != nil {
 			return err
