@@ -321,25 +321,27 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 
 			proofTry, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
 
-			err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ConnOpenACK(
-				proxy.GetContext(),
+			msg, err := proxytypes.NewMsgProxyConnectionOpenAck(
 				counterpartyConnection.ID,
 				proxies[0].UpstreamClientID,
-				proxies[0].UpstreamPrefix,
+				proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
 				proxyConnection,
 				counterpartyClient,
+				consensusState,
 				ConnectionVersion,
 				proofTry,
 				proofClient,
 				proofConsensus,
 				proofHeight,
 				consensusHeight,
-				consensusState,
+				proxy.SenderAccount.GetAddress().String(),
 			)
 			if err != nil {
 				return err
 			}
-			coord.CommitBlock(proxy)
+			if _, err := proxy.SendMsgs(msg); err != nil {
+				return err
+			}
 			coord.CommitBlock(proxy)
 		}
 
@@ -404,25 +406,25 @@ func (coord *Coordinator) ConnOpenConfirmWithProxy(
 			DefaultDelayPeriod,
 		)
 
-		{
-			connectionKey := host.ConnectionKey(counterpartyConnection.ID)
-			proofAck, proofHeight := counterparty.QueryProof(connectionKey)
+		connectionKey := host.ConnectionKey(counterpartyConnection.ID)
+		proofAck, proofHeight := counterparty.QueryProof(connectionKey)
 
-			err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ConnOpenConfirm(
-				proxy.GetContext(),
-				counterpartyConnection.ID,
-				proxies[0].UpstreamClientID,
-				proxies[0].UpstreamPrefix,
-				proxyConnection,
-				proofAck,
-				proofHeight,
-			)
-			if err != nil {
-				return err
-			}
-			coord.CommitBlock(proxy)
-			coord.CommitBlock(proxy)
+		msg, err := proxytypes.NewMsgProxyConnectionOpenConfirm(
+			counterpartyConnection.ID,
+			proxies[0].UpstreamClientID,
+			proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
+			proxyConnection,
+			proofAck,
+			proofHeight,
+			proxy.SenderAccount.GetAddress().String(),
+		)
+		if err != nil {
+			return err
 		}
+		if _, err := proxy.SendMsgs(msg); err != nil {
+			return err
+		}
+		coord.CommitBlock(proxy)
 
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
 			return err

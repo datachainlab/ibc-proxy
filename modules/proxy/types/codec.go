@@ -12,7 +12,12 @@ import (
 // RegisterInterfaces register the ibc transfer module interfaces to protobuf
 // Any.
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
-	registry.RegisterImplementations((*sdk.Msg)(nil), &MsgProxyConnectionOpenTry{})
+	registry.RegisterImplementations(
+		(*sdk.Msg)(nil),
+		&MsgProxyConnectionOpenTry{},
+		&MsgProxyConnectionOpenAck{},
+		&MsgProxyConnectionOpenConfirm{},
+	)
 	registry.RegisterImplementations((*exported.ClientState)(nil), &proxytypes.ClientState{})
 	registry.RegisterImplementations((*exported.ConsensusState)(nil), &proxytypes.ConsensusState{})
 	multivtypes.RegisterInterfaces(registry)
