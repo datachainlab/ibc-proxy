@@ -64,7 +64,7 @@ func (k Keeper) ConnOpenTry(
 
 // caller: A
 // CONTRACT: upstream is B, downstream is A, we are proxy(P)
-func (k Keeper) ConnOpenACK(
+func (k Keeper) ConnOpenAck(
 	ctx sdk.Context,
 	connectionID string, // connectionID corresponding to B on A
 	upstreamClientID string, // clientID corresponding to B on P

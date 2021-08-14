@@ -126,8 +126,7 @@ func (am AppModule) LegacyQuerierHandler(_ *codec.LegacyAmino) sdk.Querier {
 
 // RegisterServices allows a module to register services
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	// types.RegisterMsgServer(cfg.MsgServer(), am.keeper)
-	// types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+	types.RegisterMsgServer(cfg.MsgServer(), &am.keeper)
 }
 
 // ConsensusVersion is a sequence number for state-breaking change of the
