@@ -12,6 +12,8 @@ import (
 var (
 	_, _, _ sdk.Msg                            = (*MsgProxyConnectionOpenTry)(nil), (*MsgProxyConnectionOpenAck)(nil), (*MsgProxyConnectionOpenConfirm)(nil)
 	_, _, _ codectypes.UnpackInterfacesMessage = (*MsgProxyConnectionOpenTry)(nil), (*MsgProxyConnectionOpenAck)(nil), (*MsgProxyConnectionOpenConfirm)(nil)
+
+	_, _, _ sdk.Msg = (*MsgProxyChannelOpenTry)(nil), (*MsgProxyChannelOpenAck)(nil), (*MsgProxyChannelOpenConfirm)(nil)
 )
 
 func NewMsgProxyConnectionOpenTry(
@@ -52,6 +54,7 @@ func NewMsgProxyConnectionOpenTry(
 	}, nil
 }
 
+// ValidateBasic implements sdk.Msg
 func (msg MsgProxyConnectionOpenTry) ValidateBasic() error {
 	return nil
 }
@@ -117,6 +120,7 @@ func NewMsgProxyConnectionOpenAck(
 	}, nil
 }
 
+// ValidateBasic implements sdk.Msg
 func (msg MsgProxyConnectionOpenAck) ValidateBasic() error {
 	return nil
 }
@@ -162,6 +166,7 @@ func NewMsgProxyConnectionOpenConfirm(
 	}, nil
 }
 
+// ValidateBasic implements sdk.Msg
 func (msg MsgProxyConnectionOpenConfirm) ValidateBasic() error {
 	return nil
 }
@@ -178,4 +183,55 @@ func (msg MsgProxyConnectionOpenConfirm) GetSigners() []sdk.AccAddress {
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
 func (msg MsgProxyConnectionOpenConfirm) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	return nil
+}
+
+// func NewMsgProxyChannelOpenTry() *MsgProxyChannelOpenTry {
+// 	return &MsgProxyChannelOpenTry{}
+// }
+
+func (msg MsgProxyChannelOpenTry) ValidateBasic() error {
+	return nil
+}
+
+// GetSigners implements sdk.Msg
+func (msg MsgProxyChannelOpenTry) GetSigners() []sdk.AccAddress {
+	accAddr, err := sdk.AccAddressFromBech32(msg.Signer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{accAddr}
+}
+
+// func NewMsgProxyChannelOpenAck() *MsgProxyChannelOpenAck {
+// 	return &MsgProxyChannelOpenAck{}
+// }
+
+func (msg MsgProxyChannelOpenAck) ValidateBasic() error {
+	return nil
+}
+
+// GetSigners implements sdk.Msg
+func (msg MsgProxyChannelOpenAck) GetSigners() []sdk.AccAddress {
+	accAddr, err := sdk.AccAddressFromBech32(msg.Signer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{accAddr}
+}
+
+// func NewMsgProxyChannelOpenConfirm() *MsgProxyChannelOpenConfirm {
+// 	return &MsgProxyChannelOpenConfirm{}
+// }
+
+func (msg MsgProxyChannelOpenConfirm) ValidateBasic() error {
+	return nil
+}
+
+// GetSigners implements sdk.Msg
+func (msg MsgProxyChannelOpenConfirm) GetSigners() []sdk.AccAddress {
+	accAddr, err := sdk.AccAddressFromBech32(msg.Signer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{accAddr}
 }

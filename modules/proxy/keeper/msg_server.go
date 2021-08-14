@@ -60,3 +60,36 @@ func (k *Keeper) ProxyConnectionOpenConfirm(goCtx context.Context, msg *types.Ms
 	}
 	return &types.MsgProxyConnectionOpenConfirmResponse{}, nil
 }
+
+// ProxyConnectionOpenTry implements types.MsgServer
+func (k *Keeper) ProxyChannelOpenTry(goCtx context.Context, msg *types.MsgProxyChannelOpenTry) (*types.MsgProxyChannelOpenTryResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	err := k.ChanOpenTry(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.Order, msg.ConnectionHops, msg.PortId, msg.PreviousChannelId, msg.Counterparty, msg.Version, msg.CounterpartyVersion, msg.ProofInit, msg.ProofHeight)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgProxyChannelOpenTryResponse{}, nil
+}
+
+// ProxyChannelOpenAck implements types.MsgServer
+func (k *Keeper) ProxyChannelOpenAck(goCtx context.Context, msg *types.MsgProxyChannelOpenAck) (*types.MsgProxyChannelOpenAckResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	err := k.ChanOpenAck(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.Order, msg.ConnectionHops, msg.PortId, msg.ChannelId, msg.Counterparty, msg.Version, msg.CounterpartyVersion, msg.ProofTry, msg.ProofHeight)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgProxyChannelOpenAckResponse{}, nil
+}
+
+// ProxyChannelOpenConfirm implements types.MsgServer
+func (k *Keeper) ProxyChannelOpenConfirm(goCtx context.Context, msg *types.MsgProxyChannelOpenConfirm) (*types.MsgProxyChannelOpenConfirmResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	err := k.ChanOpenConfirm(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.SourceChannelId, msg.CounterpartyPortId, msg.CounterpartyChannelId, msg.ProofAck, msg.ProofHeight)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgProxyChannelOpenConfirmResponse{}, nil
+}

@@ -510,23 +510,23 @@ func (coord *Coordinator) ChanOpenTryWithProxy(
 
 		proofInit, proofHeight := counterparty.QueryProof(host.ChannelKey(counterpartyChannel.PortID, counterpartyChannel.ID))
 
-		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ChanOpenTry(
-			proxy.GetContext(),
-			proxies[0].UpstreamClientID,
-			proxies[0].UpstreamPrefix,
-			order,
-			[]string{counterpartyConnection.ID},
-			sourceChannel.PortID,
-			sourceChannel.ID,
-			channeltypes.NewCounterparty(counterpartyChannel.PortID, counterpartyChannel.ID),
-			sourceChannel.Version,
-			counterpartyChannel.Version,
-			proofInit, proofHeight,
-		)
-		if err != nil {
+		msg := &proxytypes.MsgProxyChannelOpenTry{
+			UpstreamClientId:    proxies[0].UpstreamClientID,
+			UpstreamPrefix:      proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
+			Order:               order,
+			ConnectionHops:      []string{counterpartyConnection.ID},
+			PortId:              sourceChannel.PortID,
+			PreviousChannelId:   sourceChannel.ID,
+			Counterparty:        channeltypes.NewCounterparty(counterpartyChannel.PortID, counterpartyChannel.ID),
+			Version:             sourceChannel.Version,
+			CounterpartyVersion: counterpartyChannel.Version,
+			ProofInit:           proofInit,
+			ProofHeight:         proofHeight,
+			Signer:              proxy.SenderAccount.GetAddress().String(),
+		}
+		if _, err := proxy.SendMsgs(msg); err != nil {
 			return err
 		}
-		coord.CommitBlock(proxy)
 		coord.CommitBlock(proxy)
 
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
@@ -581,22 +581,23 @@ func (coord *Coordinator) ChanOpenAckWithProxy(
 
 		proofTry, proofHeight := counterparty.QueryProof(host.ChannelKey(counterpartyChannel.PortID, counterpartyChannel.ID))
 
-		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ChanOpenAck(
-			proxy.GetContext(),
-			proxies[0].UpstreamClientID,
-			proxies[0].UpstreamPrefix,
-			order,
-			[]string{counterpartyConnection.ID},
-			sourceChannel.PortID, sourceChannel.ID,
-			channeltypes.NewCounterparty(counterpartyChannel.PortID, counterpartyChannel.ID),
-			sourceChannel.Version,
-			counterpartyChannel.Version,
-			proofTry, proofHeight,
-		)
-		if err != nil {
+		msg := &proxytypes.MsgProxyChannelOpenAck{
+			UpstreamClientId:    proxies[0].UpstreamClientID,
+			UpstreamPrefix:      proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
+			Order:               order,
+			ConnectionHops:      []string{counterpartyConnection.ID},
+			PortId:              sourceChannel.PortID,
+			ChannelId:           sourceChannel.ID,
+			Counterparty:        channeltypes.NewCounterparty(counterpartyChannel.PortID, counterpartyChannel.ID),
+			Version:             sourceChannel.Version,
+			CounterpartyVersion: counterpartyChannel.Version,
+			ProofTry:            proofTry,
+			ProofHeight:         proofHeight,
+			Signer:              proxy.SenderAccount.GetAddress().String(),
+		}
+		if _, err := proxy.SendMsgs(msg); err != nil {
 			return err
 		}
-		coord.CommitBlock(proxy)
 		coord.CommitBlock(proxy)
 
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
@@ -649,18 +650,19 @@ func (coord *Coordinator) ChanOpenConfirmWithProxy(
 
 		proofAck, proofHeight := counterparty.QueryProof(host.ChannelKey(counterpartyChannel.PortID, counterpartyChannel.ID))
 
-		err := proxy.App.(*simapp.SimApp).IBCProxyKeeper.ChanOpenConfirm(
-			proxy.GetContext(),
-			proxies[0].UpstreamClientID,
-			proxies[0].UpstreamPrefix,
-			sourceChannel.ID,
-			counterpartyChannel.PortID, counterpartyChannel.ID,
-			proofAck, proofHeight,
-		)
-		if err != nil {
+		msg := &proxytypes.MsgProxyChannelOpenConfirm{
+			UpstreamClientId:      proxies[0].UpstreamClientID,
+			UpstreamPrefix:        proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
+			SourceChannelId:       sourceChannel.ID,
+			CounterpartyPortId:    counterpartyChannel.PortID,
+			CounterpartyChannelId: counterpartyChannel.ID,
+			ProofAck:              proofAck,
+			ProofHeight:           proofHeight,
+			Signer:                proxy.SenderAccount.GetAddress().String(),
+		}
+		if _, err := proxy.SendMsgs(msg); err != nil {
 			return err
 		}
-		coord.CommitBlock(proxy)
 		coord.CommitBlock(proxy)
 
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {

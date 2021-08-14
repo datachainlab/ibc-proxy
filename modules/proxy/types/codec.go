@@ -17,6 +17,9 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgProxyConnectionOpenTry{},
 		&MsgProxyConnectionOpenAck{},
 		&MsgProxyConnectionOpenConfirm{},
+		&MsgProxyChannelOpenTry{},
+		&MsgProxyChannelOpenAck{},
+		&MsgProxyChannelOpenConfirm{},
 	)
 	registry.RegisterImplementations((*exported.ClientState)(nil), &proxytypes.ClientState{})
 	registry.RegisterImplementations((*exported.ConsensusState)(nil), &proxytypes.ConsensusState{})
