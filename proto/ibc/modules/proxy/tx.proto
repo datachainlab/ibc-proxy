@@ -18,6 +18,9 @@ service Msg {
   rpc ProxyChannelOpenTry(MsgProxyChannelOpenTry) returns (MsgProxyChannelOpenTryResponse);
   rpc ProxyChannelOpenAck(MsgProxyChannelOpenAck) returns (MsgProxyChannelOpenAckResponse);
   rpc ProxyChannelOpenConfirm(MsgProxyChannelOpenConfirm) returns (MsgProxyChannelOpenConfirmResponse);
+
+  rpc ProxyRecvPacket(MsgProxyRecvPacket) returns (MsgProxyRecvPacketResponse);
+  rpc ProxyAcknowledgePacket(MsgProxyAcknowledgePacket) returns (MsgProxyAcknowledgePacketResponse);
 }
 
 message MsgProxyConnectionOpenTry {
@@ -128,3 +131,32 @@ message MsgProxyChannelOpenConfirm {
 }
 
 message MsgProxyChannelOpenConfirmResponse {}
+
+message MsgProxyRecvPacket {
+  option (gogoproto.equal)           = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string upstream_client_id = 1;
+  ibc.core.commitment.v1.MerklePrefix upstream_prefix = 2 [(gogoproto.nullable) = false];
+  ibc.core.channel.v1.Packet packet = 3 [(gogoproto.nullable) = false];
+  bytes proof = 4;
+  ibc.core.client.v1.Height proof_height = 5 [(gogoproto.nullable) = false];
+  string signer = 6;
+}
+
+message MsgProxyRecvPacketResponse {}
+
+message MsgProxyAcknowledgePacket {
+  option (gogoproto.equal)           = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string upstream_client_id = 1;
+  ibc.core.commitment.v1.MerklePrefix upstream_prefix = 2 [(gogoproto.nullable) = false];
+  ibc.core.channel.v1.Packet packet = 3 [(gogoproto.nullable) = false];
+  bytes acknowledgement = 4;
+  bytes proof = 5;
+  ibc.core.client.v1.Height proof_height = 6 [(gogoproto.nullable) = false];
+  string signer = 7;
+}
+
+message MsgProxyAcknowledgePacketResponse {}

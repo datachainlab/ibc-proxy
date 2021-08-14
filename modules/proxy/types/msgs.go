@@ -14,6 +14,7 @@ var (
 	_, _, _ codectypes.UnpackInterfacesMessage = (*MsgProxyConnectionOpenTry)(nil), (*MsgProxyConnectionOpenAck)(nil), (*MsgProxyConnectionOpenConfirm)(nil)
 
 	_, _, _ sdk.Msg = (*MsgProxyChannelOpenTry)(nil), (*MsgProxyChannelOpenAck)(nil), (*MsgProxyChannelOpenConfirm)(nil)
+	_, _    sdk.Msg = (*MsgProxyRecvPacket)(nil), (*MsgProxyAcknowledgePacket)(nil)
 )
 
 func NewMsgProxyConnectionOpenTry(
@@ -185,10 +186,7 @@ func (msg MsgProxyConnectionOpenConfirm) UnpackInterfaces(unpacker codectypes.An
 	return nil
 }
 
-// func NewMsgProxyChannelOpenTry() *MsgProxyChannelOpenTry {
-// 	return &MsgProxyChannelOpenTry{}
-// }
-
+// ValidateBasic implements sdk.Msg
 func (msg MsgProxyChannelOpenTry) ValidateBasic() error {
 	return nil
 }
@@ -202,10 +200,7 @@ func (msg MsgProxyChannelOpenTry) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{accAddr}
 }
 
-// func NewMsgProxyChannelOpenAck() *MsgProxyChannelOpenAck {
-// 	return &MsgProxyChannelOpenAck{}
-// }
-
+// ValidateBasic implements sdk.Msg
 func (msg MsgProxyChannelOpenAck) ValidateBasic() error {
 	return nil
 }
@@ -219,16 +214,40 @@ func (msg MsgProxyChannelOpenAck) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{accAddr}
 }
 
-// func NewMsgProxyChannelOpenConfirm() *MsgProxyChannelOpenConfirm {
-// 	return &MsgProxyChannelOpenConfirm{}
-// }
-
+// ValidateBasic implements sdk.Msg
 func (msg MsgProxyChannelOpenConfirm) ValidateBasic() error {
 	return nil
 }
 
 // GetSigners implements sdk.Msg
 func (msg MsgProxyChannelOpenConfirm) GetSigners() []sdk.AccAddress {
+	accAddr, err := sdk.AccAddressFromBech32(msg.Signer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{accAddr}
+}
+
+// ValidateBasic implements sdk.Msg
+func (msg MsgProxyRecvPacket) ValidateBasic() error {
+	return nil
+}
+
+// GetSigners implements sdk.Msg
+func (msg MsgProxyRecvPacket) GetSigners() []sdk.AccAddress {
+	accAddr, err := sdk.AccAddressFromBech32(msg.Signer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{accAddr}
+}
+
+// ValidateBasic implements sdk.Msg
+func (msg MsgProxyAcknowledgePacket) ValidateBasic() error {
+	return nil
+}
+
+func (msg MsgProxyAcknowledgePacket) GetSigners() []sdk.AccAddress {
 	accAddr, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		panic(err)

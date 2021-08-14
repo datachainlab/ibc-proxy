@@ -93,3 +93,25 @@ func (k *Keeper) ProxyChannelOpenConfirm(goCtx context.Context, msg *types.MsgPr
 	}
 	return &types.MsgProxyChannelOpenConfirmResponse{}, nil
 }
+
+// ProxyRecvPacket implements types.MsgServer
+func (k *Keeper) ProxyRecvPacket(goCtx context.Context, msg *types.MsgProxyRecvPacket) (*types.MsgProxyRecvPacketResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	err := k.RecvPacket(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.Packet, msg.Proof, msg.ProofHeight)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgProxyRecvPacketResponse{}, nil
+}
+
+// ProxyAcknowledgePacket implements types.MsgServer
+func (k *Keeper) ProxyAcknowledgePacket(goCtx context.Context, msg *types.MsgProxyAcknowledgePacket) (*types.MsgProxyAcknowledgePacketResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	err := k.AcknowledgePacket(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.Packet, msg.Acknowledgement, msg.Proof, msg.ProofHeight)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgProxyAcknowledgePacketResponse{}, nil
+}
