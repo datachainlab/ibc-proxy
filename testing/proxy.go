@@ -869,11 +869,7 @@ func (chain *TestChain) QueryProxiedClientStateProof(clientID string, upstreamPr
 		upstreamClientID,
 	)
 	require.True(chain.t, found)
-
-	clientKey := withProxyPrefix(upstreamPrefix, upstreamClientID, host.FullClientStateKey(clientID))
-
-	proofClient, _ := chain.QueryProxiedProof(clientKey)
-
+	proofClient, _ := chain.QueryProxiedProof(proxytypes.ProxyClientStateKey(upstreamPrefix, upstreamClientID, clientID))
 	return clientState, proofClient
 }
 
@@ -886,34 +882,24 @@ func (chain *TestChain) QueryProxiedConsensusStateProof(clientID string, upstrea
 	)
 	require.True(chain.t, found)
 	consensusHeight := clientState.GetLatestHeight().(clienttypes.Height)
-	consensusKey := withProxyPrefix(upstreamPrefix, upstreamClientID, host.FullConsensusStateKey(clientID, consensusHeight))
-	proofConsensus, _ := chain.QueryProxiedProof(consensusKey)
-
+	proofConsensus, _ := chain.QueryProxiedProof(proxytypes.ProxyConsensusStateKey(upstreamPrefix, upstreamClientID, clientID, consensusHeight))
 	return proofConsensus, consensusHeight
 }
 
 func (chain *TestChain) QueryProxiedConnectionStateProof(connectionID string, upstreamPrefix exported.Prefix, upstreamClientID string) ([]byte, clienttypes.Height) {
-	connectionKey := withProxyPrefix(upstreamPrefix, upstreamClientID, host.ConnectionKey(connectionID))
-	return chain.QueryProxiedProof(connectionKey)
+	return chain.QueryProxiedProof(proxytypes.ProxyConnectionKey(upstreamPrefix, upstreamClientID, connectionID))
 }
 
 func (chain *TestChain) QueryProxiedChannelStateProof(portID string, channelID string, upstreamPrefix exported.Prefix, upstreamClientID string) ([]byte, clienttypes.Height) {
-	channelKey := withProxyPrefix(upstreamPrefix, upstreamClientID, host.ChannelKey(portID, channelID))
-	return chain.QueryProxiedProof(channelKey)
+	return chain.QueryProxiedProof(proxytypes.ProxyChannelKey(upstreamPrefix, upstreamClientID, portID, channelID))
 }
 
 func (chain *TestChain) QueryProxiedPacketCommitmentProof(sourcePort, sourceChannel string, packetSequence uint64, upstreamPrefix exported.Prefix, upstreamClientID string) ([]byte, clienttypes.Height) {
-	packetCommitmentKey := withProxyPrefix(upstreamPrefix, upstreamClientID, host.PacketCommitmentKey(sourcePort, sourceChannel, packetSequence))
-	return chain.QueryProxiedProof(packetCommitmentKey)
+	return chain.QueryProxiedProof(proxytypes.ProxyPacketCommitmentKey(upstreamPrefix, upstreamClientID, sourcePort, sourceChannel, packetSequence))
 }
 
 func (chain *TestChain) QueryProxiedAcknowledgementProof(destPort, destChannel string, packetSequence uint64, upstreamPrefix exported.Prefix, upstreamClientID string) ([]byte, clienttypes.Height) {
-	ackCommitmentKey := withProxyPrefix(upstreamPrefix, upstreamClientID, host.PacketAcknowledgementKey(destPort, destChannel, packetSequence))
-	return chain.QueryProxiedProof(ackCommitmentKey)
-}
-
-func withProxyPrefix(upstreamPrefix exported.Prefix, upstreamClientID string, key []byte) []byte {
-	return append(append([]byte(upstreamClientID+"/"), string(upstreamPrefix.Bytes())+"/"...), key...)
+	return chain.QueryProxiedProof(proxytypes.ProxyAcknowledgementKey(upstreamPrefix, upstreamClientID, destPort, destChannel, packetSequence))
 }
 
 // QueryProof performs an abci query with the given key and returns the proto encoded merkle proof
