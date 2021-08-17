@@ -310,7 +310,7 @@ func NewSimApp(
 	app.IBCKeeper = applyPatchToIBCKeeper(*ibcKeeper, appCodec, keys[ibchost.StoreKey], app.GetSubspace(ibchost.ModuleName))
 
 	app.IBCProxyKeeper = ibcproxykeeper.NewKeeper(
-		appCodec, keys[ibcproxytypes.StoreKey], keys[ibchost.StoreKey], app.IBCKeeper.ClientKeeper, app.IBCKeeper.ConnectionKeeper, app.IBCKeeper.ChannelKeeper, scopedIBCProxyKeeper, &app.IBCKeeper.PortKeeper,
+		appCodec, keys[ibcproxytypes.StoreKey], keys[ibchost.StoreKey], false, app.IBCKeeper.ClientKeeper, app.IBCKeeper.ConnectionKeeper, app.IBCKeeper.ChannelKeeper, scopedIBCProxyKeeper, &app.IBCKeeper.PortKeeper,
 	)
 	proxyModule := ibcproxy.NewAppModule(app.IBCProxyKeeper)
 

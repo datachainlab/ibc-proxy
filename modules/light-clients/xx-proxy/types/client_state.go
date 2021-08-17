@@ -18,8 +18,8 @@ const ProxyClientType string = "proxyclient"
 var _ exported.ClientState = (*ClientState)(nil)
 var _ codectypes.UnpackInterfacesMessage = (*ClientState)(nil)
 
-func NewClientState(upstreamClientID string, proxyClientState *codectypes.Any) *ClientState {
-	return &ClientState{UpstreamClientId: upstreamClientID, ProxyClientState: proxyClientState}
+func NewClientState(upstreamClientID string) *ClientState {
+	return &ClientState{UpstreamClientId: upstreamClientID}
 }
 
 func (cs *ClientState) IsInitialized() bool {
@@ -73,10 +73,18 @@ func (cs *ClientState) GetProofSpecs() []*ics23.ProofSpec {
 // Clients must validate the initial consensus state, and may store any client-specific metadata
 // necessary for correct light client operation
 func (cs *ClientState) Initialize(ctx sdk.Context, cdc codec.BinaryCodec, clientStore sdk.KVStore, consState exported.ConsensusState) error {
-	if cs.ProxyClientState != nil || cs.IbcPrefix != nil || cs.ProxyPrefix != nil {
-		return sdkerrors.Wrap(errors.New("invalid clientState"), "each fields of the clientState must be empty")
-	} else if consState != nil {
-		return sdkerrors.Wrap(errors.New("invalid consensusState"), "each fields of the consensusState must be empty")
+	if cs.TrustedSetup {
+		if cs.ProxyClientState == nil || cs.IbcPrefix == nil || cs.ProxyPrefix == nil {
+			return sdkerrors.Wrap(errors.New("invalid clientState"), "each fields of the clientState must be non-empty")
+		} else if consState == nil {
+			return sdkerrors.Wrap(errors.New("invalid consensusState"), "each fields of the consensusState must be non-empty")
+		}
+	} else {
+		if cs.ProxyClientState != nil || cs.IbcPrefix != nil || cs.ProxyPrefix != nil {
+			return sdkerrors.Wrap(errors.New("invalid clientState"), "each fields of the clientState must be empty")
+		} else if consState != nil {
+			return sdkerrors.Wrap(errors.New("invalid consensusState"), "each fields of the consensusState must be empty")
+		}
 	}
 	return nil
 }

@@ -17,6 +17,7 @@ message ClientState {
   // commitment merkle prefix of the proxy chain.
   ibc.core.commitment.v1.MerklePrefix proxy_prefix = 3;
   ibc.core.commitment.v1.MerklePrefix ibc_prefix = 4;
+  bool trusted_setup = 5;
 }
 
 message ConsensusState {
