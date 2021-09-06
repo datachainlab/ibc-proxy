@@ -23,7 +23,7 @@ func (k *Keeper) ProxyConnectionOpenTry(goCtx context.Context, msg *types.MsgPro
 		return nil, err
 	}
 
-	err = k.ConnOpenTry(ctx, msg.ConnectionId, msg.UpstreamClientId, msg.UpstreamPrefix, msg.Connection, clientState, msg.ProofInit, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight, consensusState)
+	err = k.ConnOpenTry(ctx, msg.ConnectionId, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Connection, clientState, msg.ProofInit, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight, consensusState)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (k *Keeper) ProxyConnectionOpenAck(goCtx context.Context, msg *types.MsgPro
 		return nil, err
 	}
 
-	err = k.ConnOpenAck(ctx, msg.ConnectionId, msg.UpstreamClientId, msg.UpstreamPrefix, msg.Connection, clientState, msg.Version, msg.ProofTry, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight, consensusState)
+	err = k.ConnOpenAck(ctx, msg.ConnectionId, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Connection, clientState, msg.Version, msg.ProofTry, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight, consensusState)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (k *Keeper) ProxyConnectionOpenAck(goCtx context.Context, msg *types.MsgPro
 func (k *Keeper) ProxyConnectionOpenConfirm(goCtx context.Context, msg *types.MsgProxyConnectionOpenConfirm) (*types.MsgProxyConnectionOpenConfirmResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	err := k.ConnOpenConfirm(ctx, msg.ConnectionId, msg.UpstreamClientId, msg.UpstreamPrefix, msg.Connection, msg.ProofAck, msg.ProofHeight)
+	err := k.ConnOpenConfirm(ctx, msg.ConnectionId, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Connection, msg.ProofAck, msg.ProofHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (k *Keeper) ProxyConnectionOpenConfirm(goCtx context.Context, msg *types.Ms
 func (k *Keeper) ProxyChannelOpenTry(goCtx context.Context, msg *types.MsgProxyChannelOpenTry) (*types.MsgProxyChannelOpenTryResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	err := k.ChanOpenTry(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.Order, msg.ConnectionHops, msg.PortId, msg.PreviousChannelId, msg.Counterparty, msg.Version, msg.CounterpartyVersion, msg.ProofInit, msg.ProofHeight)
+	err := k.ChanOpenTry(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Order, msg.ConnectionHops, msg.PortId, msg.PreviousChannelId, msg.Counterparty, msg.Version, msg.CounterpartyVersion, msg.ProofInit, msg.ProofHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (k *Keeper) ProxyChannelOpenTry(goCtx context.Context, msg *types.MsgProxyC
 func (k *Keeper) ProxyChannelOpenAck(goCtx context.Context, msg *types.MsgProxyChannelOpenAck) (*types.MsgProxyChannelOpenAckResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	err := k.ChanOpenAck(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.Order, msg.ConnectionHops, msg.PortId, msg.ChannelId, msg.Counterparty, msg.Version, msg.CounterpartyVersion, msg.ProofTry, msg.ProofHeight)
+	err := k.ChanOpenAck(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Order, msg.ConnectionHops, msg.PortId, msg.ChannelId, msg.Counterparty, msg.Version, msg.CounterpartyVersion, msg.ProofTry, msg.ProofHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (k *Keeper) ProxyChannelOpenAck(goCtx context.Context, msg *types.MsgProxyC
 func (k *Keeper) ProxyChannelOpenConfirm(goCtx context.Context, msg *types.MsgProxyChannelOpenConfirm) (*types.MsgProxyChannelOpenConfirmResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	err := k.ChanOpenConfirm(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.SourceChannelId, msg.CounterpartyPortId, msg.CounterpartyChannelId, msg.ProofAck, msg.ProofHeight)
+	err := k.ChanOpenConfirm(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.SourceChannelId, msg.CounterpartyPortId, msg.CounterpartyChannelId, msg.ProofAck, msg.ProofHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (k *Keeper) ProxyChannelOpenConfirm(goCtx context.Context, msg *types.MsgPr
 func (k *Keeper) ProxyRecvPacket(goCtx context.Context, msg *types.MsgProxyRecvPacket) (*types.MsgProxyRecvPacketResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	err := k.RecvPacket(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.Packet, msg.Proof, msg.ProofHeight)
+	err := k.RecvPacket(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Packet, msg.Proof, msg.ProofHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (k *Keeper) ProxyRecvPacket(goCtx context.Context, msg *types.MsgProxyRecvP
 func (k *Keeper) ProxyAcknowledgePacket(goCtx context.Context, msg *types.MsgProxyAcknowledgePacket) (*types.MsgProxyAcknowledgePacketResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	err := k.AcknowledgePacket(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.Packet, msg.Acknowledgement, msg.Proof, msg.ProofHeight)
+	err := k.AcknowledgePacket(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Packet, msg.Acknowledgement, msg.Proof, msg.ProofHeight)
 	if err != nil {
 		return nil, err
 	}
