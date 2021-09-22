@@ -89,7 +89,7 @@ func (k Keeper) SendProxyRequest(
 		return nil, "", sdkerrors.Wrap(channeltypes.ErrChannelCapabilityNotFound, "module does not own channel capability")
 	}
 
-	proxyClientID, err := k.clientKeeper.CreateClient(ctx, proxytypes.NewClientState(upstreamClientID, nil), nil)
+	proxyClientID, err := k.clientKeeper.CreateClient(ctx, proxytypes.NewClientState(upstreamClientID), nil)
 	if err != nil {
 		return nil, "", err
 	}

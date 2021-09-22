@@ -18,9 +18,10 @@ import (
 )
 
 type Keeper struct {
-	proxyStoreKey sdk.StoreKey
-	ibcStoreKey   sdk.StoreKey
-	cdc           codec.BinaryCodec
+	proxyStoreKey   sdk.StoreKey
+	ibcStoreKey     sdk.StoreKey
+	cdc             codec.BinaryCodec
+	allowALLClients bool
 
 	clientKeeper     types.ClientKeeper
 	connectionKeeper types.ConnectionKeeper
@@ -29,11 +30,12 @@ type Keeper struct {
 	portKeeper       types.PortKeeper
 }
 
-func NewKeeper(cdc codec.BinaryCodec, proxyStoreKey, ibcStoreKey sdk.StoreKey, clientKeeper types.ClientKeeper, connectionKeeper types.ConnectionKeeper, channelKeeper types.ChannelKeeper, scopedKeeper capabilitykeeper.ScopedKeeper, portKeeper types.PortKeeper) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, proxyStoreKey, ibcStoreKey sdk.StoreKey, allowALLClients bool, clientKeeper types.ClientKeeper, connectionKeeper types.ConnectionKeeper, channelKeeper types.ChannelKeeper, scopedKeeper capabilitykeeper.ScopedKeeper, portKeeper types.PortKeeper) Keeper {
 	return Keeper{
-		proxyStoreKey: proxyStoreKey,
-		ibcStoreKey:   ibcStoreKey,
-		cdc:           cdc,
+		proxyStoreKey:   proxyStoreKey,
+		ibcStoreKey:     ibcStoreKey,
+		cdc:             cdc,
+		allowALLClients: allowALLClients,
 
 		clientKeeper:     clientKeeper,
 		connectionKeeper: connectionKeeper,
@@ -80,7 +82,7 @@ func (k Keeper) EnableProxy(ctx sdk.Context, clientID string) error {
 }
 
 func (k Keeper) IsProxyEnabled(ctx sdk.Context, clientID string) bool {
-	return ctx.KVStore(k.proxyStoreKey).Has([]byte(clientID))
+	return k.allowALLClients || ctx.KVStore(k.proxyStoreKey).Has([]byte(clientID))
 }
 
 // AuthenticateCapability wraps the scopedKeeper's AuthenticateCapability function

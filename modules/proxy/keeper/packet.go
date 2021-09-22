@@ -24,13 +24,6 @@ func (k Keeper) RecvPacket(
 		return sdkerrors.Wrap(channeltypes.ErrChannelNotFound, packet.GetDestChannel())
 	}
 
-	if channel.State != channeltypes.OPEN {
-		return sdkerrors.Wrapf(
-			channeltypes.ErrInvalidChannelState,
-			"channel state is not OPEN (got %s)", channel.State.String(),
-		)
-	}
-
 	// packet must come from the channel's counterparty
 	if packet.GetDestPort() != channel.Counterparty.PortId {
 		return sdkerrors.Wrapf(
