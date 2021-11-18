@@ -10,6 +10,26 @@ import (
 
 var _ types.MsgServer = (*Keeper)(nil)
 
+// ProxyClientState implements types.MsgServer
+func (k *Keeper) ProxyClientState(goCtx context.Context, msg *types.MsgProxyClientState) (*types.MsgProxyClientStateResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	clientState, err := clienttypes.UnpackClientState(msg.ClientState)
+	if err != nil {
+		return nil, err
+	}
+	consensusState, err := clienttypes.UnpackConsensusState(msg.ConsensusState)
+	if err != nil {
+		return nil, err
+	}
+
+	err = k.ClientState(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.CounterpartyClientId, clientState, consensusState, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgProxyClientStateResponse{}, nil
+}
+
 // ProxyConnectionOpenTry implements types.MsgServer
 func (k *Keeper) ProxyConnectionOpenTry(goCtx context.Context, msg *types.MsgProxyConnectionOpenTry) (*types.MsgProxyConnectionOpenTryResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)

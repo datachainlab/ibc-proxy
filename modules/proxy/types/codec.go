@@ -14,6 +14,7 @@ import (
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
+		&MsgProxyClientState{},
 		&MsgProxyConnectionOpenTry{},
 		&MsgProxyConnectionOpenAck{},
 		&MsgProxyConnectionOpenConfirm{},

@@ -40,7 +40,7 @@ func (k Keeper) ConnOpenTry(
 	}
 
 	// Check that ChainA stored the clientState provided in the msg
-	if err := k.VerifyClientState(ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, proofClient, clientState); err != nil {
+	if err := k.VerifyClientState(ctx, upstreamClientID, upstreamPrefix, proxyConnection.GetClientID(), proofHeight, proofClient, clientState); err != nil {
 		return err
 	}
 
@@ -53,7 +53,7 @@ func (k Keeper) ConnOpenTry(
 
 	// Check that ChainA stored the correct ConsensusState of chainB or proxy at the given consensusHeight
 	if err := k.VerifyClientConsensusState(
-		ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
+		ctx, upstreamClientID, upstreamPrefix, proxyConnection.GetClientID(), proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
 	); err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (k Keeper) ConnOpenAck(
 	}
 
 	// Check that ChainB stored the clientState provided in the msg
-	if err := k.VerifyClientState(ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, proofClient, clientState); err != nil {
+	if err := k.VerifyClientState(ctx, upstreamClientID, upstreamPrefix, proxyConnection.GetClientID(), proofHeight, proofClient, clientState); err != nil {
 		return err
 	}
 
@@ -106,7 +106,7 @@ func (k Keeper) ConnOpenAck(
 
 	// Ensure that ChainB has stored the correct ConsensusState for chainA at the consensusHeight
 	if err := k.VerifyClientConsensusState(
-		ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
+		ctx, upstreamClientID, upstreamPrefix, proxyConnection.GetClientID(), proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
 	); err != nil {
 		return err
 	}
