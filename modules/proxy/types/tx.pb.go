@@ -6,9 +6,9 @@ package types
 import (
 	context "context"
 	fmt "fmt"
-	types2 "github.com/cosmos/cosmos-sdk/codec/types"
-	types3 "github.com/cosmos/ibc-go/modules/core/02-client/types"
-	types1 "github.com/cosmos/ibc-go/modules/core/03-connection/types"
+	types1 "github.com/cosmos/cosmos-sdk/codec/types"
+	types2 "github.com/cosmos/ibc-go/modules/core/02-client/types"
+	types3 "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 	types4 "github.com/cosmos/ibc-go/modules/core/04-channel/types"
 	types "github.com/cosmos/ibc-go/modules/core/23-commitment/types"
 	_ "github.com/gogo/protobuf/gogoproto"
@@ -33,18 +33,100 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+type MsgProxyClientState struct {
+	UpstreamClientId     string             `protobuf:"bytes,1,opt,name=upstream_client_id,json=upstreamClientId,proto3" json:"upstream_client_id,omitempty"`
+	UpstreamPrefix       types.MerklePrefix `protobuf:"bytes,2,opt,name=upstream_prefix,json=upstreamPrefix,proto3" json:"upstream_prefix"`
+	CounterpartyClientId string             `protobuf:"bytes,3,opt,name=counterparty_client_id,json=counterpartyClientId,proto3" json:"counterparty_client_id,omitempty"`
+	ClientState          *types1.Any        `protobuf:"bytes,4,opt,name=client_state,json=clientState,proto3" json:"client_state,omitempty"`
+	ConsensusState       *types1.Any        `protobuf:"bytes,5,opt,name=consensus_state,json=consensusState,proto3" json:"consensus_state,omitempty"`
+	ProofClient          []byte             `protobuf:"bytes,6,opt,name=proof_client,json=proofClient,proto3" json:"proof_client,omitempty"`
+	ProofConsensus       []byte             `protobuf:"bytes,7,opt,name=proof_consensus,json=proofConsensus,proto3" json:"proof_consensus,omitempty"`
+	ProofHeight          types2.Height      `protobuf:"bytes,8,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
+	ConsensusHeight      types2.Height      `protobuf:"bytes,9,opt,name=consensus_height,json=consensusHeight,proto3" json:"consensus_height"`
+	Signer               string             `protobuf:"bytes,10,opt,name=signer,proto3" json:"signer,omitempty"`
+}
+
+func (m *MsgProxyClientState) Reset()         { *m = MsgProxyClientState{} }
+func (m *MsgProxyClientState) String() string { return proto.CompactTextString(m) }
+func (*MsgProxyClientState) ProtoMessage()    {}
+func (*MsgProxyClientState) Descriptor() ([]byte, []int) {
+	return fileDescriptor_68797dc99f8f4cd2, []int{0}
+}
+func (m *MsgProxyClientState) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgProxyClientState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgProxyClientState.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgProxyClientState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgProxyClientState.Merge(m, src)
+}
+func (m *MsgProxyClientState) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgProxyClientState) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgProxyClientState.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgProxyClientState proto.InternalMessageInfo
+
+type MsgProxyClientStateResponse struct {
+}
+
+func (m *MsgProxyClientStateResponse) Reset()         { *m = MsgProxyClientStateResponse{} }
+func (m *MsgProxyClientStateResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgProxyClientStateResponse) ProtoMessage()    {}
+func (*MsgProxyClientStateResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_68797dc99f8f4cd2, []int{1}
+}
+func (m *MsgProxyClientStateResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgProxyClientStateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgProxyClientStateResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgProxyClientStateResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgProxyClientStateResponse.Merge(m, src)
+}
+func (m *MsgProxyClientStateResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgProxyClientStateResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgProxyClientStateResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgProxyClientStateResponse proto.InternalMessageInfo
+
 type MsgProxyConnectionOpenTry struct {
 	ConnectionId     string               `protobuf:"bytes,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
 	UpstreamClientId string               `protobuf:"bytes,2,opt,name=upstream_client_id,json=upstreamClientId,proto3" json:"upstream_client_id,omitempty"`
 	UpstreamPrefix   types.MerklePrefix   `protobuf:"bytes,3,opt,name=upstream_prefix,json=upstreamPrefix,proto3" json:"upstream_prefix"`
-	Connection       types1.ConnectionEnd `protobuf:"bytes,4,opt,name=connection,proto3" json:"connection"`
-	ClientState      *types2.Any          `protobuf:"bytes,5,opt,name=client_state,json=clientState,proto3" json:"client_state,omitempty"`
-	ConsensusState   *types2.Any          `protobuf:"bytes,6,opt,name=consensus_state,json=consensusState,proto3" json:"consensus_state,omitempty"`
+	Connection       types3.ConnectionEnd `protobuf:"bytes,4,opt,name=connection,proto3" json:"connection"`
+	ClientState      *types1.Any          `protobuf:"bytes,5,opt,name=client_state,json=clientState,proto3" json:"client_state,omitempty"`
+	ConsensusState   *types1.Any          `protobuf:"bytes,6,opt,name=consensus_state,json=consensusState,proto3" json:"consensus_state,omitempty"`
 	ProofInit        []byte               `protobuf:"bytes,7,opt,name=proof_init,json=proofInit,proto3" json:"proof_init,omitempty"`
 	ProofClient      []byte               `protobuf:"bytes,8,opt,name=proof_client,json=proofClient,proto3" json:"proof_client,omitempty"`
 	ProofConsensus   []byte               `protobuf:"bytes,9,opt,name=proof_consensus,json=proofConsensus,proto3" json:"proof_consensus,omitempty"`
-	ProofHeight      types3.Height        `protobuf:"bytes,10,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
-	ConsensusHeight  types3.Height        `protobuf:"bytes,11,opt,name=consensus_height,json=consensusHeight,proto3" json:"consensus_height"`
+	ProofHeight      types2.Height        `protobuf:"bytes,10,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
+	ConsensusHeight  types2.Height        `protobuf:"bytes,11,opt,name=consensus_height,json=consensusHeight,proto3" json:"consensus_height"`
 	Signer           string               `protobuf:"bytes,12,opt,name=signer,proto3" json:"signer,omitempty"`
 }
 
@@ -52,7 +134,7 @@ func (m *MsgProxyConnectionOpenTry) Reset()         { *m = MsgProxyConnectionOpe
 func (m *MsgProxyConnectionOpenTry) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyConnectionOpenTry) ProtoMessage()    {}
 func (*MsgProxyConnectionOpenTry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{0}
+	return fileDescriptor_68797dc99f8f4cd2, []int{2}
 }
 func (m *MsgProxyConnectionOpenTry) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -88,7 +170,7 @@ func (m *MsgProxyConnectionOpenTryResponse) Reset()         { *m = MsgProxyConne
 func (m *MsgProxyConnectionOpenTryResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyConnectionOpenTryResponse) ProtoMessage()    {}
 func (*MsgProxyConnectionOpenTryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{1}
+	return fileDescriptor_68797dc99f8f4cd2, []int{3}
 }
 func (m *MsgProxyConnectionOpenTryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -121,15 +203,15 @@ type MsgProxyConnectionOpenAck struct {
 	ConnectionId     string               `protobuf:"bytes,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
 	UpstreamClientId string               `protobuf:"bytes,2,opt,name=upstream_client_id,json=upstreamClientId,proto3" json:"upstream_client_id,omitempty"`
 	UpstreamPrefix   types.MerklePrefix   `protobuf:"bytes,3,opt,name=upstream_prefix,json=upstreamPrefix,proto3" json:"upstream_prefix"`
-	Connection       types1.ConnectionEnd `protobuf:"bytes,4,opt,name=connection,proto3" json:"connection"`
-	ClientState      *types2.Any          `protobuf:"bytes,5,opt,name=client_state,json=clientState,proto3" json:"client_state,omitempty"`
-	ConsensusState   *types2.Any          `protobuf:"bytes,6,opt,name=consensus_state,json=consensusState,proto3" json:"consensus_state,omitempty"`
-	Version          *types1.Version      `protobuf:"bytes,7,opt,name=version,proto3" json:"version,omitempty"`
+	Connection       types3.ConnectionEnd `protobuf:"bytes,4,opt,name=connection,proto3" json:"connection"`
+	ClientState      *types1.Any          `protobuf:"bytes,5,opt,name=client_state,json=clientState,proto3" json:"client_state,omitempty"`
+	ConsensusState   *types1.Any          `protobuf:"bytes,6,opt,name=consensus_state,json=consensusState,proto3" json:"consensus_state,omitempty"`
+	Version          *types3.Version      `protobuf:"bytes,7,opt,name=version,proto3" json:"version,omitempty"`
 	ProofTry         []byte               `protobuf:"bytes,8,opt,name=proof_try,json=proofTry,proto3" json:"proof_try,omitempty"`
 	ProofClient      []byte               `protobuf:"bytes,9,opt,name=proof_client,json=proofClient,proto3" json:"proof_client,omitempty"`
 	ProofConsensus   []byte               `protobuf:"bytes,10,opt,name=proof_consensus,json=proofConsensus,proto3" json:"proof_consensus,omitempty"`
-	ProofHeight      types3.Height        `protobuf:"bytes,11,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
-	ConsensusHeight  types3.Height        `protobuf:"bytes,12,opt,name=consensus_height,json=consensusHeight,proto3" json:"consensus_height"`
+	ProofHeight      types2.Height        `protobuf:"bytes,11,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
+	ConsensusHeight  types2.Height        `protobuf:"bytes,12,opt,name=consensus_height,json=consensusHeight,proto3" json:"consensus_height"`
 	Signer           string               `protobuf:"bytes,13,opt,name=signer,proto3" json:"signer,omitempty"`
 }
 
@@ -137,7 +219,7 @@ func (m *MsgProxyConnectionOpenAck) Reset()         { *m = MsgProxyConnectionOpe
 func (m *MsgProxyConnectionOpenAck) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyConnectionOpenAck) ProtoMessage()    {}
 func (*MsgProxyConnectionOpenAck) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{2}
+	return fileDescriptor_68797dc99f8f4cd2, []int{4}
 }
 func (m *MsgProxyConnectionOpenAck) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -173,7 +255,7 @@ func (m *MsgProxyConnectionOpenAckResponse) Reset()         { *m = MsgProxyConne
 func (m *MsgProxyConnectionOpenAckResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyConnectionOpenAckResponse) ProtoMessage()    {}
 func (*MsgProxyConnectionOpenAckResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{3}
+	return fileDescriptor_68797dc99f8f4cd2, []int{5}
 }
 func (m *MsgProxyConnectionOpenAckResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -206,9 +288,9 @@ type MsgProxyConnectionOpenConfirm struct {
 	ConnectionId     string               `protobuf:"bytes,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
 	UpstreamClientId string               `protobuf:"bytes,2,opt,name=upstream_client_id,json=upstreamClientId,proto3" json:"upstream_client_id,omitempty"`
 	UpstreamPrefix   types.MerklePrefix   `protobuf:"bytes,3,opt,name=upstream_prefix,json=upstreamPrefix,proto3" json:"upstream_prefix"`
-	Connection       types1.ConnectionEnd `protobuf:"bytes,4,opt,name=connection,proto3" json:"connection"`
+	Connection       types3.ConnectionEnd `protobuf:"bytes,4,opt,name=connection,proto3" json:"connection"`
 	ProofAck         []byte               `protobuf:"bytes,5,opt,name=proof_ack,json=proofAck,proto3" json:"proof_ack,omitempty"`
-	ProofHeight      types3.Height        `protobuf:"bytes,6,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
+	ProofHeight      types2.Height        `protobuf:"bytes,6,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
 	Signer           string               `protobuf:"bytes,7,opt,name=signer,proto3" json:"signer,omitempty"`
 }
 
@@ -216,7 +298,7 @@ func (m *MsgProxyConnectionOpenConfirm) Reset()         { *m = MsgProxyConnectio
 func (m *MsgProxyConnectionOpenConfirm) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyConnectionOpenConfirm) ProtoMessage()    {}
 func (*MsgProxyConnectionOpenConfirm) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{4}
+	return fileDescriptor_68797dc99f8f4cd2, []int{6}
 }
 func (m *MsgProxyConnectionOpenConfirm) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -252,7 +334,7 @@ func (m *MsgProxyConnectionOpenConfirmResponse) Reset()         { *m = MsgProxyC
 func (m *MsgProxyConnectionOpenConfirmResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyConnectionOpenConfirmResponse) ProtoMessage()    {}
 func (*MsgProxyConnectionOpenConfirmResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{5}
+	return fileDescriptor_68797dc99f8f4cd2, []int{7}
 }
 func (m *MsgProxyConnectionOpenConfirmResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -292,7 +374,7 @@ type MsgProxyChannelOpenTry struct {
 	Version             string              `protobuf:"bytes,8,opt,name=version,proto3" json:"version,omitempty"`
 	CounterpartyVersion string              `protobuf:"bytes,9,opt,name=counterparty_version,json=counterpartyVersion,proto3" json:"counterparty_version,omitempty"`
 	ProofInit           []byte              `protobuf:"bytes,10,opt,name=proof_init,json=proofInit,proto3" json:"proof_init,omitempty"`
-	ProofHeight         types3.Height       `protobuf:"bytes,11,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
+	ProofHeight         types2.Height       `protobuf:"bytes,11,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
 	Signer              string              `protobuf:"bytes,12,opt,name=signer,proto3" json:"signer,omitempty"`
 }
 
@@ -300,7 +382,7 @@ func (m *MsgProxyChannelOpenTry) Reset()         { *m = MsgProxyChannelOpenTry{}
 func (m *MsgProxyChannelOpenTry) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyChannelOpenTry) ProtoMessage()    {}
 func (*MsgProxyChannelOpenTry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{6}
+	return fileDescriptor_68797dc99f8f4cd2, []int{8}
 }
 func (m *MsgProxyChannelOpenTry) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -336,7 +418,7 @@ func (m *MsgProxyChannelOpenTryResponse) Reset()         { *m = MsgProxyChannelO
 func (m *MsgProxyChannelOpenTryResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyChannelOpenTryResponse) ProtoMessage()    {}
 func (*MsgProxyChannelOpenTryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{7}
+	return fileDescriptor_68797dc99f8f4cd2, []int{9}
 }
 func (m *MsgProxyChannelOpenTryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -376,7 +458,7 @@ type MsgProxyChannelOpenAck struct {
 	Version             string              `protobuf:"bytes,8,opt,name=version,proto3" json:"version,omitempty"`
 	CounterpartyVersion string              `protobuf:"bytes,9,opt,name=counterparty_version,json=counterpartyVersion,proto3" json:"counterparty_version,omitempty"`
 	ProofTry            []byte              `protobuf:"bytes,10,opt,name=proof_try,json=proofTry,proto3" json:"proof_try,omitempty"`
-	ProofHeight         types3.Height       `protobuf:"bytes,11,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
+	ProofHeight         types2.Height       `protobuf:"bytes,11,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
 	Signer              string              `protobuf:"bytes,12,opt,name=signer,proto3" json:"signer,omitempty"`
 }
 
@@ -384,7 +466,7 @@ func (m *MsgProxyChannelOpenAck) Reset()         { *m = MsgProxyChannelOpenAck{}
 func (m *MsgProxyChannelOpenAck) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyChannelOpenAck) ProtoMessage()    {}
 func (*MsgProxyChannelOpenAck) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{8}
+	return fileDescriptor_68797dc99f8f4cd2, []int{10}
 }
 func (m *MsgProxyChannelOpenAck) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -420,7 +502,7 @@ func (m *MsgProxyChannelOpenAckResponse) Reset()         { *m = MsgProxyChannelO
 func (m *MsgProxyChannelOpenAckResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyChannelOpenAckResponse) ProtoMessage()    {}
 func (*MsgProxyChannelOpenAckResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{9}
+	return fileDescriptor_68797dc99f8f4cd2, []int{11}
 }
 func (m *MsgProxyChannelOpenAckResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -456,7 +538,7 @@ type MsgProxyChannelOpenConfirm struct {
 	CounterpartyPortId    string             `protobuf:"bytes,4,opt,name=counterparty_port_id,json=counterpartyPortId,proto3" json:"counterparty_port_id,omitempty"`
 	CounterpartyChannelId string             `protobuf:"bytes,5,opt,name=counterparty_channel_id,json=counterpartyChannelId,proto3" json:"counterparty_channel_id,omitempty"`
 	ProofAck              []byte             `protobuf:"bytes,6,opt,name=proof_ack,json=proofAck,proto3" json:"proof_ack,omitempty"`
-	ProofHeight           types3.Height      `protobuf:"bytes,7,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
+	ProofHeight           types2.Height      `protobuf:"bytes,7,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
 	Signer                string             `protobuf:"bytes,8,opt,name=signer,proto3" json:"signer,omitempty"`
 }
 
@@ -464,7 +546,7 @@ func (m *MsgProxyChannelOpenConfirm) Reset()         { *m = MsgProxyChannelOpenC
 func (m *MsgProxyChannelOpenConfirm) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyChannelOpenConfirm) ProtoMessage()    {}
 func (*MsgProxyChannelOpenConfirm) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{10}
+	return fileDescriptor_68797dc99f8f4cd2, []int{12}
 }
 func (m *MsgProxyChannelOpenConfirm) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -535,11 +617,11 @@ func (m *MsgProxyChannelOpenConfirm) GetProofAck() []byte {
 	return nil
 }
 
-func (m *MsgProxyChannelOpenConfirm) GetProofHeight() types3.Height {
+func (m *MsgProxyChannelOpenConfirm) GetProofHeight() types2.Height {
 	if m != nil {
 		return m.ProofHeight
 	}
-	return types3.Height{}
+	return types2.Height{}
 }
 
 func (m *MsgProxyChannelOpenConfirm) GetSigner() string {
@@ -556,7 +638,7 @@ func (m *MsgProxyChannelOpenConfirmResponse) Reset()         { *m = MsgProxyChan
 func (m *MsgProxyChannelOpenConfirmResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyChannelOpenConfirmResponse) ProtoMessage()    {}
 func (*MsgProxyChannelOpenConfirmResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{11}
+	return fileDescriptor_68797dc99f8f4cd2, []int{13}
 }
 func (m *MsgProxyChannelOpenConfirmResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -590,7 +672,7 @@ type MsgProxyRecvPacket struct {
 	UpstreamPrefix   types.MerklePrefix `protobuf:"bytes,2,opt,name=upstream_prefix,json=upstreamPrefix,proto3" json:"upstream_prefix"`
 	Packet           types4.Packet      `protobuf:"bytes,3,opt,name=packet,proto3" json:"packet"`
 	Proof            []byte             `protobuf:"bytes,4,opt,name=proof,proto3" json:"proof,omitempty"`
-	ProofHeight      types3.Height      `protobuf:"bytes,5,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
+	ProofHeight      types2.Height      `protobuf:"bytes,5,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
 	Signer           string             `protobuf:"bytes,6,opt,name=signer,proto3" json:"signer,omitempty"`
 }
 
@@ -598,7 +680,7 @@ func (m *MsgProxyRecvPacket) Reset()         { *m = MsgProxyRecvPacket{} }
 func (m *MsgProxyRecvPacket) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyRecvPacket) ProtoMessage()    {}
 func (*MsgProxyRecvPacket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{12}
+	return fileDescriptor_68797dc99f8f4cd2, []int{14}
 }
 func (m *MsgProxyRecvPacket) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -634,7 +716,7 @@ func (m *MsgProxyRecvPacketResponse) Reset()         { *m = MsgProxyRecvPacketRe
 func (m *MsgProxyRecvPacketResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyRecvPacketResponse) ProtoMessage()    {}
 func (*MsgProxyRecvPacketResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{13}
+	return fileDescriptor_68797dc99f8f4cd2, []int{15}
 }
 func (m *MsgProxyRecvPacketResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -669,7 +751,7 @@ type MsgProxyAcknowledgePacket struct {
 	Packet           types4.Packet      `protobuf:"bytes,3,opt,name=packet,proto3" json:"packet"`
 	Acknowledgement  []byte             `protobuf:"bytes,4,opt,name=acknowledgement,proto3" json:"acknowledgement,omitempty"`
 	Proof            []byte             `protobuf:"bytes,5,opt,name=proof,proto3" json:"proof,omitempty"`
-	ProofHeight      types3.Height      `protobuf:"bytes,6,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
+	ProofHeight      types2.Height      `protobuf:"bytes,6,opt,name=proof_height,json=proofHeight,proto3" json:"proof_height"`
 	Signer           string             `protobuf:"bytes,7,opt,name=signer,proto3" json:"signer,omitempty"`
 }
 
@@ -677,7 +759,7 @@ func (m *MsgProxyAcknowledgePacket) Reset()         { *m = MsgProxyAcknowledgePa
 func (m *MsgProxyAcknowledgePacket) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyAcknowledgePacket) ProtoMessage()    {}
 func (*MsgProxyAcknowledgePacket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{14}
+	return fileDescriptor_68797dc99f8f4cd2, []int{16}
 }
 func (m *MsgProxyAcknowledgePacket) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -713,7 +795,7 @@ func (m *MsgProxyAcknowledgePacketResponse) Reset()         { *m = MsgProxyAckno
 func (m *MsgProxyAcknowledgePacketResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgProxyAcknowledgePacketResponse) ProtoMessage()    {}
 func (*MsgProxyAcknowledgePacketResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_68797dc99f8f4cd2, []int{15}
+	return fileDescriptor_68797dc99f8f4cd2, []int{17}
 }
 func (m *MsgProxyAcknowledgePacketResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -743,6 +825,8 @@ func (m *MsgProxyAcknowledgePacketResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_MsgProxyAcknowledgePacketResponse proto.InternalMessageInfo
 
 func init() {
+	proto.RegisterType((*MsgProxyClientState)(nil), "ibc.proxy.v1.MsgProxyClientState")
+	proto.RegisterType((*MsgProxyClientStateResponse)(nil), "ibc.proxy.v1.MsgProxyClientStateResponse")
 	proto.RegisterType((*MsgProxyConnectionOpenTry)(nil), "ibc.proxy.v1.MsgProxyConnectionOpenTry")
 	proto.RegisterType((*MsgProxyConnectionOpenTryResponse)(nil), "ibc.proxy.v1.MsgProxyConnectionOpenTryResponse")
 	proto.RegisterType((*MsgProxyConnectionOpenAck)(nil), "ibc.proxy.v1.MsgProxyConnectionOpenAck")
@@ -764,83 +848,88 @@ func init() {
 func init() { proto.RegisterFile("ibc/modules/proxy/tx.proto", fileDescriptor_68797dc99f8f4cd2) }
 
 var fileDescriptor_68797dc99f8f4cd2 = []byte{
-	// 1213 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x58, 0xcd, 0x6f, 0x1b, 0x55,
-	0x10, 0xb7, 0xe3, 0xd8, 0x8e, 0x27, 0x6e, 0xdc, 0xbe, 0x84, 0x64, 0xeb, 0x12, 0xc7, 0x49, 0x53,
-	0xc5, 0x82, 0xb0, 0x1b, 0xb7, 0x02, 0x54, 0x24, 0x0e, 0x69, 0x84, 0xd4, 0x28, 0x8a, 0x12, 0xb9,
-	0x88, 0x03, 0x12, 0xb2, 0xd6, 0xeb, 0x17, 0x7b, 0x65, 0x7b, 0xdf, 0xea, 0xed, 0xda, 0xc4, 0x17,
-	0xc4, 0x91, 0x0b, 0x12, 0x47, 0x8e, 0xbd, 0x71, 0xe4, 0xdf, 0xe8, 0x01, 0x89, 0x1e, 0x39, 0x41,
-	0x95, 0x5c, 0xf8, 0x33, 0xd0, 0xfb, 0xd8, 0x0f, 0x7f, 0x6c, 0xbc, 0x25, 0x05, 0x0a, 0xe5, 0xb6,
-	0xef, 0xcd, 0xef, 0xcd, 0xbc, 0x99, 0xf9, 0xcd, 0xcc, 0xee, 0x42, 0xd1, 0x6c, 0x18, 0x5a, 0x8f,
-	0x34, 0xfb, 0x5d, 0xec, 0x68, 0x36, 0x25, 0xe7, 0x43, 0xcd, 0x3d, 0x57, 0x6d, 0x4a, 0x5c, 0x82,
-	0xf2, 0x66, 0xc3, 0x50, 0xf9, 0x9e, 0x3a, 0xa8, 0x16, 0x57, 0x5a, 0xa4, 0x45, 0xb8, 0x40, 0x63,
-	0x4f, 0x02, 0x53, 0xdc, 0x60, 0xe7, 0x0d, 0x42, 0xb1, 0x66, 0x74, 0x4d, 0x6c, 0xb9, 0xda, 0xa0,
-	0x2a, 0x9f, 0x24, 0x60, 0x27, 0x00, 0x10, 0xcb, 0xc2, 0x86, 0x6b, 0x12, 0x8b, 0x83, 0xfc, 0x95,
-	0x04, 0x6e, 0x06, 0xc0, 0xb6, 0x6e, 0x59, 0xb8, 0xcb, 0x51, 0xe2, 0x71, 0x8a, 0xae, 0x5e, 0xcf,
-	0x74, 0x7b, 0x9e, 0x41, 0x7f, 0x25, 0x81, 0xb7, 0x5b, 0x84, 0xb4, 0xba, 0x58, 0xe3, 0xab, 0x46,
-	0xff, 0x4c, 0xd3, 0xad, 0xa1, 0x10, 0x6d, 0xfd, 0x90, 0x86, 0xdb, 0xc7, 0x4e, 0xeb, 0x94, 0xb9,
-	0x75, 0xe0, 0xdf, 0xe1, 0xc4, 0xc6, 0xd6, 0xa7, 0x74, 0x88, 0xee, 0xc2, 0x8d, 0xe0, 0x62, 0x75,
-	0xb3, 0xa9, 0x24, 0xcb, 0xc9, 0x4a, 0xae, 0x96, 0x0f, 0x36, 0x0f, 0x9b, 0x68, 0x17, 0x50, 0xdf,
-	0x76, 0x5c, 0x8a, 0xf5, 0x5e, 0x5d, 0xf8, 0xca, 0x90, 0x73, 0x1c, 0x79, 0xd3, 0x93, 0x1c, 0x70,
-	0xc1, 0x61, 0x13, 0x3d, 0x81, 0x82, 0x8f, 0xb6, 0x29, 0x3e, 0x33, 0xcf, 0x95, 0x54, 0x39, 0x59,
-	0x59, 0xbc, 0xbf, 0xad, 0xb2, 0xf8, 0x32, 0x77, 0xd4, 0x90, 0x03, 0x83, 0xaa, 0x7a, 0x8c, 0x69,
-	0xa7, 0x8b, 0x4f, 0x39, 0xf6, 0xd1, 0xfc, 0xb3, 0x5f, 0x37, 0x12, 0xb5, 0x25, 0x4f, 0x85, 0xd8,
-	0x45, 0x47, 0x00, 0xc1, 0x95, 0x94, 0x79, 0xae, 0xef, 0x5e, 0x58, 0x9f, 0x1f, 0xdc, 0x41, 0x55,
-	0x0d, 0xdc, 0xfc, 0xc4, 0x6a, 0x4a, 0x85, 0xa1, 0xe3, 0xe8, 0x43, 0xc8, 0x4b, 0x37, 0x1c, 0x57,
-	0x77, 0xb1, 0x92, 0xe6, 0xea, 0x56, 0x54, 0x11, 0x44, 0xd5, 0x0b, 0xa2, 0xba, 0x6f, 0x0d, 0x6b,
-	0x8b, 0x02, 0xf9, 0x84, 0x01, 0xd1, 0xc7, 0x50, 0x30, 0x88, 0xe5, 0x60, 0xcb, 0xe9, 0x3b, 0xf2,
-	0x6c, 0xe6, 0x8a, 0xb3, 0x4b, 0x3e, 0x58, 0x1c, 0x5f, 0x07, 0xb0, 0x29, 0x21, 0x67, 0x75, 0xd3,
-	0x32, 0x5d, 0x25, 0x5b, 0x4e, 0x56, 0xf2, 0xb5, 0x1c, 0xdf, 0x39, 0xb4, 0x4c, 0x17, 0x6d, 0x42,
-	0x5e, 0x88, 0x85, 0x49, 0x65, 0x81, 0x03, 0x16, 0xf9, 0x9e, 0x88, 0x2e, 0xda, 0x81, 0x82, 0x84,
-	0x78, 0x9a, 0x95, 0x1c, 0x47, 0x2d, 0x09, 0x94, 0xb7, 0x8b, 0x0e, 0x3c, 0x5d, 0x6d, 0x6c, 0xb6,
-	0xda, 0xae, 0x02, 0xfc, 0x9a, 0xc5, 0x50, 0xc4, 0x04, 0x67, 0x07, 0x55, 0xf5, 0x31, 0x47, 0xc8,
-	0x30, 0x09, 0x6b, 0x62, 0x0b, 0x1d, 0xc1, 0xcd, 0xc0, 0x5d, 0xa9, 0x68, 0x31, 0xa6, 0xa2, 0x20,
-	0x50, 0x52, 0xd9, 0x2a, 0x64, 0x1c, 0xb3, 0x65, 0x61, 0xaa, 0xe4, 0x39, 0x71, 0xe4, 0xea, 0xa3,
-	0x85, 0x6f, 0x9e, 0x6e, 0x24, 0x7e, 0x7f, 0xba, 0x91, 0xd8, 0xba, 0x0b, 0x9b, 0x91, 0x44, 0xad,
-	0x61, 0xc7, 0x66, 0x0a, 0xb7, 0x5e, 0x44, 0xd2, 0x79, 0xdf, 0xe8, 0xfc, 0x4f, 0xe7, 0xbf, 0x93,
-	0xce, 0x0f, 0x21, 0x3b, 0xc0, 0xd4, 0x61, 0x1e, 0x64, 0xf9, 0xb1, 0x8d, 0x28, 0x0f, 0x3e, 0x13,
-	0xb0, 0x9a, 0x87, 0x47, 0x77, 0x40, 0xf0, 0xbe, 0xee, 0xd2, 0xa1, 0xe4, 0xf9, 0x02, 0xdf, 0x60,
-	0x3d, 0x69, 0xbc, 0x0e, 0x72, 0xb1, 0xea, 0x00, 0x62, 0xd5, 0xc1, 0xe2, 0xab, 0xaa, 0x83, 0xfc,
-	0xf5, 0xeb, 0xe0, 0xc6, 0xcb, 0xd6, 0xc1, 0xbe, 0xd1, 0xf1, 0xeb, 0xe0, 0xfb, 0x14, 0xac, 0x4f,
-	0x47, 0x1d, 0x10, 0xeb, 0xcc, 0xa4, 0xbd, 0x37, 0xb3, 0x16, 0x7c, 0x62, 0xe9, 0x46, 0x87, 0x17,
-	0x82, 0x47, 0x2c, 0xd6, 0x1d, 0xc6, 0xc9, 0x90, 0xf9, 0x33, 0x64, 0x08, 0xf2, 0x97, 0x8d, 0xc8,
-	0xdf, 0x0e, 0xdc, 0xbb, 0x32, 0x33, 0x7e, 0x0e, 0x7f, 0x9b, 0x87, 0x55, 0x1f, 0x29, 0x06, 0xbf,
-	0x37, 0x97, 0xa7, 0xe7, 0x25, 0x19, 0x3f, 0x2f, 0x73, 0xd7, 0xce, 0xcb, 0x1e, 0xa4, 0x09, 0x6d,
-	0x62, 0xca, 0x53, 0xbc, 0x34, 0x12, 0x26, 0xf9, 0x92, 0x32, 0xa8, 0xaa, 0x27, 0x0c, 0x51, 0x13,
-	0x40, 0x56, 0x95, 0x21, 0xc6, 0xb5, 0x89, 0xed, 0x28, 0xf3, 0xe5, 0x54, 0x25, 0xc7, 0x3b, 0x87,
-	0xdc, 0x7e, 0x4c, 0x6c, 0x07, 0xad, 0x41, 0xd6, 0x26, 0x94, 0xbb, 0x94, 0x16, 0x41, 0x64, 0xcb,
-	0xc3, 0x26, 0x52, 0x61, 0xd9, 0xa6, 0x78, 0x60, 0x92, 0xbe, 0x53, 0x97, 0x56, 0x18, 0x28, 0xc3,
-	0x41, 0xb7, 0x3c, 0x91, 0x8c, 0xd5, 0x61, 0x13, 0x1d, 0x41, 0xde, 0x20, 0x7d, 0xcb, 0xc5, 0xd4,
-	0xd6, 0xa9, 0x3b, 0x94, 0x7d, 0x68, 0x73, 0xea, 0x55, 0x0f, 0x42, 0x40, 0xe9, 0xf2, 0xc8, 0x61,
-	0xa4, 0x04, 0xfd, 0x6c, 0x81, 0x1b, 0xf4, 0xdb, 0x55, 0x15, 0x56, 0xc2, 0xc8, 0xba, 0x07, 0xcb,
-	0x71, 0xd8, 0x72, 0x58, 0x26, 0x5b, 0xdd, 0xd8, 0xac, 0x87, 0xf1, 0x59, 0xff, 0x4a, 0xfa, 0xd2,
-	0xec, 0x91, 0x5a, 0x86, 0xd2, 0x74, 0x82, 0xf9, 0x1c, 0xfc, 0x69, 0x3a, 0x07, 0x59, 0xb9, 0xbc,
-	0xa1, 0x1c, 0x5c, 0x07, 0x98, 0xa0, 0x5e, 0xce, 0xf8, 0x17, 0x50, 0x6e, 0x64, 0xa8, 0xc2, 0xd8,
-	0x50, 0xfd, 0x47, 0x09, 0x17, 0x1e, 0x5c, 0x3f, 0xa6, 0xa0, 0x38, 0x05, 0xe2, 0x4d, 0xad, 0xd7,
-	0x80, 0x74, 0xef, 0xc0, 0x2d, 0x87, 0xf4, 0xa9, 0x81, 0xc3, 0x2d, 0x28, 0xc5, 0x6f, 0x50, 0x10,
-	0x82, 0xa0, 0x01, 0xed, 0x8d, 0xa5, 0xc9, 0xa3, 0xd4, 0x3c, 0x87, 0xa3, 0xb0, 0xec, 0x54, 0xd0,
-	0xeb, 0x03, 0x58, 0x1b, 0x39, 0x11, 0xb2, 0x21, 0x78, 0xf8, 0x56, 0x58, 0x1c, 0x58, 0x1a, 0x99,
-	0x6c, 0x99, 0x19, 0x93, 0x2d, 0x7b, 0xbd, 0xec, 0x2e, 0x84, 0xb3, 0xbb, 0xb5, 0x0d, 0x5b, 0xd1,
-	0x09, 0xf3, 0xf3, 0xfa, 0xf3, 0x1c, 0x20, 0x0f, 0x56, 0xc3, 0xc6, 0xe0, 0x54, 0x37, 0x3a, 0xd8,
-	0x7d, 0x1d, 0xf2, 0xf9, 0x10, 0x32, 0x36, 0xbf, 0x8c, 0x7c, 0x59, 0xb9, 0x33, 0xb5, 0x56, 0xc5,
-	0x7d, 0xa5, 0x0a, 0x79, 0x00, 0xad, 0x40, 0x9a, 0x47, 0x88, 0xe7, 0x33, 0x5f, 0x13, 0x8b, 0x89,
-	0x68, 0xa7, 0xaf, 0x17, 0xed, 0x4c, 0x44, 0x2d, 0xbd, 0x1d, 0x14, 0x4a, 0x10, 0x50, 0x3f, 0xde,
-	0x5f, 0xa7, 0x82, 0x0f, 0xa1, 0x7d, 0xa3, 0x63, 0x91, 0x2f, 0xbb, 0xb8, 0xd9, 0xc2, 0xff, 0x89,
-	0xb0, 0x57, 0xa0, 0xa0, 0x07, 0x2e, 0x31, 0x9b, 0x32, 0x01, 0xe3, 0xdb, 0x41, 0x82, 0xd2, 0x57,
-	0x25, 0xe8, 0x2f, 0x7a, 0xd1, 0x0b, 0xbd, 0xa8, 0x4f, 0x64, 0xc0, 0xcb, 0xd3, 0xfd, 0x6f, 0xb3,
-	0x90, 0x3a, 0x76, 0x5a, 0x88, 0xc2, 0x6a, 0xc4, 0x3f, 0x98, 0x1d, 0x35, 0xfc, 0xdf, 0x49, 0x8d,
-	0xfc, 0x06, 0x2e, 0x6a, 0x31, 0x81, 0x9e, 0xed, 0x08, 0x9b, 0xac, 0x61, 0xc4, 0xb2, 0xb9, 0x6f,
-	0x74, 0xe2, 0xd9, 0x0c, 0xf5, 0x77, 0xf4, 0x15, 0x14, 0xaf, 0xf8, 0x28, 0x79, 0x37, 0x8e, 0x3a,
-	0x09, 0x2e, 0x3e, 0x78, 0x09, 0xb0, 0x6f, 0xdf, 0x84, 0xe5, 0x69, 0x2f, 0xd4, 0xdb, 0x11, 0xba,
-	0x46, 0x50, 0xc5, 0xdd, 0x38, 0xa8, 0xab, 0x4c, 0xb1, 0xd8, 0xce, 0x36, 0xc5, 0x02, 0xbb, 0x1b,
-	0x07, 0xe5, 0x9b, 0xea, 0xc3, 0x5a, 0xd4, 0xc4, 0xac, 0xcc, 0x54, 0xe4, 0xc5, 0x73, 0x2f, 0x2e,
-	0xd2, 0x37, 0xfb, 0x05, 0x14, 0xc6, 0x1b, 0x7a, 0x79, 0xba, 0x92, 0x00, 0x51, 0xac, 0xcc, 0x42,
-	0x4c, 0xf0, 0x73, 0xb2, 0x7f, 0x45, 0xf0, 0x73, 0x02, 0x18, 0xc5, 0xcf, 0xc8, 0x7a, 0x7c, 0x74,
-	0xf2, 0xec, 0xa2, 0x94, 0x7c, 0x7e, 0x51, 0x4a, 0xbe, 0xb8, 0x28, 0x25, 0xbf, 0xbb, 0x2c, 0x25,
-	0x9e, 0x5f, 0x96, 0x12, 0xbf, 0x5c, 0x96, 0x12, 0x9f, 0xbf, 0xdf, 0x32, 0xdd, 0x76, 0xbf, 0xc1,
-	0x3a, 0x9d, 0xd6, 0xd4, 0x5d, 0xdd, 0x68, 0xeb, 0xa6, 0xd5, 0xd5, 0x1b, 0x9a, 0xd9, 0x30, 0xde,
-	0x13, 0xbf, 0x8a, 0xc7, 0x7e, 0x1c, 0x0f, 0x6d, 0xec, 0x34, 0x32, 0xfc, 0x27, 0xc9, 0x83, 0x3f,
-	0x02, 0x00, 0x00, 0xff, 0xff, 0x80, 0x4f, 0x3c, 0x96, 0x5a, 0x16, 0x00, 0x00,
+	// 1288 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x59, 0xcd, 0x6f, 0xe3, 0x44,
+	0x14, 0x4f, 0x36, 0xdf, 0xaf, 0xd9, 0xa6, 0xeb, 0x96, 0x36, 0xeb, 0xd2, 0x34, 0xed, 0x76, 0xd5,
+	0x00, 0xc5, 0x6e, 0x76, 0xf9, 0xd0, 0x22, 0x71, 0xe8, 0x56, 0x48, 0x5b, 0x55, 0x55, 0xab, 0x2c,
+	0xe2, 0x80, 0x84, 0x8a, 0xe3, 0x4c, 0x13, 0x2b, 0x89, 0xc7, 0xb2, 0x9d, 0xd0, 0x5c, 0x10, 0x47,
+	0x8e, 0x1c, 0x39, 0xee, 0x8d, 0x23, 0xff, 0x05, 0xda, 0x03, 0x12, 0x7b, 0xe4, 0x04, 0xab, 0xf6,
+	0xc2, 0x8d, 0x7f, 0x01, 0x79, 0x66, 0x3c, 0x76, 0x12, 0x3b, 0x71, 0x49, 0x81, 0xc2, 0x72, 0x8b,
+	0x67, 0x7e, 0xf3, 0x3e, 0x7f, 0xef, 0xbd, 0xb1, 0x03, 0xa2, 0x56, 0x57, 0xe5, 0x2e, 0x6e, 0xf4,
+	0x3a, 0xc8, 0x92, 0x0d, 0x13, 0x9f, 0x0f, 0x64, 0xfb, 0x5c, 0x32, 0x4c, 0x6c, 0x63, 0x21, 0xaf,
+	0xd5, 0x55, 0x89, 0xac, 0x49, 0xfd, 0xaa, 0xb8, 0xd4, 0xc4, 0x4d, 0x4c, 0x36, 0x64, 0xe7, 0x17,
+	0xc5, 0x88, 0xeb, 0xce, 0x79, 0x15, 0x9b, 0x48, 0x56, 0x3b, 0x1a, 0xd2, 0x6d, 0xb9, 0x5f, 0x65,
+	0xbf, 0x18, 0x60, 0xdb, 0x03, 0x60, 0x5d, 0x47, 0xaa, 0xad, 0x61, 0x9d, 0x80, 0xf8, 0x13, 0x03,
+	0x6e, 0x78, 0xc0, 0x96, 0xa2, 0xeb, 0xa8, 0x43, 0x50, 0xf4, 0x67, 0x80, 0xac, 0x6e, 0x57, 0xb3,
+	0xbb, 0xae, 0x42, 0xfe, 0xc4, 0x80, 0x77, 0x9b, 0x18, 0x37, 0x3b, 0x48, 0x26, 0x4f, 0xf5, 0xde,
+	0x99, 0xac, 0xe8, 0x03, 0xba, 0xb5, 0xf9, 0x43, 0x12, 0x16, 0x8f, 0xac, 0xe6, 0x89, 0xe3, 0xd6,
+	0x3e, 0x31, 0xf4, 0xa9, 0xad, 0xd8, 0x48, 0xd8, 0x01, 0xa1, 0x67, 0x58, 0xb6, 0x89, 0x94, 0xee,
+	0x29, 0x75, 0xe0, 0x54, 0x6b, 0x14, 0xe3, 0xe5, 0x78, 0x25, 0x57, 0x5b, 0x70, 0x77, 0xe8, 0x81,
+	0x83, 0x86, 0xf0, 0x14, 0x0a, 0x1c, 0x6d, 0x98, 0xe8, 0x4c, 0x3b, 0x2f, 0xde, 0x2a, 0xc7, 0x2b,
+	0x73, 0x0f, 0xb6, 0x24, 0x27, 0x68, 0x8e, 0x8d, 0x92, 0xcf, 0xaa, 0x7e, 0x55, 0x3a, 0x42, 0x66,
+	0xbb, 0x83, 0x4e, 0x08, 0xf6, 0x71, 0xf2, 0xf9, 0x2f, 0xeb, 0xb1, 0xda, 0xbc, 0x2b, 0x82, 0xae,
+	0x0a, 0xef, 0xc0, 0xb2, 0x8a, 0x7b, 0xba, 0x8d, 0x4c, 0x43, 0x31, 0xed, 0x81, 0xcf, 0x8c, 0x04,
+	0x31, 0x63, 0xc9, 0xbf, 0xcb, 0x4d, 0x79, 0x1f, 0xf2, 0x0c, 0x68, 0x39, 0x8e, 0x14, 0x93, 0xc4,
+	0x8e, 0x25, 0x89, 0x86, 0x40, 0x72, 0x43, 0x20, 0xed, 0xe9, 0x83, 0xda, 0x9c, 0xea, 0xf3, 0xf8,
+	0x43, 0x28, 0xa8, 0x58, 0xb7, 0x90, 0x6e, 0xf5, 0x2c, 0x76, 0x36, 0x35, 0xe1, 0xec, 0x3c, 0x07,
+	0xd3, 0xe3, 0x1b, 0x90, 0x37, 0x4c, 0x8c, 0xcf, 0x98, 0x99, 0xc5, 0x74, 0x39, 0x5e, 0xc9, 0xd7,
+	0xe6, 0xc8, 0x1a, 0x35, 0x4e, 0xd8, 0x86, 0x02, 0x83, 0xb8, 0x47, 0x8b, 0x19, 0x82, 0x9a, 0xa7,
+	0x28, 0x77, 0x55, 0xd8, 0x77, 0x65, 0xb5, 0x90, 0xd6, 0x6c, 0xd9, 0xc5, 0x2c, 0xb1, 0x43, 0xf4,
+	0xc5, 0x92, 0x52, 0xaa, 0x5f, 0x95, 0x9e, 0x10, 0x04, 0x8b, 0x20, 0xd5, 0x46, 0x97, 0x84, 0x43,
+	0x58, 0xf0, 0xfc, 0x61, 0x82, 0x72, 0x11, 0x05, 0x79, 0x91, 0x60, 0xc2, 0x96, 0x21, 0x6d, 0x69,
+	0x4d, 0x1d, 0x99, 0x45, 0x20, 0xb1, 0x67, 0x4f, 0x1f, 0x64, 0xbf, 0x7e, 0xb6, 0x1e, 0xfb, 0xed,
+	0xd9, 0x7a, 0x6c, 0x73, 0x0d, 0x56, 0x03, 0x78, 0x54, 0x43, 0x96, 0xe1, 0x88, 0xda, 0xfc, 0x2e,
+	0x05, 0x77, 0xf9, 0x3e, 0xe7, 0xfa, 0xb1, 0x81, 0xf4, 0x8f, 0xcd, 0x81, 0x70, 0x0f, 0x6e, 0x7b,
+	0x05, 0xe0, 0x11, 0x2d, 0xef, 0x2d, 0x1e, 0x34, 0x42, 0x28, 0x79, 0x2b, 0x3a, 0x25, 0x13, 0x33,
+	0x53, 0xf2, 0x10, 0xc0, 0x33, 0x89, 0x51, 0xeb, 0xbe, 0x5f, 0x1e, 0x2f, 0xe2, 0x7e, 0x55, 0xf2,
+	0xdc, 0xfc, 0x48, 0x6f, 0x30, 0x81, 0xbe, 0xe3, 0x63, 0x4c, 0x4d, 0xcd, 0xc0, 0xd4, 0xf4, 0x15,
+	0x98, 0xba, 0x06, 0x40, 0xd9, 0xa5, 0xe9, 0x9a, 0xcd, 0x18, 0x98, 0x23, 0x2b, 0x07, 0xba, 0x66,
+	0x8f, 0x11, 0x39, 0x1b, 0x89, 0xc8, 0xb9, 0x48, 0x44, 0x86, 0xeb, 0x22, 0xf2, 0xdc, 0xec, 0x44,
+	0xce, 0x87, 0x10, 0xf9, 0x1e, 0x6c, 0x84, 0x12, 0x95, 0xd3, 0xf9, 0x65, 0x28, 0x9d, 0xf7, 0xd4,
+	0xf6, 0xff, 0x74, 0xfe, 0x3b, 0xe9, 0xfc, 0x08, 0x32, 0x7d, 0x64, 0x5a, 0x8e, 0x07, 0x19, 0x72,
+	0x6c, 0x3d, 0xcc, 0x83, 0x4f, 0x28, 0xac, 0xe6, 0xe2, 0x85, 0x55, 0xa0, 0xbc, 0x3f, 0xb5, 0xcd,
+	0x01, 0xe3, 0x79, 0x96, 0x2c, 0x38, 0x3d, 0x69, 0xb4, 0x0e, 0x72, 0x91, 0xea, 0x00, 0x22, 0xd5,
+	0xc1, 0xdc, 0x75, 0xd5, 0x41, 0x7e, 0xf6, 0x3a, 0xb8, 0x7d, 0xd5, 0x3a, 0xd8, 0x53, 0xdb, 0xbc,
+	0x0e, 0xbe, 0x4d, 0xc0, 0x5a, 0x30, 0x6a, 0x1f, 0xeb, 0x67, 0x9a, 0xd9, 0x7d, 0x35, 0x6b, 0x81,
+	0x13, 0x4b, 0x51, 0xdb, 0xa4, 0x10, 0x5c, 0x62, 0x39, 0xdd, 0x61, 0x94, 0x0c, 0xe9, 0x3f, 0x43,
+	0x06, 0x2f, 0x7f, 0x99, 0x90, 0xfc, 0x6d, 0xc3, 0xfd, 0x89, 0x99, 0xe1, 0x39, 0xfc, 0x35, 0x09,
+	0xcb, 0x1c, 0x49, 0x2f, 0x98, 0xee, 0x5c, 0xbe, 0x01, 0xb7, 0xc0, 0x5d, 0x48, 0x61, 0xb3, 0x81,
+	0x4c, 0x92, 0xe2, 0xf9, 0xa1, 0x30, 0xb1, 0xcb, 0x70, 0xbf, 0x2a, 0x1d, 0x3b, 0x88, 0x1a, 0x05,
+	0x3a, 0x55, 0xe9, 0x63, 0x5c, 0x0b, 0x1b, 0x56, 0x31, 0x59, 0x4e, 0x54, 0x72, 0xa4, 0x73, 0xb0,
+	0xe5, 0x27, 0xd8, 0xb0, 0x84, 0x15, 0xc8, 0x18, 0xd8, 0x24, 0x2e, 0xa5, 0x68, 0x10, 0x9d, 0xc7,
+	0x83, 0x86, 0x20, 0xc1, 0xa2, 0x61, 0xa2, 0xbe, 0x86, 0x7b, 0xd6, 0x29, 0xd3, 0xe2, 0x80, 0xd2,
+	0x04, 0x74, 0xc7, 0xdd, 0x62, 0xb1, 0x3a, 0x68, 0x08, 0x87, 0x90, 0xf7, 0xdf, 0x45, 0x59, 0x1f,
+	0xda, 0x08, 0x34, 0x75, 0xdf, 0x07, 0x64, 0x2e, 0x0f, 0x1d, 0x16, 0x8a, 0x5e, 0x3f, 0xcb, 0x12,
+	0x85, 0xbc, 0x5d, 0x55, 0x61, 0xe8, 0xca, 0x7b, 0xea, 0xc2, 0x72, 0x04, 0xb6, 0xe8, 0xdf, 0x63,
+	0xad, 0x6e, 0x64, 0xd6, 0xc3, 0xe8, 0xac, 0xbf, 0x96, 0xbe, 0x34, 0x7d, 0xa4, 0x96, 0xa1, 0x14,
+	0x4c, 0x30, 0xce, 0xc1, 0x1f, 0x83, 0x39, 0xe8, 0x94, 0xcb, 0x2b, 0xca, 0xc1, 0x35, 0x80, 0x31,
+	0xea, 0xe5, 0xd4, 0x7f, 0x01, 0xe5, 0x86, 0x86, 0x2a, 0x8c, 0x0c, 0xd5, 0x7f, 0x94, 0x70, 0xfe,
+	0xc1, 0xf5, 0x7d, 0x02, 0xc4, 0x00, 0x88, 0x3b, 0xb5, 0x6e, 0x00, 0xe9, 0xde, 0x84, 0x3b, 0x16,
+	0xee, 0x99, 0x2a, 0xf2, 0xb7, 0x20, 0xfa, 0xe6, 0x5b, 0xa0, 0x1b, 0x5e, 0x03, 0xda, 0x1d, 0x49,
+	0x93, 0x4b, 0xa9, 0x24, 0x81, 0x0b, 0xfe, 0xbd, 0x13, 0x4a, 0xaf, 0xf7, 0x60, 0x65, 0xf8, 0xe5,
+	0xda, 0xd3, 0x41, 0x79, 0xf8, 0xda, 0xd0, 0xdb, 0x35, 0xd7, 0x34, 0x34, 0xd9, 0xd2, 0x53, 0x26,
+	0x5b, 0x66, 0xb6, 0xec, 0x66, 0xfd, 0xd9, 0xdd, 0xdc, 0x82, 0xcd, 0xf0, 0x84, 0xf1, 0xbc, 0xfe,
+	0x74, 0x0b, 0x04, 0x17, 0x56, 0x43, 0x6a, 0xff, 0x44, 0x51, 0xdb, 0xc8, 0xbe, 0x09, 0xf9, 0x7c,
+	0x04, 0x69, 0x83, 0x18, 0xc3, 0x2e, 0x2b, 0xab, 0x81, 0xb5, 0x4a, 0xed, 0x65, 0x22, 0xd8, 0x01,
+	0x61, 0x09, 0x52, 0x24, 0x42, 0x24, 0x9f, 0xf9, 0x1a, 0x7d, 0x18, 0x8b, 0x76, 0x6a, 0xb6, 0x68,
+	0xa7, 0x43, 0x6a, 0xe9, 0x75, 0xaf, 0x50, 0xbc, 0x80, 0xf2, 0x78, 0x7f, 0x95, 0xf0, 0x5e, 0x84,
+	0xf6, 0xd4, 0xb6, 0x8e, 0xbf, 0xe8, 0xa0, 0x46, 0x13, 0xfd, 0x27, 0xc2, 0x5e, 0x81, 0x82, 0xe2,
+	0xb9, 0xe4, 0xe8, 0x64, 0x09, 0x18, 0x5d, 0xf6, 0x12, 0x94, 0x9a, 0x94, 0xa0, 0xbf, 0xe8, 0xa2,
+	0xe7, 0xbb, 0xa8, 0x8f, 0x65, 0xc0, 0xcd, 0xd3, 0x83, 0xdf, 0x33, 0x90, 0x38, 0xb2, 0x9a, 0xc2,
+	0xe7, 0xb0, 0x30, 0xf6, 0xad, 0x8f, 0x4e, 0x0d, 0xf7, 0xcb, 0xa6, 0x14, 0xf0, 0x19, 0x47, 0x7c,
+	0x63, 0x2a, 0xc4, 0xd5, 0x24, 0x98, 0xb0, 0x1c, 0xf2, 0x95, 0x67, 0x3b, 0x44, 0xc8, 0x28, 0x50,
+	0x94, 0x23, 0x02, 0xa7, 0xe8, 0x74, 0x5a, 0x52, 0x24, 0x9d, 0x7b, 0x6a, 0x3b, 0x9a, 0x4e, 0xdf,
+	0x04, 0x11, 0xbe, 0x04, 0x71, 0xc2, 0x6b, 0xcf, 0x5b, 0x51, 0xc4, 0x31, 0xb0, 0xf8, 0xf0, 0x0a,
+	0x60, 0xae, 0x5f, 0x83, 0xc5, 0xa0, 0x2b, 0xfb, 0x56, 0x88, 0xac, 0x21, 0x94, 0xb8, 0x13, 0x05,
+	0x35, 0x49, 0x95, 0x13, 0xdb, 0xe9, 0xaa, 0x9c, 0xc0, 0xee, 0x44, 0x41, 0x71, 0x55, 0x3d, 0x58,
+	0x09, 0x9b, 0xc9, 0x95, 0xa9, 0x82, 0xdc, 0x78, 0xee, 0x46, 0x45, 0x72, 0xb5, 0x9f, 0x41, 0x61,
+	0x74, 0x64, 0x94, 0x83, 0x85, 0x78, 0x08, 0xb1, 0x32, 0x0d, 0x31, 0xc6, 0xcf, 0xf1, 0x0e, 0x19,
+	0xc2, 0xcf, 0x31, 0x60, 0x18, 0x3f, 0x43, 0x2b, 0xfe, 0xf1, 0xf1, 0xf3, 0x8b, 0x52, 0xfc, 0xc5,
+	0x45, 0x29, 0xfe, 0xf2, 0xa2, 0x14, 0xff, 0xe6, 0xb2, 0x14, 0x7b, 0x71, 0x59, 0x8a, 0xfd, 0x7c,
+	0x59, 0x8a, 0x7d, 0xfa, 0x6e, 0x53, 0xb3, 0x5b, 0xbd, 0xba, 0xd3, 0x4b, 0xe5, 0x86, 0x62, 0x2b,
+	0x6a, 0x4b, 0xd1, 0xf4, 0x8e, 0x52, 0x97, 0xb5, 0xba, 0xfa, 0x36, 0xfd, 0xd3, 0x63, 0xe4, 0x2f,
+	0x90, 0x81, 0x81, 0xac, 0x7a, 0x9a, 0x7c, 0x86, 0x79, 0xf8, 0x47, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0xdf, 0xcd, 0xee, 0x56, 0x24, 0x19, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -855,6 +944,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
+	ProxyClientState(ctx context.Context, in *MsgProxyClientState, opts ...grpc.CallOption) (*MsgProxyClientStateResponse, error)
 	ProxyConnectionOpenTry(ctx context.Context, in *MsgProxyConnectionOpenTry, opts ...grpc.CallOption) (*MsgProxyConnectionOpenTryResponse, error)
 	ProxyConnectionOpenAck(ctx context.Context, in *MsgProxyConnectionOpenAck, opts ...grpc.CallOption) (*MsgProxyConnectionOpenAckResponse, error)
 	ProxyConnectionOpenConfirm(ctx context.Context, in *MsgProxyConnectionOpenConfirm, opts ...grpc.CallOption) (*MsgProxyConnectionOpenConfirmResponse, error)
@@ -871,6 +961,15 @@ type msgClient struct {
 
 func NewMsgClient(cc grpc1.ClientConn) MsgClient {
 	return &msgClient{cc}
+}
+
+func (c *msgClient) ProxyClientState(ctx context.Context, in *MsgProxyClientState, opts ...grpc.CallOption) (*MsgProxyClientStateResponse, error) {
+	out := new(MsgProxyClientStateResponse)
+	err := c.cc.Invoke(ctx, "/ibc.proxy.v1.Msg/ProxyClientState", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *msgClient) ProxyConnectionOpenTry(ctx context.Context, in *MsgProxyConnectionOpenTry, opts ...grpc.CallOption) (*MsgProxyConnectionOpenTryResponse, error) {
@@ -947,6 +1046,7 @@ func (c *msgClient) ProxyAcknowledgePacket(ctx context.Context, in *MsgProxyAckn
 
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
+	ProxyClientState(context.Context, *MsgProxyClientState) (*MsgProxyClientStateResponse, error)
 	ProxyConnectionOpenTry(context.Context, *MsgProxyConnectionOpenTry) (*MsgProxyConnectionOpenTryResponse, error)
 	ProxyConnectionOpenAck(context.Context, *MsgProxyConnectionOpenAck) (*MsgProxyConnectionOpenAckResponse, error)
 	ProxyConnectionOpenConfirm(context.Context, *MsgProxyConnectionOpenConfirm) (*MsgProxyConnectionOpenConfirmResponse, error)
@@ -961,6 +1061,9 @@ type MsgServer interface {
 type UnimplementedMsgServer struct {
 }
 
+func (*UnimplementedMsgServer) ProxyClientState(ctx context.Context, req *MsgProxyClientState) (*MsgProxyClientStateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProxyClientState not implemented")
+}
 func (*UnimplementedMsgServer) ProxyConnectionOpenTry(ctx context.Context, req *MsgProxyConnectionOpenTry) (*MsgProxyConnectionOpenTryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProxyConnectionOpenTry not implemented")
 }
@@ -988,6 +1091,24 @@ func (*UnimplementedMsgServer) ProxyAcknowledgePacket(ctx context.Context, req *
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
 	s.RegisterService(&_Msg_serviceDesc, srv)
+}
+
+func _Msg_ProxyClientState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgProxyClientState)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ProxyClientState(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ibc.proxy.v1.Msg/ProxyClientState",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ProxyClientState(ctx, req.(*MsgProxyClientState))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Msg_ProxyConnectionOpenTry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1139,6 +1260,10 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "ProxyClientState",
+			Handler:    _Msg_ProxyClientState_Handler,
+		},
+		{
 			MethodName: "ProxyConnectionOpenTry",
 			Handler:    _Msg_ProxyConnectionOpenTry_Handler,
 		},
@@ -1173,6 +1298,141 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "ibc/modules/proxy/tx.proto",
+}
+
+func (m *MsgProxyClientState) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgProxyClientState) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgProxyClientState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Signer) > 0 {
+		i -= len(m.Signer)
+		copy(dAtA[i:], m.Signer)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Signer)))
+		i--
+		dAtA[i] = 0x52
+	}
+	{
+		size, err := m.ConsensusHeight.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x4a
+	{
+		size, err := m.ProofHeight.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x42
+	if len(m.ProofConsensus) > 0 {
+		i -= len(m.ProofConsensus)
+		copy(dAtA[i:], m.ProofConsensus)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.ProofConsensus)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if len(m.ProofClient) > 0 {
+		i -= len(m.ProofClient)
+		copy(dAtA[i:], m.ProofClient)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.ProofClient)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.ConsensusState != nil {
+		{
+			size, err := m.ConsensusState.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTx(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.ClientState != nil {
+		{
+			size, err := m.ClientState.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTx(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.CounterpartyClientId) > 0 {
+		i -= len(m.CounterpartyClientId)
+		copy(dAtA[i:], m.CounterpartyClientId)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.CounterpartyClientId)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	{
+		size, err := m.UpstreamPrefix.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.UpstreamClientId) > 0 {
+		i -= len(m.UpstreamClientId)
+		copy(dAtA[i:], m.UpstreamClientId)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.UpstreamClientId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgProxyClientStateResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgProxyClientStateResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgProxyClientStateResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
 }
 
 func (m *MsgProxyConnectionOpenTry) Marshal() (dAtA []byte, err error) {
@@ -2193,6 +2453,58 @@ func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *MsgProxyClientState) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.UpstreamClientId)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = m.UpstreamPrefix.Size()
+	n += 1 + l + sovTx(uint64(l))
+	l = len(m.CounterpartyClientId)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.ClientState != nil {
+		l = m.ClientState.Size()
+		n += 1 + l + sovTx(uint64(l))
+	}
+	if m.ConsensusState != nil {
+		l = m.ConsensusState.Size()
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.ProofClient)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.ProofConsensus)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = m.ProofHeight.Size()
+	n += 1 + l + sovTx(uint64(l))
+	l = m.ConsensusHeight.Size()
+	n += 1 + l + sovTx(uint64(l))
+	l = len(m.Signer)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgProxyClientStateResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func (m *MsgProxyConnectionOpenTry) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2603,6 +2915,441 @@ func sovTx(x uint64) (n int) {
 func sozTx(x uint64) (n int) {
 	return sovTx(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
+func (m *MsgProxyClientState) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgProxyClientState: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgProxyClientState: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UpstreamClientId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UpstreamClientId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UpstreamPrefix", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.UpstreamPrefix.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CounterpartyClientId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CounterpartyClientId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClientState", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ClientState == nil {
+				m.ClientState = &types1.Any{}
+			}
+			if err := m.ClientState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ConsensusState", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ConsensusState == nil {
+				m.ConsensusState = &types1.Any{}
+			}
+			if err := m.ConsensusState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProofClient", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ProofClient = append(m.ProofClient[:0], dAtA[iNdEx:postIndex]...)
+			if m.ProofClient == nil {
+				m.ProofClient = []byte{}
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProofConsensus", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ProofConsensus = append(m.ProofConsensus[:0], dAtA[iNdEx:postIndex]...)
+			if m.ProofConsensus == nil {
+				m.ProofConsensus = []byte{}
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProofHeight", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ProofHeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ConsensusHeight", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ConsensusHeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Signer", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Signer = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgProxyClientStateResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgProxyClientStateResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgProxyClientStateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *MsgProxyConnectionOpenTry) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2792,7 +3539,7 @@ func (m *MsgProxyConnectionOpenTry) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ClientState == nil {
-				m.ClientState = &types2.Any{}
+				m.ClientState = &types1.Any{}
 			}
 			if err := m.ClientState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2828,7 +3575,7 @@ func (m *MsgProxyConnectionOpenTry) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ConsensusState == nil {
-				m.ConsensusState = &types2.Any{}
+				m.ConsensusState = &types1.Any{}
 			}
 			if err := m.ConsensusState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3294,7 +4041,7 @@ func (m *MsgProxyConnectionOpenAck) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ClientState == nil {
-				m.ClientState = &types2.Any{}
+				m.ClientState = &types1.Any{}
 			}
 			if err := m.ClientState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3330,7 +4077,7 @@ func (m *MsgProxyConnectionOpenAck) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ConsensusState == nil {
-				m.ConsensusState = &types2.Any{}
+				m.ConsensusState = &types1.Any{}
 			}
 			if err := m.ConsensusState.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -3366,7 +4113,7 @@ func (m *MsgProxyConnectionOpenAck) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Version == nil {
-				m.Version = &types1.Version{}
+				m.Version = &types3.Version{}
 			}
 			if err := m.Version.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

@@ -19,7 +19,7 @@ func (k Keeper) VerifyClientState(
 	ctx sdk.Context,
 	upstreamClientID string,
 	upstreamPrefix exported.Prefix,
-	counterpartyConnection exported.ConnectionI, // upstream
+	counterpartyClientID string,
 	height exported.Height,
 	proof []byte,
 	clientState exported.ClientState, // the state of downstream that upstream has
@@ -31,14 +31,14 @@ func (k Keeper) VerifyClientState(
 
 	if err := targetClient.VerifyClientState(
 		k.clientKeeper.ClientStore(ctx, upstreamClientID), k.cdc, height,
-		upstreamPrefix, counterpartyConnection.GetClientID(), proof, clientState); err != nil {
+		upstreamPrefix, counterpartyClientID, proof, clientState); err != nil {
 		return sdkerrors.Wrapf(err, "failed client state verification for target client: %s", upstreamClientID)
 	}
 
 	return k.setClientStateCommitment(
 		ctx,
 		upstreamPrefix,
-		counterpartyConnection.GetClientID(),
+		counterpartyClientID,
 		upstreamClientID,
 		clientState,
 	)
@@ -48,7 +48,7 @@ func (k Keeper) VerifyClientConsensusState(
 	ctx sdk.Context,
 	upstreamClientID string,
 	upstreamPrefix exported.Prefix,
-	connection exported.ConnectionI,
+	counterpartyClientID string,
 	height exported.Height,
 	consensusHeight exported.Height,
 	proof []byte,
@@ -61,7 +61,7 @@ func (k Keeper) VerifyClientConsensusState(
 
 	if err := targetClient.VerifyClientConsensusState(
 		k.clientKeeper.ClientStore(ctx, upstreamClientID), k.cdc, height,
-		connection.GetClientID(), consensusHeight, upstreamPrefix, proof, consensusState,
+		counterpartyClientID, consensusHeight, upstreamPrefix, proof, consensusState,
 	); err != nil {
 		return sdkerrors.Wrapf(err, "failed consensus state verification for client (%s)", upstreamClientID)
 	}
@@ -69,7 +69,7 @@ func (k Keeper) VerifyClientConsensusState(
 	return k.setClientConsensusStateCommitment(
 		ctx,
 		upstreamPrefix,
-		connection.GetClientID(),
+		counterpartyClientID,
 		upstreamClientID,
 		consensusHeight,
 		consensusState,

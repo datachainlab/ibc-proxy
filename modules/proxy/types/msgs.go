@@ -10,12 +10,71 @@ import (
 )
 
 var (
-	_, _, _ sdk.Msg                            = (*MsgProxyConnectionOpenTry)(nil), (*MsgProxyConnectionOpenAck)(nil), (*MsgProxyConnectionOpenConfirm)(nil)
-	_, _, _ codectypes.UnpackInterfacesMessage = (*MsgProxyConnectionOpenTry)(nil), (*MsgProxyConnectionOpenAck)(nil), (*MsgProxyConnectionOpenConfirm)(nil)
+	_, _, _, _ sdk.Msg                            = (*MsgProxyClientState)(nil), (*MsgProxyConnectionOpenTry)(nil), (*MsgProxyConnectionOpenAck)(nil), (*MsgProxyConnectionOpenConfirm)(nil)
+	_, _, _, _ codectypes.UnpackInterfacesMessage = (*MsgProxyClientState)(nil), (*MsgProxyConnectionOpenTry)(nil), (*MsgProxyConnectionOpenAck)(nil), (*MsgProxyConnectionOpenConfirm)(nil)
 
 	_, _, _ sdk.Msg = (*MsgProxyChannelOpenTry)(nil), (*MsgProxyChannelOpenAck)(nil), (*MsgProxyChannelOpenConfirm)(nil)
 	_, _    sdk.Msg = (*MsgProxyRecvPacket)(nil), (*MsgProxyAcknowledgePacket)(nil)
 )
+
+func NewMsgProxyClientState(
+	upstreamClientID string,
+	upstreamPrefix commitmenttypes.MerklePrefix,
+	clientState exported.ClientState,
+	consensusState exported.ConsensusState,
+	proofClient []byte,
+	proofConsensus []byte,
+	proofHeight clienttypes.Height,
+	consensusHeight clienttypes.Height,
+	signer string,
+) (*MsgProxyClientState, error) {
+	anyClient, err := clienttypes.PackClientState(clientState)
+	if err != nil {
+		return nil, err
+	}
+	anyConsensus, err := clienttypes.PackConsensusState(consensusState)
+	if err != nil {
+		return nil, err
+	}
+
+	return &MsgProxyClientState{
+		UpstreamClientId: upstreamClientID,
+		UpstreamPrefix:   upstreamPrefix,
+		ClientState:      anyClient,
+		ConsensusState:   anyConsensus,
+		ProofClient:      proofClient,
+		ProofConsensus:   proofConsensus,
+		ProofHeight:      proofHeight,
+		ConsensusHeight:  consensusHeight,
+		Signer:           signer,
+	}, nil
+}
+
+// ValidateBasic implements sdk.Msg
+func (msg MsgProxyClientState) ValidateBasic() error {
+	return nil
+}
+
+// GetSigners implements sdk.Msg
+func (msg MsgProxyClientState) GetSigners() []sdk.AccAddress {
+	accAddr, err := sdk.AccAddressFromBech32(msg.Signer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{accAddr}
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
+func (msg MsgProxyClientState) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var clientState exported.ClientState
+	err := unpacker.UnpackAny(msg.ClientState, &clientState)
+	if err != nil {
+		return err
+	}
+
+	var consensusState exported.ConsensusState
+	return unpacker.UnpackAny(msg.ConsensusState, &consensusState)
+}
 
 func NewMsgProxyConnectionOpenTry(
 	connectionID string,
