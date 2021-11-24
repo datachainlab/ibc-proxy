@@ -110,10 +110,9 @@ message MsgProxyChannelOpenTry {
   string channel_id = 6;
   string downstream_port_id = 7;
   string version = 8;
-  string downstream_version = 9;
-  bytes proof_init = 10;
-  ibc.core.client.v1.Height proof_height = 11 [(gogoproto.nullable) = false];
-  string signer = 12;
+  bytes proof_init = 9;
+  ibc.core.client.v1.Height proof_height = 10 [(gogoproto.nullable) = false];
+  string signer = 11;
 }
 
 message MsgProxyChannelOpenTryResponse {}
@@ -131,10 +130,9 @@ message MsgProxyChannelOpenAck {
   string downstream_port_id = 7;
   string downstream_channel_id = 8;
   string version = 9;
-  string downstream_version = 10;
-  bytes proof_try = 11;
-  ibc.core.client.v1.Height proof_height = 12 [(gogoproto.nullable) = false];
-  string signer = 13;
+  bytes proof_try = 10;
+  ibc.core.client.v1.Height proof_height = 11 [(gogoproto.nullable) = false];
+  string signer = 12;
 }
 
 message MsgProxyChannelOpenAckResponse {}

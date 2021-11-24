@@ -21,7 +21,6 @@ func (k Keeper) ChanOpenTry(
 	upstreamChannelID string,
 	downstreamPortID string,
 	version string,
-	counterpartyVersion string,
 	proofInit []byte,
 	proofHeight exported.Height,
 ) error {
@@ -53,7 +52,7 @@ func (k Keeper) ChanOpenTry(
 	expectedCounterparty := channeltypes.NewCounterparty(downstreamPortID, "")
 	expectedChannel := channeltypes.NewChannel(
 		channeltypes.INIT, order, expectedCounterparty,
-		connectionHops, counterpartyVersion,
+		connectionHops, version,
 	)
 
 	if err := k.VerifyChannelState(
@@ -81,8 +80,7 @@ func (k Keeper) ChanOpenAck(
 	channelID string,
 	downstreamPortID,
 	downstreamChannelID string,
-	version,
-	counterpartyVersion string,
+	version string,
 	proofTry []byte,
 	proofHeight exported.Height,
 ) error {
@@ -95,7 +93,7 @@ func (k Keeper) ChanOpenAck(
 	expectedCounterparty := channeltypes.NewCounterparty(downstreamPortID, downstreamChannelID)
 	expectedChannel := channeltypes.NewChannel(
 		channeltypes.TRYOPEN, order, expectedCounterparty,
-		connectionHops, counterpartyVersion,
+		connectionHops, version,
 	)
 
 	if err := k.VerifyChannelState(
