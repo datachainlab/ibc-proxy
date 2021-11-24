@@ -107,10 +107,10 @@ message MsgProxyChannelOpenTry {
   ibc.core.channel.v1.Order order = 3;
   repeated string connection_hops = 4;
   string port_id = 5;
-  string previous_channel_id = 6;
-  ibc.core.channel.v1.Counterparty counterparty = 7 [(gogoproto.nullable) = false];
+  string channel_id = 6;
+  string downstream_port_id = 7;
   string version = 8;
-  string counterparty_version = 9;
+  string downstream_version = 9;
   bytes proof_init = 10;
   ibc.core.client.v1.Height proof_height = 11 [(gogoproto.nullable) = false];
   string signer = 12;
@@ -128,12 +128,13 @@ message MsgProxyChannelOpenAck {
   repeated string connection_hops = 4;
   string port_id = 5;
   string channel_id = 6;
-  ibc.core.channel.v1.Counterparty counterparty = 7 [(gogoproto.nullable) = false];
-  string version = 8;
-  string counterparty_version = 9;
-  bytes proof_try = 10;
-  ibc.core.client.v1.Height proof_height = 11 [(gogoproto.nullable) = false];
-  string signer = 12;
+  string downstream_port_id = 7;
+  string downstream_channel_id = 8;
+  string version = 9;
+  string downstream_version = 10;
+  bytes proof_try = 11;
+  ibc.core.client.v1.Height proof_height = 12 [(gogoproto.nullable) = false];
+  string signer = 13;
 }
 
 message MsgProxyChannelOpenAckResponse {}
@@ -141,9 +142,9 @@ message MsgProxyChannelOpenAckResponse {}
 message MsgProxyChannelOpenConfirm {
   string upstream_client_id = 1;
   ibc.core.commitment.v1.MerklePrefix upstream_prefix = 2 [(gogoproto.nullable) = false];
-  string source_channel_id = 3;
-  string counterparty_port_id = 4;
-  string counterparty_channel_id = 5;
+  string port_id = 3;
+  string channel_id = 4;
+  string downstream_channel_id = 5;
   bytes proof_ack = 6;
   ibc.core.client.v1.Height proof_height = 7 [(gogoproto.nullable) = false];
   string signer = 8;

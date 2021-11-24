@@ -85,7 +85,7 @@ func (k *Keeper) ProxyConnectionOpenConfirm(goCtx context.Context, msg *types.Ms
 func (k *Keeper) ProxyChannelOpenTry(goCtx context.Context, msg *types.MsgProxyChannelOpenTry) (*types.MsgProxyChannelOpenTryResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	err := k.ChanOpenTry(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Order, msg.ConnectionHops, msg.PortId, msg.PreviousChannelId, msg.Counterparty, msg.Version, msg.CounterpartyVersion, msg.ProofInit, msg.ProofHeight)
+	err := k.ChanOpenTry(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Order, msg.ConnectionHops, msg.PortId, msg.ChannelId, msg.DownstreamPortId, msg.Version, msg.DownstreamVersion, msg.ProofInit, msg.ProofHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (k *Keeper) ProxyChannelOpenTry(goCtx context.Context, msg *types.MsgProxyC
 func (k *Keeper) ProxyChannelOpenAck(goCtx context.Context, msg *types.MsgProxyChannelOpenAck) (*types.MsgProxyChannelOpenAckResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	err := k.ChanOpenAck(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Order, msg.ConnectionHops, msg.PortId, msg.ChannelId, msg.Counterparty, msg.Version, msg.CounterpartyVersion, msg.ProofTry, msg.ProofHeight)
+	err := k.ChanOpenAck(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Order, msg.ConnectionHops, msg.PortId, msg.ChannelId, msg.DownstreamPortId, msg.DownstreamChannelId, msg.Version, msg.DownstreamVersion, msg.ProofTry, msg.ProofHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (k *Keeper) ProxyChannelOpenAck(goCtx context.Context, msg *types.MsgProxyC
 func (k *Keeper) ProxyChannelOpenConfirm(goCtx context.Context, msg *types.MsgProxyChannelOpenConfirm) (*types.MsgProxyChannelOpenConfirmResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	err := k.ChanOpenConfirm(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.SourceChannelId, msg.CounterpartyPortId, msg.CounterpartyChannelId, msg.ProofAck, msg.ProofHeight)
+	err := k.ChanOpenConfirm(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.PortId, msg.ChannelId, msg.DownstreamChannelId, msg.ProofAck, msg.ProofHeight)
 	if err != nil {
 		return nil, err
 	}

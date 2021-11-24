@@ -511,18 +511,18 @@ func (coord *Coordinator) ChanOpenTryWithProxy(
 		proofInit, proofHeight := counterparty.QueryProof(host.ChannelKey(counterpartyChannel.PortID, counterpartyChannel.ID))
 
 		msg := &proxytypes.MsgProxyChannelOpenTry{
-			UpstreamClientId:    proxies[0].UpstreamClientID,
-			UpstreamPrefix:      proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
-			Order:               order,
-			ConnectionHops:      []string{counterpartyConnection.ID},
-			PortId:              sourceChannel.PortID,
-			PreviousChannelId:   sourceChannel.ID,
-			Counterparty:        channeltypes.NewCounterparty(counterpartyChannel.PortID, counterpartyChannel.ID),
-			Version:             sourceChannel.Version,
-			CounterpartyVersion: counterpartyChannel.Version,
-			ProofInit:           proofInit,
-			ProofHeight:         proofHeight,
-			Signer:              proxy.SenderAccount.GetAddress().String(),
+			UpstreamClientId:  proxies[0].UpstreamClientID,
+			UpstreamPrefix:    proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
+			Order:             order,
+			ConnectionHops:    []string{counterpartyConnection.ID},
+			PortId:            counterpartyChannel.PortID,
+			ChannelId:         counterpartyChannel.ID,
+			DownstreamPortId:  sourceChannel.PortID,
+			Version:           counterpartyChannel.Version,
+			DownstreamVersion: sourceChannel.Version,
+			ProofInit:         proofInit,
+			ProofHeight:       proofHeight,
+			Signer:            proxy.SenderAccount.GetAddress().String(),
 		}
 		if _, err := proxy.SendMsgs(msg); err != nil {
 			return err
@@ -586,11 +586,12 @@ func (coord *Coordinator) ChanOpenAckWithProxy(
 			UpstreamPrefix:      proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
 			Order:               order,
 			ConnectionHops:      []string{counterpartyConnection.ID},
-			PortId:              sourceChannel.PortID,
-			ChannelId:           sourceChannel.ID,
-			Counterparty:        channeltypes.NewCounterparty(counterpartyChannel.PortID, counterpartyChannel.ID),
-			Version:             sourceChannel.Version,
-			CounterpartyVersion: counterpartyChannel.Version,
+			PortId:              counterpartyChannel.PortID,
+			ChannelId:           counterpartyChannel.ID,
+			DownstreamPortId:    sourceChannel.PortID,
+			DownstreamChannelId: sourceChannel.ID,
+			Version:             counterpartyChannel.Version,
+			DownstreamVersion:   sourceChannel.Version,
 			ProofTry:            proofTry,
 			ProofHeight:         proofHeight,
 			Signer:              proxy.SenderAccount.GetAddress().String(),
@@ -651,14 +652,14 @@ func (coord *Coordinator) ChanOpenConfirmWithProxy(
 		proofAck, proofHeight := counterparty.QueryProof(host.ChannelKey(counterpartyChannel.PortID, counterpartyChannel.ID))
 
 		msg := &proxytypes.MsgProxyChannelOpenConfirm{
-			UpstreamClientId:      proxies[0].UpstreamClientID,
-			UpstreamPrefix:        proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
-			SourceChannelId:       sourceChannel.ID,
-			CounterpartyPortId:    counterpartyChannel.PortID,
-			CounterpartyChannelId: counterpartyChannel.ID,
-			ProofAck:              proofAck,
-			ProofHeight:           proofHeight,
-			Signer:                proxy.SenderAccount.GetAddress().String(),
+			UpstreamClientId:    proxies[0].UpstreamClientID,
+			UpstreamPrefix:      proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
+			PortId:              counterpartyChannel.PortID,
+			ChannelId:           counterpartyChannel.ID,
+			DownstreamChannelId: sourceChannel.ID,
+			ProofAck:            proofAck,
+			ProofHeight:         proofHeight,
+			Signer:              proxy.SenderAccount.GetAddress().String(),
 		}
 		if _, err := proxy.SendMsgs(msg); err != nil {
 			return err
