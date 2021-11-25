@@ -18,7 +18,7 @@ func (k Keeper) ConnOpenTry(
 	upstreamPrefix exported.Prefix,
 	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to B on A (its state must be INIT)
 
-	clientState exported.ClientState, // clientState that chainA has for chainB or proxy
+	clientState exported.ClientState, // clientState for chainB
 	proofInit []byte, // proof that chainA stored connectionEnd in state (on ConnOpenInit)
 	proofClient []byte, // proof that chainA stored a light client of chainB
 	proofConsensus []byte, // proof that chainA stored chainB's consensus state at consensus height

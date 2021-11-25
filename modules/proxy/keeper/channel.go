@@ -17,11 +17,10 @@ func (k Keeper) ChanOpenTry(
 	upstreamPrefix exported.Prefix,
 	order channeltypes.Order,
 	connectionHops []string, // from upstream
-	portID,
-	previousChannelID string,
-	counterparty channeltypes.Counterparty,
-	version,
-	counterpartyVersion string,
+	upstreamPortID string,
+	upstreamChannelID string,
+	downstreamPortID string,
+	version string,
 	proofInit []byte,
 	proofHeight exported.Height,
 ) error {
@@ -50,21 +49,21 @@ func (k Keeper) ChanOpenTry(
 
 	// expectedCounterpaty is the counterparty of the counterparty's channel end
 	// (i.e self)
-	expectedCounterparty := channeltypes.NewCounterparty(portID, "")
+	expectedCounterparty := channeltypes.NewCounterparty(downstreamPortID, "")
 	expectedChannel := channeltypes.NewChannel(
 		channeltypes.INIT, order, expectedCounterparty,
-		connectionHops, counterpartyVersion,
+		connectionHops, version,
 	)
 
 	if err := k.VerifyChannelState(
 		ctx, upstreamClientID, upstreamPrefix, connectionEnd,
 		proofHeight, proofInit,
-		counterparty.PortId, counterparty.ChannelId, expectedChannel,
+		upstreamPortID, upstreamChannelID, expectedChannel,
 	); err != nil {
 		return err
 	}
 
-	k.SetChannel(ctx, upstreamClientID, counterparty.PortId, counterparty.ChannelId, expectedChannel)
+	k.SetChannel(ctx, upstreamClientID, upstreamPortID, upstreamChannelID, expectedChannel)
 	return nil
 }
 
@@ -79,9 +78,9 @@ func (k Keeper) ChanOpenAck(
 
 	portID,
 	channelID string,
-	counterparty channeltypes.Counterparty,
-	version,
-	counterpartyVersion string,
+	downstreamPortID,
+	downstreamChannelID string,
+	version string,
 	proofTry []byte,
 	proofHeight exported.Height,
 ) error {
@@ -91,21 +90,21 @@ func (k Keeper) ChanOpenAck(
 		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, connectionHops[0])
 	}
 
-	expectedCounterparty := channeltypes.NewCounterparty(portID, channelID)
+	expectedCounterparty := channeltypes.NewCounterparty(downstreamPortID, downstreamChannelID)
 	expectedChannel := channeltypes.NewChannel(
 		channeltypes.TRYOPEN, order, expectedCounterparty,
-		connectionHops, counterpartyVersion,
+		connectionHops, version,
 	)
 
 	if err := k.VerifyChannelState(
 		ctx, upstreamClientID, upstreamPrefix, connectionEnd,
 		proofHeight, proofTry,
-		counterparty.PortId, counterparty.ChannelId, expectedChannel,
+		portID, channelID, expectedChannel,
 	); err != nil {
 		return err
 	}
 
-	k.SetChannel(ctx, upstreamClientID, counterparty.PortId, counterparty.ChannelId, expectedChannel)
+	k.SetChannel(ctx, upstreamClientID, portID, channelID, expectedChannel)
 	return nil
 }
 
@@ -116,16 +115,16 @@ func (k Keeper) ChanOpenConfirm(
 	upstreamClientID string,
 	upstreamPrefix exported.Prefix,
 
-	sourceChannelID string,
-	counterpartyPortID,
-	counterpartyChannelID string,
+	portID string,
+	channelID string,
+	downstreamChannelID string,
 	proofAck []byte,
 	proofHeight exported.Height,
 ) error {
 
-	channel, found := k.GetChannel(ctx, upstreamClientID, counterpartyPortID, counterpartyChannelID)
+	channel, found := k.GetChannel(ctx, upstreamClientID, portID, channelID)
 	if !found {
-		return fmt.Errorf("channel '%v:%v:%v' not found", upstreamClientID, counterpartyPortID, counterpartyChannelID)
+		return fmt.Errorf("channel '%v:%v:%v' not found", upstreamClientID, portID, channelID)
 	} else if channel.Counterparty.ChannelId != "" {
 		return fmt.Errorf("fatal error")
 	} else if channel.State != channeltypes.INIT {
@@ -136,17 +135,17 @@ func (k Keeper) ChanOpenConfirm(
 		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, channel.ConnectionHops[0])
 	}
 
-	channel.Counterparty.ChannelId = sourceChannelID
+	channel.Counterparty.ChannelId = downstreamChannelID
 	channel.State = channeltypes.OPEN
 
 	if err := k.VerifyChannelState(
 		ctx, upstreamClientID, upstreamPrefix, connectionEnd,
 		proofHeight, proofAck,
-		counterpartyPortID, counterpartyChannelID, channel,
+		portID, channelID, channel,
 	); err != nil {
 		return err
 	}
 
-	k.SetChannel(ctx, upstreamClientID, counterpartyPortID, counterpartyChannelID, channel)
+	k.SetChannel(ctx, upstreamClientID, portID, channelID, channel)
 	return nil
 }
