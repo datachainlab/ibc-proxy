@@ -112,33 +112,25 @@ func (cs *ClientState) ZeroCustomFields() exported.ClientState {
 func (cs *ClientState) VerifyClientState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, counterpartyClientIdentifier string, proofBytes []byte, clientState exported.ClientState) error {
 	proof, err := UnmarshalProof(cdc, proofBytes)
 	if err != nil {
-		// XXX if got unexpected proof format, fallback to the base client
-		return cs.GetBaseClientState().VerifyClientState(store, cdc, height, prefix, counterpartyClientIdentifier, proofBytes, clientState)
+		return err
 	}
 
-	switch proof.(type) {
-	case *MultiProof:
-	default:
-		return cs.GetBaseClientState().VerifyClientState(store, cdc, height, prefix, counterpartyClientIdentifier, proofBytes, clientState)
-	}
-	mproof := proof.(*MultiProof)
-
-	if l := len(mproof.Proofs); l < 2 {
+	if l := len(proof.Proofs); l < 2 {
 		return fmt.Errorf("unexpected proofs length: %v", l)
 	}
 
-	h, ok := mproof.Proofs[0].Proof.(*Proof_Branch)
+	h, ok := proof.Proofs[0].Proof.(*Proof_Branch)
 	if !ok {
-		return fmt.Errorf("first element must be %v, but got %v", &Proof_Branch{}, mproof.Proofs[0].Proof)
+		return fmt.Errorf("first element must be %v, but got %v", &Proof_Branch{}, proof.Proofs[0].Proof)
 	}
 	head := h.Branch
 	if !head.ProofHeight.EQ(height) {
 		return fmt.Errorf("first proof's height must be %v, but got %v", height, head.ProofHeight)
 	}
 
-	l, ok := mproof.Proofs[len(mproof.Proofs)-1].Proof.(*Proof_LeafClient)
+	l, ok := proof.Proofs[len(proof.Proofs)-1].Proof.(*Proof_LeafClient)
 	if !ok {
-		return fmt.Errorf("last element must be %v, but got %v", &Proof_LeafClient{}, mproof.Proofs[len(mproof.Proofs)-1].Proof)
+		return fmt.Errorf("last element must be %v, but got %v", &Proof_LeafClient{}, proof.Proofs[len(proof.Proofs)-1].Proof)
 	}
 	leaf := l.LeafClient
 
@@ -171,7 +163,7 @@ func (cs *ClientState) VerifyClientState(store sdk.KVStore, cdc codec.BinaryCode
 
 	// step2. verify state with nodes
 
-	for _, p := range mproof.Proofs[1 : len(mproof.Proofs)-1] {
+	for _, p := range proof.Proofs[1 : len(proof.Proofs)-1] {
 		b, ok := p.Proof.(*Proof_Branch)
 		if !ok {
 			return fmt.Errorf("unexpected proof type: %T", p.Proof)
@@ -233,31 +225,23 @@ func (cs *ClientState) VerifyClientState(store sdk.KVStore, cdc codec.BinaryCode
 func (cs *ClientState) VerifyClientConsensusState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, counterpartyClientIdentifier string, consensusHeight exported.Height, prefix exported.Prefix, proofBytes []byte, consensusState exported.ConsensusState) error {
 	proof, err := UnmarshalProof(cdc, proofBytes)
 	if err != nil {
-		// XXX if got unexpected proof format, fallback to the base client
-		return cs.GetBaseClientState().VerifyClientConsensusState(store, cdc, height, counterpartyClientIdentifier, consensusHeight, prefix, proofBytes, consensusState)
+		return err
 	}
-	switch proof.(type) {
-	case *MultiProof:
-	default:
-		return cs.GetBaseClientState().VerifyClientConsensusState(store, cdc, height, counterpartyClientIdentifier, consensusHeight, prefix, proofBytes, consensusState)
-	}
-	mproof := proof.(*MultiProof)
-
-	if l := len(mproof.Proofs); l < 2 {
+	if l := len(proof.Proofs); l < 2 {
 		return fmt.Errorf("unexpected proofs length: %v", l)
 	}
 
-	h, ok := mproof.Proofs[0].Proof.(*Proof_Branch)
+	h, ok := proof.Proofs[0].Proof.(*Proof_Branch)
 	if !ok {
-		return fmt.Errorf("first element must be %v, but got %v", &Proof_Branch{}, mproof.Proofs[0].Proof)
+		return fmt.Errorf("first element must be %v, but got %v", &Proof_Branch{}, proof.Proofs[0].Proof)
 	}
 	head := h.Branch
 	if !head.ProofHeight.EQ(height) {
 		return fmt.Errorf("first proof's height must be %v, but got %v", height, head.ProofHeight)
 	}
-	l, ok := mproof.Proofs[len(mproof.Proofs)-1].Proof.(*Proof_LeafConsensus)
+	l, ok := proof.Proofs[len(proof.Proofs)-1].Proof.(*Proof_LeafConsensus)
 	if !ok {
-		return fmt.Errorf("last element must be %v, but got %v", &Proof_LeafConsensus{}, mproof.Proofs[len(mproof.Proofs)-1].Proof)
+		return fmt.Errorf("last element must be %v, but got %v", &Proof_LeafConsensus{}, proof.Proofs[len(proof.Proofs)-1].Proof)
 	}
 	leaf := l.LeafConsensus
 
@@ -290,7 +274,7 @@ func (cs *ClientState) VerifyClientConsensusState(store sdk.KVStore, cdc codec.B
 
 	// step2. verify state with nodes
 
-	for _, p := range mproof.Proofs[1 : len(mproof.Proofs)-1] {
+	for _, p := range proof.Proofs[1 : len(proof.Proofs)-1] {
 		b, ok := p.Proof.(*Proof_Branch)
 		if !ok {
 			return fmt.Errorf("unexpected proof type: %T", p.Proof)

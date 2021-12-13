@@ -19,13 +19,20 @@ import (
 
 func (coord *Coordinator) InitProxy(
 	source, counterparty *TestChain,
-	clientType string,
+	clientType string, useMultiV bool,
 ) (clientID string, err error) {
-	clientID, err = coord.CreateMultiVClient(source, counterparty, clientType)
+	if useMultiV {
+		clientID, err = coord.CreateMultiVClient(source, counterparty, clientType)
+	} else {
+		clientID, err = coord.CreateClient(source, counterparty, clientType)
+	}
+	if err != nil {
+		return "", err
+	}
+	err = source.App.(*simapp.SimApp).IBCProxyKeeper.EnableProxy(source.GetContext(), clientID)
 	if err != nil {
 		return clientID, err
 	}
-	err = source.App.(*simapp.SimApp).IBCProxyKeeper.EnableProxy(source.GetContext(), clientID)
 	coord.CommitBlock(source)
 	return clientID, err
 }

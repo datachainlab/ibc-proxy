@@ -28,7 +28,6 @@ func (k Keeper) VerifyClientState(
 	if !found {
 		return sdkerrors.Wrap(clienttypes.ErrClientNotFound, upstreamClientID)
 	}
-
 	if err := targetClient.VerifyClientState(
 		k.clientKeeper.ClientStore(ctx, upstreamClientID), k.cdc, height,
 		upstreamPrefix, counterpartyClientID, proof, clientState); err != nil {
@@ -58,7 +57,6 @@ func (k Keeper) VerifyClientConsensusState(
 	if !found {
 		return sdkerrors.Wrap(clienttypes.ErrClientNotFound, upstreamClientID)
 	}
-
 	if err := targetClient.VerifyClientConsensusState(
 		k.clientKeeper.ClientStore(ctx, upstreamClientID), k.cdc, height,
 		counterpartyClientID, consensusHeight, upstreamPrefix, proof, consensusState,
