@@ -19,7 +19,7 @@ func (suite *KeeperTestSuite) TestMultiV() {
 // A(C) -> B, B -> A
 // A: downstream, B: upstream, C: proxy
 func (suite *KeeperTestSuite) TestOneSideProxy1() {
-	clientCB, err := suite.coordinator.InitProxy(suite.chainC, suite.chainB, exported.Tendermint)
+	clientCB, err := suite.coordinator.InitProxy(suite.chainC, suite.chainB, exported.Tendermint, false)
 	suite.Require().NoError(err)
 
 	// XXX increment the sequence...
@@ -40,7 +40,7 @@ func (suite *KeeperTestSuite) TestOneSideProxy1() {
 // A -> B, B(C) -> A
 // A: upstream, B: downstream, C: proxy
 func (suite *KeeperTestSuite) TestOneSideProxy2() {
-	clientCA, err := suite.coordinator.InitProxy(suite.chainC, suite.chainA, exported.Tendermint)
+	clientCA, err := suite.coordinator.InitProxy(suite.chainC, suite.chainA, exported.Tendermint, false)
 	suite.Require().NoError(err)
 
 	// XXX increment the sequence...
@@ -61,10 +61,10 @@ func (suite *KeeperTestSuite) TestOneSideProxy2() {
 // A(C) -> B, B(D) -> A
 // A: upstream/downstream, B: downstream/upstream, C: proxy for A, D: proxy for B
 func (suite *KeeperTestSuite) TestBothSideProxy() {
-	clientCB, err := suite.coordinator.InitProxy(suite.chainC, suite.chainB, exported.Tendermint)
+	clientCB, err := suite.coordinator.InitProxy(suite.chainC, suite.chainB, exported.Tendermint, true)
 	suite.Require().NoError(err)
 
-	clientDA, err := suite.coordinator.InitProxy(suite.chainD, suite.chainA, exported.Tendermint)
+	clientDA, err := suite.coordinator.InitProxy(suite.chainD, suite.chainA, exported.Tendermint, true)
 	suite.Require().NoError(err)
 
 	clientAC, err := suite.coordinator.SetupProxy(suite.chainA, suite.chainC, clientCB)
