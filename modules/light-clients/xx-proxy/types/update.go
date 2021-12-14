@@ -1,7 +1,8 @@
 package types
 
 import (
-	"strings"
+	"fmt"
+	"regexp"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,7 +13,7 @@ import (
 
 // Update and Misbehaviour functions
 func (cs ClientState) CheckHeaderAndUpdateState(ctx sdk.Context, cdc codec.BinaryCodec, clientStore sdk.KVStore, header exported.Header) (exported.ClientState, exported.ConsensusState, error) {
-	clientState, consensusState, err := cs.GetProxyClientState().CheckHeaderAndUpdateState(ctx, cdc, NewProxyStore(cdc, clientStore), header)
+	clientState, consensusState, err := cs.GetProxyClientState().CheckHeaderAndUpdateState(ctx, cdc, NewProxyExtractorStore(cdc, clientStore), header)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -52,26 +53,25 @@ func (cs *ClientState) CheckSubstituteAndUpdateState(ctx sdk.Context, cdc codec.
 	return cs, nil
 }
 
-// ProxyStore provides the proxy for the underlying store
-// if the key of consensus state is given, get the client state from proxy client state
-type ProxyStore struct {
+// proxyExtractorStore provides a store that extracts the underlying state from ProxyConsensusState
+type proxyExtractorStore struct {
 	sdk.KVStore
 	cdc codec.BinaryCodec
 }
 
-var _ sdk.KVStore = (*ProxyStore)(nil)
+var _ sdk.KVStore = (*proxyExtractorStore)(nil)
 
-func NewProxyStore(cdc codec.BinaryCodec, store sdk.KVStore) ProxyStore {
-	return ProxyStore{cdc: cdc, KVStore: store}
+func NewProxyExtractorStore(cdc codec.BinaryCodec, store sdk.KVStore) proxyExtractorStore {
+	return proxyExtractorStore{cdc: cdc, KVStore: store}
 }
 
-func (s ProxyStore) Get(key []byte) []byte {
-	k := string(key)
-	if !strings.HasPrefix(k, host.KeyConsensusStatePrefix+"/") || strings.HasSuffix(k, "/processedTime") || strings.HasSuffix(k, "/processedHeight") {
-		return s.KVStore.Get(key)
-	}
+var consensusStateKeyRegexp = regexp.MustCompile(fmt.Sprintf(`^%s/\d+-\d+$`, host.KeyConsensusStatePrefix))
+
+func (s proxyExtractorStore) Get(key []byte) []byte {
 	v := s.KVStore.Get(key)
-	if len(v) == 0 {
+	if !consensusStateKeyRegexp.Match(key) {
+		return v
+	} else if len(v) == 0 {
 		return v
 	}
 	cs, err := clienttypes.UnmarshalConsensusState(s.cdc, v)
