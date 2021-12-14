@@ -27,6 +27,10 @@ The following figure shows the concept:
 
 The figure shows the case where Proxy P0 verifies Chain C0 and Chain C1 verifies P0. Note that for the reverse direction packet flow, you can select a configuration where C0 verifies C1 directly without Proxy.
 
+## Demo
+
+- ICS-20 through proxy: https://github.com/datachainlab/ibc-proxy-relay/blob/95fb4cd5fb819650ae1b3c23d105a1c02676e663/.github/workflows/test.yml#L63
+
 ## Author
 
 - [Jun Kimura](https://github.com/bluele)
