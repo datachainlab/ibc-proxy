@@ -11,17 +11,23 @@ import "ibc/core/commitment/v1/commitment.proto";
 message ClientState {
   option (gogoproto.goproto_getters) = false;
 
-  string upstream_client_id = 1; // client id corresponding to upstream on proxy
-  google.protobuf.Any proxy_client_state = 2; // client state corresponding to proxy
-
-  // commitment merkle prefix of the proxy chain.
+  // client state corresponding to proxy
+  // the type must implements ClientState interface
+  google.protobuf.Any proxy_client_state = 1;
+  // client id corresponding to upstream on proxy
+  string upstream_client_id = 2;
+  // the proxy commitment prefix of the proxy chain.
   ibc.core.commitment.v1.MerklePrefix proxy_prefix = 3;
+  // the ibc commitment prefix of the proxy chain
   ibc.core.commitment.v1.MerklePrefix ibc_prefix = 4;
+  // a boolean value indicating whether or not to trust to create ProxyClient by the relayer
   bool trusted_setup = 5;
 }
 
 message ConsensusState {
   option (gogoproto.goproto_getters) = false;
 
-  google.protobuf.Any proxy_consensus_state = 1; // consensus state corresponding to proxy
+  // consensus state corresponding to proxy
+  // the type must implements ConsensusState interface
+  google.protobuf.Any proxy_consensus_state = 1;
 }
