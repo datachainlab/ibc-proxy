@@ -37,6 +37,8 @@ type ClientState struct {
 	// the ibc commitment prefix of the proxy chain
 	IbcPrefix *types1.MerklePrefix `protobuf:"bytes,4,opt,name=ibc_prefix,json=ibcPrefix,proto3" json:"ibc_prefix,omitempty"`
 	// a boolean value indicating whether or not to trust to create ProxyClient by the relayer
+	// if true, trust that the values in each field of the client state are valid
+	// if false, the client state must be setup through a channel between downstream and proxy chain. please see ./modules/proxy/keeper/relay.go
 	TrustedSetup bool `protobuf:"varint,5,opt,name=trusted_setup,json=trustedSetup,proto3" json:"trusted_setup,omitempty"`
 }
 
