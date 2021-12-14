@@ -21,18 +21,22 @@ import (
 var _ exported.ClientState = (*ClientState)(nil)
 var _ codectypes.UnpackInterfacesMessage = (*ClientState)(nil)
 
-func NewClientState(base *codectypes.Any) *ClientState {
+func NewClientState(clientState exported.ClientState) *ClientState {
+	anyClientState, err := clienttypes.PackClientState(clientState)
+	if err != nil {
+		panic(err)
+	}
 	return &ClientState{
-		Base: base,
+		UnderlyingClientState: anyClientState,
 	}
 }
 
 func (cs *ClientState) ClientType() string {
-	return cs.GetBaseClientState().ClientType()
+	return cs.GetUnderlyingClientState().ClientType()
 }
 
-func (cs *ClientState) GetBaseClientState() exported.ClientState {
-	state, err := clienttypes.UnpackClientState(cs.Base)
+func (cs *ClientState) GetUnderlyingClientState() exported.ClientState {
+	state, err := clienttypes.UnpackClientState(cs.UnderlyingClientState)
 	if err != nil {
 		panic(err)
 	}
@@ -41,11 +45,11 @@ func (cs *ClientState) GetBaseClientState() exported.ClientState {
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
 func (cs *ClientState) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	return unpacker.UnpackAny(cs.Base, new(exported.ClientState))
+	return unpacker.UnpackAny(cs.UnderlyingClientState, new(exported.ClientState))
 }
 
 func (cs *ClientState) GetLatestHeight() exported.Height {
-	return cs.GetBaseClientState().GetLatestHeight()
+	return cs.GetUnderlyingClientState().GetLatestHeight()
 }
 
 func (cs *ClientState) Status(
@@ -53,25 +57,25 @@ func (cs *ClientState) Status(
 	clientStore sdk.KVStore,
 	cdc codec.BinaryCodec,
 ) exported.Status {
-	return cs.GetBaseClientState().Status(ctx, clientStore, cdc)
+	return cs.GetUnderlyingClientState().Status(ctx, clientStore, cdc)
 }
 
 func (cs *ClientState) Validate() error {
-	if cs.Base == nil {
+	if cs.UnderlyingClientState == nil {
 		return errors.New("Base cannot be nil")
 	}
-	return cs.GetBaseClientState().Validate()
+	return cs.GetUnderlyingClientState().Validate()
 }
 
 func (cs *ClientState) GetProofSpecs() []*ics23.ProofSpec {
-	return cs.GetBaseClientState().GetProofSpecs()
+	return cs.GetUnderlyingClientState().GetProofSpecs()
 }
 
 // Initialization function
 // Clients must validate the initial consensus state, and may store any client-specific metadata
 // necessary for correct light client operation
 func (cs *ClientState) Initialize(ctx sdk.Context, cdc codec.BinaryCodec, clientStore sdk.KVStore, consState exported.ConsensusState) error {
-	if cs.Base == nil {
+	if cs.UnderlyingClientState == nil {
 		return sdkerrors.Wrap(errors.New("invalid clientState"), "the base of a clientState must not be empty")
 	} else if consState == nil {
 		return sdkerrors.Wrap(errors.New("invalid consensusState"), "consensusState must not be empty")
@@ -81,7 +85,7 @@ func (cs *ClientState) Initialize(ctx sdk.Context, cdc codec.BinaryCodec, client
 
 // Genesis function
 func (cs *ClientState) ExportMetadata(store sdk.KVStore) []exported.GenesisMetadata {
-	return cs.GetBaseClientState().ExportMetadata(store)
+	return cs.GetUnderlyingClientState().ExportMetadata(store)
 }
 
 // Upgrade functions
@@ -91,20 +95,19 @@ func (cs *ClientState) ExportMetadata(store sdk.KVStore) []exported.GenesisMetad
 // This is to ensure that no premature upgrades occur, since upgrade plans committed to by the counterparty
 // may be cancelled or modified before the last planned height.
 func (cs *ClientState) VerifyUpgradeAndUpdateState(ctx sdk.Context, cdc codec.BinaryCodec, store sdk.KVStore, newClient exported.ClientState, newConsState exported.ConsensusState, proofUpgradeClient []byte, proofUpgradeConsState []byte) (exported.ClientState, exported.ConsensusState, error) {
-	return cs.GetBaseClientState().VerifyUpgradeAndUpdateState(ctx, cdc, store, newClient, newConsState, proofUpgradeClient, proofUpgradeConsState)
+	return cs.GetUnderlyingClientState().VerifyUpgradeAndUpdateState(ctx, cdc, store, newClient, newConsState, proofUpgradeClient, proofUpgradeConsState)
 }
 
 // Utility function that zeroes out any client customizable fields in client state
 // Ledger enforced fields are maintained while all custom fields are zero values
 // Used to verify upgrades
-func (cs *ClientState) ZeroCustomFields() exported.ClientState {
-	any, err := clienttypes.PackClientState(cs.GetBaseClientState().ZeroCustomFields())
+func (cs ClientState) ZeroCustomFields() exported.ClientState {
+	any, err := clienttypes.PackClientState(cs.GetUnderlyingClientState().ZeroCustomFields())
 	if err != nil {
 		panic(err)
 	}
-	return &ClientState{
-		Base: any,
-	}
+	cs.UnderlyingClientState = any
+	return &cs
 }
 
 // State verification functions
@@ -143,7 +146,7 @@ func (cs *ClientState) VerifyClientState(store sdk.KVStore, cdc codec.BinaryCode
 	if err != nil {
 		return err
 	}
-	if err := cs.GetBaseClientState().VerifyClientState(
+	if err := cs.GetUnderlyingClientState().VerifyClientState(
 		store, cdc, height, prefix, counterpartyClientIdentifier, head.ClientProof, proxyClientState,
 	); err != nil {
 		return err
@@ -155,7 +158,7 @@ func (cs *ClientState) VerifyClientState(store sdk.KVStore, cdc codec.BinaryCode
 	if err != nil {
 		return err
 	}
-	if err := cs.GetBaseClientState().VerifyClientConsensusState(
+	if err := cs.GetUnderlyingClientState().VerifyClientConsensusState(
 		store, cdc, height, counterpartyClientIdentifier, head.ConsensusHeight, prefix, head.ConsensusProof, proxyConsensusState,
 	); err != nil {
 		return err
@@ -254,7 +257,7 @@ func (cs *ClientState) VerifyClientConsensusState(store sdk.KVStore, cdc codec.B
 	if err != nil {
 		return err
 	}
-	if err := cs.GetBaseClientState().VerifyClientState(
+	if err := cs.GetUnderlyingClientState().VerifyClientState(
 		store, cdc, height, prefix, counterpartyClientIdentifier, head.ClientProof, proxyClientState,
 	); err != nil {
 		return err
@@ -266,7 +269,7 @@ func (cs *ClientState) VerifyClientConsensusState(store sdk.KVStore, cdc codec.B
 	if err != nil {
 		return err
 	}
-	if err := cs.GetBaseClientState().VerifyClientConsensusState(
+	if err := cs.GetUnderlyingClientState().VerifyClientConsensusState(
 		store, cdc, height, counterpartyClientIdentifier, head.ConsensusHeight, prefix, head.ConsensusProof, proxyConsensusState,
 	); err != nil {
 		return err
@@ -333,27 +336,27 @@ func (cs *ClientState) VerifyClientConsensusState(store sdk.KVStore, cdc codec.B
 }
 
 func (cs *ClientState) VerifyConnectionState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, proof []byte, connectionID string, connectionEnd exported.ConnectionI) error {
-	return cs.GetBaseClientState().VerifyConnectionState(store, cdc, height, prefix, proof, connectionID, connectionEnd)
+	return cs.GetUnderlyingClientState().VerifyConnectionState(store, cdc, height, prefix, proof, connectionID, connectionEnd)
 }
 
 func (cs *ClientState) VerifyChannelState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, proof []byte, portID string, channelID string, channel exported.ChannelI) error {
-	return cs.GetBaseClientState().VerifyChannelState(store, cdc, height, prefix, proof, portID, channelID, channel)
+	return cs.GetUnderlyingClientState().VerifyChannelState(store, cdc, height, prefix, proof, portID, channelID, channel)
 }
 
 func (cs *ClientState) VerifyPacketCommitment(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64, commitmentBytes []byte) error {
-	return cs.GetBaseClientState().VerifyPacketCommitment(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence, commitmentBytes)
+	return cs.GetUnderlyingClientState().VerifyPacketCommitment(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence, commitmentBytes)
 }
 
 func (cs *ClientState) VerifyPacketAcknowledgement(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64, acknowledgement []byte) error {
-	return cs.GetBaseClientState().VerifyPacketAcknowledgement(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence, acknowledgement)
+	return cs.GetUnderlyingClientState().VerifyPacketAcknowledgement(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence, acknowledgement)
 }
 
 func (cs *ClientState) VerifyPacketReceiptAbsence(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64) error {
-	return cs.GetBaseClientState().VerifyPacketReceiptAbsence(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence)
+	return cs.GetUnderlyingClientState().VerifyPacketReceiptAbsence(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence)
 }
 
 func (cs *ClientState) VerifyNextSequenceRecv(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, nextSequenceRecv uint64) error {
-	return cs.GetBaseClientState().VerifyNextSequenceRecv(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, nextSequenceRecv)
+	return cs.GetUnderlyingClientState().VerifyNextSequenceRecv(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, nextSequenceRecv)
 }
 
 func unpackProxyClientState(cdc codec.BinaryCodec, anyClientState *types.Any) (*proxytypes.ClientState, error) {

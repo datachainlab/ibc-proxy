@@ -22,5 +22,5 @@ func (k ClientKeeper) ValidateSelfClient(ctx sdk.Context, clientState exported.C
 	if !ok {
 		return k.ClientKeeper.ValidateSelfClient(ctx, clientState)
 	}
-	return k.ClientKeeper.ValidateSelfClient(ctx, cs.GetBaseClientState())
+	return k.ClientKeeper.ValidateSelfClient(ctx, cs.GetUnderlyingClientState())
 }

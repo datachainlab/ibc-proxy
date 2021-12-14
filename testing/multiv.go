@@ -55,7 +55,7 @@ func (chain *TestChain) CreateMultiVClient(
 	}
 
 	msg, err := clienttypes.NewMsgCreateClient(
-		multivtypes.NewClientState(m.ClientState),
+		&multivtypes.ClientState{UnderlyingClientState: m.ClientState},
 		consensusState, m.Signer,
 	)
 	if err != nil {
