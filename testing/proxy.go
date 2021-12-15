@@ -19,10 +19,10 @@ import (
 
 func (coord *Coordinator) InitProxy(
 	source, counterparty *TestChain,
-	clientType string, useMultiV bool,
+	clientType string, useMultiV bool, depth uint32,
 ) (clientID string, err error) {
 	if useMultiV {
-		clientID, err = coord.CreateMultiVClient(source, counterparty, clientType)
+		clientID, err = coord.CreateMultiVClient(source, counterparty, clientType, depth)
 	} else {
 		clientID, err = coord.CreateClient(source, counterparty, clientType)
 	}

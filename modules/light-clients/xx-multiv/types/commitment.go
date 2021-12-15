@@ -26,7 +26,7 @@ func (p *MultiProof) ValidateBasic() error {
 	return nil
 }
 
-func UnmarshalProof(cdc codec.BinaryCodec, bz []byte) (*MultiProof, error) {
+func unmarshalProof(cdc codec.BinaryCodec, bz []byte) (*MultiProof, error) {
 	var proof exported.Proof
 	if err := cdc.UnmarshalInterface(bz, &proof); err != nil {
 		return nil, err

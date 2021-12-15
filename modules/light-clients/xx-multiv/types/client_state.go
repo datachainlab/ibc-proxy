@@ -21,18 +21,23 @@ import (
 var _ exported.ClientState = (*ClientState)(nil)
 var _ codectypes.UnpackInterfacesMessage = (*ClientState)(nil)
 
-func NewClientState(base *codectypes.Any) *ClientState {
+func NewClientState(clientState exported.ClientState, depth uint32) *ClientState {
+	anyClientState, err := clienttypes.PackClientState(clientState)
+	if err != nil {
+		panic(err)
+	}
 	return &ClientState{
-		Base: base,
+		UnderlyingClientState: anyClientState,
+		Depth:                 depth,
 	}
 }
 
 func (cs *ClientState) ClientType() string {
-	return cs.GetBaseClientState().ClientType()
+	return cs.GetUnderlyingClientState().ClientType()
 }
 
-func (cs *ClientState) GetBaseClientState() exported.ClientState {
-	state, err := clienttypes.UnpackClientState(cs.Base)
+func (cs *ClientState) GetUnderlyingClientState() exported.ClientState {
+	state, err := clienttypes.UnpackClientState(cs.UnderlyingClientState)
 	if err != nil {
 		panic(err)
 	}
@@ -41,11 +46,11 @@ func (cs *ClientState) GetBaseClientState() exported.ClientState {
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
 func (cs *ClientState) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	return unpacker.UnpackAny(cs.Base, new(exported.ClientState))
+	return unpacker.UnpackAny(cs.UnderlyingClientState, new(exported.ClientState))
 }
 
 func (cs *ClientState) GetLatestHeight() exported.Height {
-	return cs.GetBaseClientState().GetLatestHeight()
+	return cs.GetUnderlyingClientState().GetLatestHeight()
 }
 
 func (cs *ClientState) Status(
@@ -53,25 +58,25 @@ func (cs *ClientState) Status(
 	clientStore sdk.KVStore,
 	cdc codec.BinaryCodec,
 ) exported.Status {
-	return cs.GetBaseClientState().Status(ctx, clientStore, cdc)
+	return cs.GetUnderlyingClientState().Status(ctx, clientStore, cdc)
 }
 
 func (cs *ClientState) Validate() error {
-	if cs.Base == nil {
+	if cs.UnderlyingClientState == nil {
 		return errors.New("Base cannot be nil")
 	}
-	return cs.GetBaseClientState().Validate()
+	return cs.GetUnderlyingClientState().Validate()
 }
 
 func (cs *ClientState) GetProofSpecs() []*ics23.ProofSpec {
-	return cs.GetBaseClientState().GetProofSpecs()
+	return cs.GetUnderlyingClientState().GetProofSpecs()
 }
 
 // Initialization function
 // Clients must validate the initial consensus state, and may store any client-specific metadata
 // necessary for correct light client operation
 func (cs *ClientState) Initialize(ctx sdk.Context, cdc codec.BinaryCodec, clientStore sdk.KVStore, consState exported.ConsensusState) error {
-	if cs.Base == nil {
+	if cs.UnderlyingClientState == nil {
 		return sdkerrors.Wrap(errors.New("invalid clientState"), "the base of a clientState must not be empty")
 	} else if consState == nil {
 		return sdkerrors.Wrap(errors.New("invalid consensusState"), "consensusState must not be empty")
@@ -81,7 +86,7 @@ func (cs *ClientState) Initialize(ctx sdk.Context, cdc codec.BinaryCodec, client
 
 // Genesis function
 func (cs *ClientState) ExportMetadata(store sdk.KVStore) []exported.GenesisMetadata {
-	return cs.GetBaseClientState().ExportMetadata(store)
+	return cs.GetUnderlyingClientState().ExportMetadata(store)
 }
 
 // Upgrade functions
@@ -91,269 +96,168 @@ func (cs *ClientState) ExportMetadata(store sdk.KVStore) []exported.GenesisMetad
 // This is to ensure that no premature upgrades occur, since upgrade plans committed to by the counterparty
 // may be cancelled or modified before the last planned height.
 func (cs *ClientState) VerifyUpgradeAndUpdateState(ctx sdk.Context, cdc codec.BinaryCodec, store sdk.KVStore, newClient exported.ClientState, newConsState exported.ConsensusState, proofUpgradeClient []byte, proofUpgradeConsState []byte) (exported.ClientState, exported.ConsensusState, error) {
-	return cs.GetBaseClientState().VerifyUpgradeAndUpdateState(ctx, cdc, store, newClient, newConsState, proofUpgradeClient, proofUpgradeConsState)
+	return cs.GetUnderlyingClientState().VerifyUpgradeAndUpdateState(ctx, cdc, store, newClient, newConsState, proofUpgradeClient, proofUpgradeConsState)
 }
 
 // Utility function that zeroes out any client customizable fields in client state
 // Ledger enforced fields are maintained while all custom fields are zero values
 // Used to verify upgrades
-func (cs *ClientState) ZeroCustomFields() exported.ClientState {
-	any, err := clienttypes.PackClientState(cs.GetBaseClientState().ZeroCustomFields())
+func (cs ClientState) ZeroCustomFields() exported.ClientState {
+	any, err := clienttypes.PackClientState(cs.GetUnderlyingClientState().ZeroCustomFields())
 	if err != nil {
 		panic(err)
 	}
-	return &ClientState{
-		Base: any,
-	}
+	cs.UnderlyingClientState = any
+	return &cs
 }
 
 // State verification functions
 
 func (cs *ClientState) VerifyClientState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, counterpartyClientIdentifier string, proofBytes []byte, clientState exported.ClientState) error {
-	proof, err := UnmarshalProof(cdc, proofBytes)
+	proof, err := unmarshalProof(cdc, proofBytes)
+	if err != nil {
+		return err
+	}
+	proxyClientState, proxyConsensusState, err := cs.verifyProxyState(store, cdc, height, prefix, counterpartyClientIdentifier, proof)
 	if err != nil {
 		return err
 	}
 
-	if l := len(proof.Proofs); l < 2 {
-		return fmt.Errorf("unexpected proofs length: %v", l)
-	}
-
-	h, ok := proof.Proofs[0].Proof.(*Proof_Branch)
-	if !ok {
-		return fmt.Errorf("first element must be %v, but got %v", &Proof_Branch{}, proof.Proofs[0].Proof)
-	}
-	head := h.Branch
-	if !head.ProofHeight.EQ(height) {
-		return fmt.Errorf("first proof's height must be %v, but got %v", height, head.ProofHeight)
-	}
-
-	l, ok := proof.Proofs[len(proof.Proofs)-1].Proof.(*Proof_LeafClient)
-	if !ok {
-		return fmt.Errorf("last element must be %v, but got %v", &Proof_LeafClient{}, proof.Proofs[len(proof.Proofs)-1].Proof)
-	}
-	leaf := l.LeafClient
-
-	/// Verification process ///
-
-	// step1-1. verify proxy client state on c0
-
-	// client for p on c0
-	proxyClientState, err := unpackProxyClientState(cdc, head.ClientState)
-	if err != nil {
-		return err
-	}
-	if err := cs.GetBaseClientState().VerifyClientState(
-		store, cdc, height, prefix, counterpartyClientIdentifier, head.ClientProof, proxyClientState,
-	); err != nil {
-		return err
-	}
-
-	// step1-2. verify proxy consensus state on c0
-
-	proxyConsensusState, err := unpackProxyConsensusState(cdc, head.ConsensusState)
-	if err != nil {
-		return err
-	}
-	if err := cs.GetBaseClientState().VerifyClientConsensusState(
-		store, cdc, height, counterpartyClientIdentifier, head.ConsensusHeight, prefix, head.ConsensusProof, proxyConsensusState,
-	); err != nil {
-		return err
-	}
-
-	// step2. verify state with nodes
-
-	for _, p := range proof.Proofs[1 : len(proof.Proofs)-1] {
-		b, ok := p.Proof.(*Proof_Branch)
-		if !ok {
-			return fmt.Errorf("unexpected proof type: %T", p.Proof)
-		}
-		branch := b.Branch
-
-		consensusStateBytes, err := clienttypes.MarshalConsensusState(cdc, proxyConsensusState)
-		if err != nil {
-			return err
-		}
-		targetClientState, err := unpackProxyClientState(cdc, branch.ClientState)
-		if err != nil {
-			return err
-		}
-		targetConsensusState, err := unpackProxyConsensusState(cdc, branch.ConsensusState)
-		if err != nil {
-			return err
-		}
-
-		// setup store
-		mem := dbadapter.Store{DB: dbm.NewMemDB()}
-		mem.Set(host.ConsensusStateKey(branch.ProofHeight), consensusStateBytes)
-
-		if err := proxyClientState.IBCVerifyClientState(
-			mem, cdc, branch.ProofHeight, proxyClientState.IbcPrefix, proxyClientState.UpstreamClientId, branch.ClientProof, targetClientState,
-		); err != nil {
-			return err
-		}
-		if err := proxyClientState.IBCVerifyClientConsensusState(
-			mem, cdc, branch.ProofHeight, proxyClientState.UpstreamClientId, branch.ConsensusHeight, proxyClientState.IbcPrefix, branch.ConsensusProof, targetConsensusState,
-		); err != nil {
-			return err
-		}
-
-		proxyClientState = targetClientState
-		proxyConsensusState = targetConsensusState
-	}
-
-	// step3. verify existence of target client state on proxy
-
-	consensusStateBytes, err := clienttypes.MarshalConsensusState(cdc, proxyConsensusState)
-	if err != nil {
-		return err
-	}
-	// setup store
-	mem := dbadapter.Store{DB: dbm.NewMemDB()}
-	mem.Set(host.ConsensusStateKey(leaf.ProofHeight), consensusStateBytes)
-
-	if err := proxyClientState.IBCVerifyClientState(
-		mem, cdc, leaf.ProofHeight, proxyClientState.IbcPrefix, proxyClientState.UpstreamClientId, leaf.Proof, clientState,
-	); err != nil {
-		return err
-	}
-
-	return nil
+	// verify existence of target client state on proxy
+	store = makeMemStore(cdc, proxyConsensusState, proof.Leaf.ProofHeight)
+	return proxyClientState.IBCVerifyClientState(
+		store, cdc, proof.Leaf.ProofHeight, proxyClientState.IbcPrefix, proxyClientState.UpstreamClientId, proof.Leaf.Proof, clientState,
+	)
 }
 
-// the type of proof must be Any
 func (cs *ClientState) VerifyClientConsensusState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, counterpartyClientIdentifier string, consensusHeight exported.Height, prefix exported.Prefix, proofBytes []byte, consensusState exported.ConsensusState) error {
-	proof, err := UnmarshalProof(cdc, proofBytes)
+	proof, err := unmarshalProof(cdc, proofBytes)
 	if err != nil {
 		return err
 	}
-	if l := len(proof.Proofs); l < 2 {
-		return fmt.Errorf("unexpected proofs length: %v", l)
+	proxyClientState, proxyConsensusState, err := cs.verifyProxyState(store, cdc, height, prefix, counterpartyClientIdentifier, proof)
+	if err != nil {
+		return err
 	}
 
-	h, ok := proof.Proofs[0].Proof.(*Proof_Branch)
-	if !ok {
-		return fmt.Errorf("first element must be %v, but got %v", &Proof_Branch{}, proof.Proofs[0].Proof)
+	// verify existence of target client state on proxy
+	store = makeMemStore(cdc, proxyConsensusState, proof.Leaf.ProofHeight)
+	return proxyClientState.IBCVerifyClientConsensusState(
+		store, cdc, proof.Leaf.ProofHeight, proxyClientState.UpstreamClientId, consensusHeight, proxyClientState.IbcPrefix, proof.Leaf.Proof, consensusState,
+	)
+}
+
+func (cs *ClientState) verifyProxyState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, counterpartyClientIdentifier string, proof *MultiProof) (*proxytypes.ClientState, *proxytypes.ConsensusState, error) {
+	/// Proof validation ///
+
+	if err := validateProof(cs, proof); err != nil {
+		return nil, nil, err
 	}
-	head := h.Branch
+	head, branches := proof.Head, proof.Branches
 	if !head.ProofHeight.EQ(height) {
-		return fmt.Errorf("first proof's height must be %v, but got %v", height, head.ProofHeight)
+		return nil, nil, fmt.Errorf("first proof's height must be %v, but got %v", height, head.ProofHeight)
 	}
-	l, ok := proof.Proofs[len(proof.Proofs)-1].Proof.(*Proof_LeafConsensus)
-	if !ok {
-		return fmt.Errorf("last element must be %v, but got %v", &Proof_LeafConsensus{}, proof.Proofs[len(proof.Proofs)-1].Proof)
-	}
-	leaf := l.LeafConsensus
 
 	/// Verification process ///
+
+	// c0: source, c1: counterparty, p: proxy
 
 	// step1-1. verify proxy client state on c0
 
 	// client for p on c0
 	proxyClientState, err := unpackProxyClientState(cdc, head.ClientState)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	if err := cs.GetBaseClientState().VerifyClientState(
+	if err := cs.GetUnderlyingClientState().VerifyClientState(
 		store, cdc, height, prefix, counterpartyClientIdentifier, head.ClientProof, proxyClientState,
 	); err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	// step1-2. verify proxy consensus state on c0
 
 	proxyConsensusState, err := unpackProxyConsensusState(cdc, head.ConsensusState)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	if err := cs.GetBaseClientState().VerifyClientConsensusState(
+	if err := cs.GetUnderlyingClientState().VerifyClientConsensusState(
 		store, cdc, height, counterpartyClientIdentifier, head.ConsensusHeight, prefix, head.ConsensusProof, proxyConsensusState,
 	); err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	// step2. verify state with nodes
+	// step2. verify state recursively
 
-	for _, p := range proof.Proofs[1 : len(proof.Proofs)-1] {
-		b, ok := p.Proof.(*Proof_Branch)
-		if !ok {
-			return fmt.Errorf("unexpected proof type: %T", p.Proof)
-		}
-		branch := b.Branch
-
-		consensusStateBytes, err := clienttypes.MarshalConsensusState(cdc, proxyConsensusState)
-		if err != nil {
-			return err
-		}
+	for _, branch := range branches {
 		targetClientState, err := unpackProxyClientState(cdc, branch.ClientState)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		targetConsensusState, err := unpackProxyConsensusState(cdc, branch.ConsensusState)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 
-		// setup store
-		mem := dbadapter.Store{DB: dbm.NewMemDB()}
-		mem.Set(host.ConsensusStateKey(branch.ProofHeight), consensusStateBytes)
+		store := makeMemStore(cdc, proxyConsensusState, branch.ProofHeight)
 
 		if err := proxyClientState.IBCVerifyClientState(
-			mem, cdc, branch.ProofHeight, proxyClientState.IbcPrefix, proxyClientState.UpstreamClientId, branch.ClientProof, targetClientState,
+			store, cdc, branch.ProofHeight, proxyClientState.IbcPrefix, proxyClientState.UpstreamClientId, branch.ClientProof, targetClientState,
 		); err != nil {
-			return err
+			return nil, nil, err
 		}
 		if err := proxyClientState.IBCVerifyClientConsensusState(
-			mem, cdc, branch.ProofHeight, proxyClientState.UpstreamClientId, branch.ConsensusHeight, proxyClientState.IbcPrefix, branch.ConsensusProof, targetConsensusState,
+			store, cdc, branch.ProofHeight, proxyClientState.UpstreamClientId, branch.ConsensusHeight, proxyClientState.IbcPrefix, branch.ConsensusProof, targetConsensusState,
 		); err != nil {
-			return err
+			return nil, nil, err
 		}
 
 		proxyClientState = targetClientState
 		proxyConsensusState = targetConsensusState
 	}
 
-	// step3. verify existence of target client state on proxy
-
-	consensusStateBytes, err := clienttypes.MarshalConsensusState(cdc, proxyConsensusState)
-	if err != nil {
-		return err
-	}
-	// setup store
-	mem := dbadapter.Store{DB: dbm.NewMemDB()}
-	mem.Set(host.ConsensusStateKey(leaf.ProofHeight), consensusStateBytes)
-
-	if err := proxyClientState.IBCVerifyClientConsensusState(
-		mem, cdc, leaf.ProofHeight, proxyClientState.UpstreamClientId, leaf.ConsensusHeight, proxyClientState.IbcPrefix, leaf.Proof, consensusState,
-	); err != nil {
-		return err
-	}
-
-	return nil
+	return proxyClientState, proxyConsensusState, nil
 }
 
 func (cs *ClientState) VerifyConnectionState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, proof []byte, connectionID string, connectionEnd exported.ConnectionI) error {
-	return cs.GetBaseClientState().VerifyConnectionState(store, cdc, height, prefix, proof, connectionID, connectionEnd)
+	return cs.GetUnderlyingClientState().VerifyConnectionState(store, cdc, height, prefix, proof, connectionID, connectionEnd)
 }
 
 func (cs *ClientState) VerifyChannelState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, proof []byte, portID string, channelID string, channel exported.ChannelI) error {
-	return cs.GetBaseClientState().VerifyChannelState(store, cdc, height, prefix, proof, portID, channelID, channel)
+	return cs.GetUnderlyingClientState().VerifyChannelState(store, cdc, height, prefix, proof, portID, channelID, channel)
 }
 
 func (cs *ClientState) VerifyPacketCommitment(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64, commitmentBytes []byte) error {
-	return cs.GetBaseClientState().VerifyPacketCommitment(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence, commitmentBytes)
+	return cs.GetUnderlyingClientState().VerifyPacketCommitment(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence, commitmentBytes)
 }
 
 func (cs *ClientState) VerifyPacketAcknowledgement(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64, acknowledgement []byte) error {
-	return cs.GetBaseClientState().VerifyPacketAcknowledgement(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence, acknowledgement)
+	return cs.GetUnderlyingClientState().VerifyPacketAcknowledgement(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence, acknowledgement)
 }
 
 func (cs *ClientState) VerifyPacketReceiptAbsence(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, sequence uint64) error {
-	return cs.GetBaseClientState().VerifyPacketReceiptAbsence(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence)
+	return cs.GetUnderlyingClientState().VerifyPacketReceiptAbsence(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, sequence)
 }
 
 func (cs *ClientState) VerifyNextSequenceRecv(ctx sdk.Context, store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, currentTimestamp uint64, delayPeriod uint64, prefix exported.Prefix, proof []byte, portID string, channelID string, nextSequenceRecv uint64) error {
-	return cs.GetBaseClientState().VerifyNextSequenceRecv(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, nextSequenceRecv)
+	return cs.GetUnderlyingClientState().VerifyNextSequenceRecv(ctx, store, cdc, height, currentTimestamp, delayPeriod, prefix, proof, portID, channelID, nextSequenceRecv)
+}
+
+func validateProof(cs *ClientState, proof *MultiProof) error {
+	if l := len(proof.Branches); l != int(cs.Depth) {
+		return fmt.Errorf("invalid branches length: expected=%v got=%v", cs.Depth, len(proof.Branches))
+	}
+	return nil
+}
+
+func makeMemStore(cdc codec.BinaryCodec, consensusState exported.ConsensusState, proofHeight exported.Height) dbadapter.Store {
+	consensusStateBytes, err := clienttypes.MarshalConsensusState(cdc, consensusState)
+	if err != nil {
+		panic(err)
+	}
+	store := dbadapter.Store{DB: dbm.NewMemDB()}
+	store.Set(host.ConsensusStateKey(proofHeight), consensusStateBytes)
+	return store
 }
 
 func unpackProxyClientState(cdc codec.BinaryCodec, anyClientState *types.Any) (*proxytypes.ClientState, error) {
@@ -363,7 +267,7 @@ func unpackProxyClientState(cdc codec.BinaryCodec, anyClientState *types.Any) (*
 	}
 	s, ok := clientState.(*proxytypes.ClientState)
 	if !ok {
-		return nil, fmt.Errorf("the type of proxyClientState must be %T", &proxytypes.ClientState{})
+		return nil, fmt.Errorf("clientState must be %T, but got %T", &proxytypes.ClientState{}, clientState)
 	}
 	return s, nil
 }
@@ -375,7 +279,7 @@ func unpackProxyConsensusState(cdc codec.BinaryCodec, anyConsensusState *types.A
 	}
 	s, ok := consensusState.(*proxytypes.ConsensusState)
 	if !ok {
-		return nil, fmt.Errorf("the type of proxyConsensusState must be %T", &proxytypes.ConsensusState{})
+		return nil, fmt.Errorf("consensusState must be %T, but got %T", &proxytypes.ConsensusState{}, consensusState)
 	}
 	return s, nil
 }

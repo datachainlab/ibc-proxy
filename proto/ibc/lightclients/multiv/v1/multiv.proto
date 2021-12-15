@@ -11,16 +11,19 @@ import "ibc/core/commitment/v1/commitment.proto";
 message ClientState {
   option (gogoproto.goproto_getters) = false;
 
-  google.protobuf.Any base = 1;
+  google.protobuf.Any underlying_client_state = 1;
+  uint32 depth = 2;
 }
 
 message MultiProof {
   option (gogoproto.goproto_getters) = false;
 
-  repeated Proof proofs = 1;
+  Proof head = 1 [(gogoproto.nullable) = false];
+  repeated Proof branches = 2 [(gogoproto.nullable) = false];
+  LeafProof leaf = 3 [(gogoproto.nullable) = false];
 }
 
-message BranchProof {
+message Proof {
   option (gogoproto.goproto_getters) = false;
 
   bytes client_proof = 1;
@@ -31,25 +34,9 @@ message BranchProof {
   ibc.core.client.v1.Height consensus_height = 6 [(gogoproto.nullable) = false];
 }
 
-message Proof {
-  oneof proof {
-    BranchProof branch = 1;
-    LeafClientProof leafClient = 2;
-    LeafConsensusProof leafConsensus = 3;
-  }
-}
-
-message LeafClientProof {
+message LeafProof {
   option (gogoproto.goproto_getters) = false;
 
   bytes proof = 1;
   ibc.core.client.v1.Height proof_height = 2 [(gogoproto.nullable) = false];
-}
-
-message LeafConsensusProof {
-  option (gogoproto.goproto_getters) = false;
-
-  bytes proof = 1;
-  ibc.core.client.v1.Height proof_height = 2 [(gogoproto.nullable) = false];
-  ibc.core.client.v1.Height consensus_height = 3 [(gogoproto.nullable) = false];
 }

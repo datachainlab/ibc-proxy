@@ -16,19 +16,14 @@ import (
 
 func (coord *Coordinator) CreateMultiVClient(
 	source, counterparty *TestChain,
-	clientType string,
-) (clientID string, err error) {
+	clientType string, depth uint32,
+) (string, error) {
 	coord.CommitBlock(source, counterparty)
-
-	clientID = source.NewClientID(clientType)
-
-	err = source.CreateMultiVClient(counterparty, clientID, clientType)
-	if err != nil {
+	clientID := source.NewClientID(clientType)
+	if err := source.CreateMultiVClient(counterparty, clientID, clientType, depth); err != nil {
 		return "", err
 	}
-
 	coord.IncrementTime()
-
 	return clientID, nil
 }
 
@@ -42,12 +37,13 @@ func (coord *Coordinator) UpdateMultiVClient(
 func (chain *TestChain) CreateMultiVClient(
 	counterparty *TestChain,
 	clientID string,
-	wrappedClientType string,
+	clientType string,
+	depth uint32,
 ) error {
-	if wrappedClientType != exported.Tendermint {
-		return fmt.Errorf("unsupported client type %v", wrappedClientType)
+	if clientType != exported.Tendermint {
+		return fmt.Errorf("unsupported client type %v", clientType)
 	}
-	m := chain.ConstructMsgCreateClient(counterparty, clientID, wrappedClientType)
+	m := chain.ConstructMsgCreateClient(counterparty, clientID, clientType)
 
 	consensusState, err := clienttypes.UnpackConsensusState(m.ConsensusState)
 	if err != nil {
@@ -55,7 +51,7 @@ func (chain *TestChain) CreateMultiVClient(
 	}
 
 	msg, err := clienttypes.NewMsgCreateClient(
-		multivtypes.NewClientState(m.ClientState),
+		&multivtypes.ClientState{UnderlyingClientState: m.ClientState, Depth: depth},
 		consensusState, m.Signer,
 	)
 	if err != nil {
@@ -144,11 +140,11 @@ func (chain *TestChain) QueryAnyConsensusStateProof(clientID string) (*codectype
 	return any, proof, consensusHeight
 }
 
-func (chain *TestChain) QueryMultiVBranchProof(clientID string) *multivtypes.BranchProof {
+func (chain *TestChain) QueryMultiVBranchProof(clientID string) *multivtypes.Proof {
 	proxyClientState, proofHeight, proxyProofClient := chain.QueryAnyClientStateProof(clientID)
 	proxyConsensusState, proxyProofConsensus, consensusHeight := chain.QueryAnyConsensusStateProof(clientID)
 
-	return &multivtypes.BranchProof{
+	return &multivtypes.Proof{
 		ClientProof:     proxyProofClient,
 		ClientState:     proxyClientState,
 		ConsensusProof:  proxyProofConsensus,
@@ -158,35 +154,33 @@ func (chain *TestChain) QueryMultiVBranchProof(clientID string) *multivtypes.Bra
 	}
 }
 
-func (chain *TestChain) QueryMultiVLeafClientProof(head *multivtypes.BranchProof, upstreamClientID string) (exported.ClientState, []byte) {
+func (chain *TestChain) QueryMultiVLeafClientProof(head *multivtypes.Proof, upstreamClientID string) (exported.ClientState, []byte) {
 	cs, err := clienttypes.UnpackClientState(head.ClientState)
 	if err != nil {
 		panic(err)
 	}
 	h := cs.GetLatestHeight()
 	upstreamClientState, upstreamClientProof, upstreamProofHeight := chain.queryClientStateProof(upstreamClientID, int64(h.GetRevisionHeight())-1)
-
-	leafClient := &multivtypes.LeafClientProof{
+	leafClient := &multivtypes.LeafProof{
 		Proof:       upstreamClientProof,
 		ProofHeight: upstreamProofHeight,
 	}
-	proofClient := chain.makeClientStateProof(leafClient, head)
+	proofClient := chain.makeMultiProof(head, nil, leafClient)
 	return upstreamClientState, proofClient
 }
 
-func (chain *TestChain) QueryMultiVLeafConsensusProof(head *multivtypes.BranchProof, upstreamClientID string) (exported.ConsensusState, []byte, clienttypes.Height) {
+func (chain *TestChain) QueryMultiVLeafConsensusProof(head *multivtypes.Proof, upstreamClientID string) (exported.ConsensusState, []byte, clienttypes.Height) {
 	cs, err := clienttypes.UnpackClientState(head.ClientState)
 	if err != nil {
 		panic(err)
 	}
 	h := cs.GetLatestHeight()
 	upstreamConsensusProof, upstreamConsensusHeight, upstreamProofHeight := chain.queryConsensusStateProof(upstreamClientID, int64(h.GetRevisionHeight())-1)
-	leafConsensus := &multivtypes.LeafConsensusProof{
-		Proof:           upstreamConsensusProof,
-		ProofHeight:     upstreamProofHeight,
-		ConsensusHeight: upstreamConsensusHeight,
+	leafConsensus := &multivtypes.LeafProof{
+		Proof:       upstreamConsensusProof,
+		ProofHeight: upstreamProofHeight,
 	}
-	proofConsensus := chain.makeConsensusStateProof(leafConsensus, head)
+	proofConsensus := chain.makeMultiProof(head, nil, leafConsensus)
 	consensusState, found := chain.GetConsensusState(upstreamClientID, upstreamConsensusHeight)
 	if !found {
 		panic("consensusState not found")
@@ -194,47 +188,17 @@ func (chain *TestChain) QueryMultiVLeafConsensusProof(head *multivtypes.BranchPr
 	return consensusState, proofConsensus, upstreamConsensusHeight
 }
 
-func (chain *TestChain) makeClientStateProof(
-	leafClient *multivtypes.LeafClientProof,
-	branches ...*multivtypes.BranchProof,
+func (chain *TestChain) makeMultiProof(
+	head *multivtypes.Proof,
+	branches []*multivtypes.Proof,
+	leafClient *multivtypes.LeafProof,
 ) []byte {
 	var mp multivtypes.MultiProof
-
+	mp.Head = *head
 	for _, branch := range branches {
-		mp.Proofs = append(mp.Proofs, &multivtypes.Proof{
-			Proof: &multivtypes.Proof_Branch{Branch: branch},
-		})
+		mp.Branches = append(mp.Branches, *branch)
 	}
-	mp.Proofs = append(mp.Proofs, &multivtypes.Proof{
-		Proof: &multivtypes.Proof_LeafClient{LeafClient: leafClient},
-	})
-
-	any, err := codectypes.NewAnyWithValue(&mp)
-	if err != nil {
-		panic(err)
-	}
-	bz, err := chain.App.AppCodec().Marshal(any)
-	if err != nil {
-		panic(err)
-	}
-	return bz
-}
-
-func (chain *TestChain) makeConsensusStateProof(
-	leafConsensus *multivtypes.LeafConsensusProof,
-	branches ...*multivtypes.BranchProof,
-) []byte {
-	var mp multivtypes.MultiProof
-
-	for _, branch := range branches {
-		mp.Proofs = append(mp.Proofs, &multivtypes.Proof{
-			Proof: &multivtypes.Proof_Branch{Branch: branch},
-		})
-	}
-	mp.Proofs = append(mp.Proofs, &multivtypes.Proof{
-		Proof: &multivtypes.Proof_LeafConsensus{LeafConsensus: leafConsensus},
-	})
-
+	mp.Leaf = *leafClient
 	any, err := codectypes.NewAnyWithValue(&mp)
 	if err != nil {
 		panic(err)
