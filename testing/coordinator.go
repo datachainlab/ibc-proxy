@@ -700,3 +700,17 @@ func (coord *Coordinator) SetChannelClosed(
 		testChannel.CounterpartyClientID, exported.Tendermint,
 	)
 }
+
+// IncrementClientSequence creates a given number of clients. It's useful if you want to use different clientIDs across chains for testing purposes.
+func (coord *Coordinator) IncrementClientSequence(
+	source, counterparty *TestChain,
+	clientType string, num int,
+) error {
+	for i := 0; i < num; i++ {
+		_, err := coord.CreateClient(source, counterparty, clientType)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

@@ -19,11 +19,13 @@ func (suite *KeeperTestSuite) TestMultiV() {
 // A(C) -> B, B -> A
 // A: downstream, B: upstream, C: proxy
 func (suite *KeeperTestSuite) TestOneSideProxy1() {
+	// use different clientIDs for each chain
+	suite.Require().NoError(suite.coordinator.IncrementClientSequence(suite.chainC, suite.chainB, exported.Tendermint, 1))
+	suite.Require().NoError(suite.coordinator.IncrementClientSequence(suite.chainB, suite.chainA, exported.Tendermint, 2))
+
 	clientCB, err := suite.coordinator.InitProxy(suite.chainC, suite.chainB, exported.Tendermint, false, 0)
 	suite.Require().NoError(err)
 
-	// XXX increment the sequence...
-	suite.coordinator.CreateClient(suite.chainB, suite.chainA, exported.Tendermint)
 	clientBA, err := suite.coordinator.CreateMultiVClient(suite.chainB, suite.chainA, exported.Tendermint, 0)
 	suite.Require().NoError(err)
 
@@ -40,11 +42,13 @@ func (suite *KeeperTestSuite) TestOneSideProxy1() {
 // A -> B, B(C) -> A
 // A: upstream, B: downstream, C: proxy
 func (suite *KeeperTestSuite) TestOneSideProxy2() {
+	// use different clientIDs for each chain
+	suite.Require().NoError(suite.coordinator.IncrementClientSequence(suite.chainB, suite.chainC, exported.Tendermint, 1))
+	suite.Require().NoError(suite.coordinator.IncrementClientSequence(suite.chainC, suite.chainA, exported.Tendermint, 2))
+
 	clientCA, err := suite.coordinator.InitProxy(suite.chainC, suite.chainA, exported.Tendermint, false, 0)
 	suite.Require().NoError(err)
 
-	// XXX increment the sequence...
-	suite.coordinator.CreateClient(suite.chainA, suite.chainB, exported.Tendermint)
 	clientAB, err := suite.coordinator.CreateMultiVClient(suite.chainA, suite.chainB, exported.Tendermint, 0)
 	suite.Require().NoError(err)
 
@@ -61,6 +65,11 @@ func (suite *KeeperTestSuite) TestOneSideProxy2() {
 // A(C) -> B, B(D) -> A
 // A: upstream/downstream, B: downstream/upstream, C: proxy for A, D: proxy for B
 func (suite *KeeperTestSuite) TestBothSideProxy() {
+	// use different clientIDs for each chain
+	suite.Require().NoError(suite.coordinator.IncrementClientSequence(suite.chainC, suite.chainB, exported.Tendermint, 1))
+	suite.Require().NoError(suite.coordinator.IncrementClientSequence(suite.chainB, suite.chainD, exported.Tendermint, 2))
+	suite.Require().NoError(suite.coordinator.IncrementClientSequence(suite.chainD, suite.chainA, exported.Tendermint, 3))
+
 	clientCB, err := suite.coordinator.InitProxy(suite.chainC, suite.chainB, exported.Tendermint, true, 0)
 	suite.Require().NoError(err)
 
