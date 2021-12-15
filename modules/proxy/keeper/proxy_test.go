@@ -11,7 +11,7 @@ import (
 )
 
 func (suite *KeeperTestSuite) TestMultiV() {
-	clientBA, err := suite.coordinator.CreateMultiVClient(suite.chainB, suite.chainA, exported.Tendermint)
+	clientBA, err := suite.coordinator.CreateMultiVClient(suite.chainB, suite.chainA, exported.Tendermint, 0)
 	suite.Require().NoError(err)
 	suite.Require().NoError(suite.coordinator.UpdateClient(suite.chainB, suite.chainA, clientBA, exported.Tendermint))
 }
@@ -19,12 +19,12 @@ func (suite *KeeperTestSuite) TestMultiV() {
 // A(C) -> B, B -> A
 // A: downstream, B: upstream, C: proxy
 func (suite *KeeperTestSuite) TestOneSideProxy1() {
-	clientCB, err := suite.coordinator.InitProxy(suite.chainC, suite.chainB, exported.Tendermint, false)
+	clientCB, err := suite.coordinator.InitProxy(suite.chainC, suite.chainB, exported.Tendermint, false, 0)
 	suite.Require().NoError(err)
 
 	// XXX increment the sequence...
 	suite.coordinator.CreateClient(suite.chainB, suite.chainA, exported.Tendermint)
-	clientBA, err := suite.coordinator.CreateMultiVClient(suite.chainB, suite.chainA, exported.Tendermint)
+	clientBA, err := suite.coordinator.CreateMultiVClient(suite.chainB, suite.chainA, exported.Tendermint, 0)
 	suite.Require().NoError(err)
 
 	// setup proxy
@@ -40,12 +40,12 @@ func (suite *KeeperTestSuite) TestOneSideProxy1() {
 // A -> B, B(C) -> A
 // A: upstream, B: downstream, C: proxy
 func (suite *KeeperTestSuite) TestOneSideProxy2() {
-	clientCA, err := suite.coordinator.InitProxy(suite.chainC, suite.chainA, exported.Tendermint, false)
+	clientCA, err := suite.coordinator.InitProxy(suite.chainC, suite.chainA, exported.Tendermint, false, 0)
 	suite.Require().NoError(err)
 
 	// XXX increment the sequence...
 	suite.coordinator.CreateClient(suite.chainA, suite.chainB, exported.Tendermint)
-	clientAB, err := suite.coordinator.CreateMultiVClient(suite.chainA, suite.chainB, exported.Tendermint)
+	clientAB, err := suite.coordinator.CreateMultiVClient(suite.chainA, suite.chainB, exported.Tendermint, 0)
 	suite.Require().NoError(err)
 
 	// downstream creates a proxy client
@@ -61,10 +61,10 @@ func (suite *KeeperTestSuite) TestOneSideProxy2() {
 // A(C) -> B, B(D) -> A
 // A: upstream/downstream, B: downstream/upstream, C: proxy for A, D: proxy for B
 func (suite *KeeperTestSuite) TestBothSideProxy() {
-	clientCB, err := suite.coordinator.InitProxy(suite.chainC, suite.chainB, exported.Tendermint, true)
+	clientCB, err := suite.coordinator.InitProxy(suite.chainC, suite.chainB, exported.Tendermint, true, 0)
 	suite.Require().NoError(err)
 
-	clientDA, err := suite.coordinator.InitProxy(suite.chainD, suite.chainA, exported.Tendermint, true)
+	clientDA, err := suite.coordinator.InitProxy(suite.chainD, suite.chainA, exported.Tendermint, true, 0)
 	suite.Require().NoError(err)
 
 	clientAC, err := suite.coordinator.SetupProxy(suite.chainA, suite.chainC, clientCB)
