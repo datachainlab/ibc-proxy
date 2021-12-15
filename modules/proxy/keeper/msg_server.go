@@ -23,7 +23,7 @@ func (k *Keeper) ProxyClientState(goCtx context.Context, msg *types.MsgProxyClie
 		return nil, err
 	}
 
-	err = k.ClientState(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.CounterpartyClientId, clientState, consensusState, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight)
+	err = k.ClientState(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.CounterpartyClientId, clientState, consensusState, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight)
 	if err != nil {
 		return nil, err
 	}
