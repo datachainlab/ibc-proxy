@@ -114,135 +114,89 @@ func (cs ClientState) ZeroCustomFields() exported.ClientState {
 // State verification functions
 
 func (cs *ClientState) VerifyClientState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, counterpartyClientIdentifier string, proofBytes []byte, clientState exported.ClientState) error {
-	proof, err := UnmarshalProof(cdc, proofBytes)
+	proof, err := unmarshalProof(cdc, proofBytes)
 	if err != nil {
 		return err
 	}
-	if err := validateProof(cs, proof); err != nil {
-		return err
-	}
-	head, branches, leaf := proof.Head, proof.Branches, proof.Leaf
-	if !head.ProofHeight.EQ(height) {
-		return fmt.Errorf("first proof's height must be %v, but got %v", height, proof.Head.ProofHeight)
-	}
-
-	/// Verification process ///
-
-	// step1-1. verify proxy client state on c0
-
-	// client for p on c0
-	proxyClientState, err := unpackProxyClientState(cdc, head.ClientState)
+	proxyClientState, proxyConsensusState, err := cs.verifyProxyState(store, cdc, height, prefix, counterpartyClientIdentifier, proof)
 	if err != nil {
 		return err
 	}
-	if err := cs.GetUnderlyingClientState().VerifyClientState(
-		store, cdc, height, prefix, counterpartyClientIdentifier, head.ClientProof, proxyClientState,
-	); err != nil {
-		return err
-	}
 
-	// step1-2. verify proxy consensus state on c0
-
-	proxyConsensusState, err := unpackProxyConsensusState(cdc, head.ConsensusState)
-	if err != nil {
-		return err
-	}
-	if err := cs.GetUnderlyingClientState().VerifyClientConsensusState(
-		store, cdc, height, counterpartyClientIdentifier, head.ConsensusHeight, prefix, head.ConsensusProof, proxyConsensusState,
-	); err != nil {
-		return err
-	}
-
-	// step2. verify state with nodes
-
-	for _, branch := range branches {
-		targetClientState, err := unpackProxyClientState(cdc, branch.ClientState)
-		if err != nil {
-			return err
-		}
-		targetConsensusState, err := unpackProxyConsensusState(cdc, branch.ConsensusState)
-		if err != nil {
-			return err
-		}
-		store := makeMemStore(cdc, proxyConsensusState, branch.ProofHeight)
-
-		if err := proxyClientState.IBCVerifyClientState(
-			store, cdc, branch.ProofHeight, proxyClientState.IbcPrefix, proxyClientState.UpstreamClientId, branch.ClientProof, targetClientState,
-		); err != nil {
-			return err
-		}
-		if err := proxyClientState.IBCVerifyClientConsensusState(
-			store, cdc, branch.ProofHeight, proxyClientState.UpstreamClientId, branch.ConsensusHeight, proxyClientState.IbcPrefix, branch.ConsensusProof, targetConsensusState,
-		); err != nil {
-			return err
-		}
-
-		proxyClientState = targetClientState
-		proxyConsensusState = targetConsensusState
-	}
-
-	// step3. verify existence of target client state on proxy
-	store = makeMemStore(cdc, proxyConsensusState, leaf.ProofHeight)
-	if err := proxyClientState.IBCVerifyClientState(
-		store, cdc, leaf.ProofHeight, proxyClientState.IbcPrefix, proxyClientState.UpstreamClientId, leaf.Proof, clientState,
-	); err != nil {
-		return err
-	}
-
-	return nil
+	// verify existence of target client state on proxy
+	store = makeMemStore(cdc, proxyConsensusState, proof.Leaf.ProofHeight)
+	return proxyClientState.IBCVerifyClientState(
+		store, cdc, proof.Leaf.ProofHeight, proxyClientState.IbcPrefix, proxyClientState.UpstreamClientId, proof.Leaf.Proof, clientState,
+	)
 }
 
-// the type of proof must be Any
 func (cs *ClientState) VerifyClientConsensusState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, counterpartyClientIdentifier string, consensusHeight exported.Height, prefix exported.Prefix, proofBytes []byte, consensusState exported.ConsensusState) error {
-	proof, err := UnmarshalProof(cdc, proofBytes)
+	proof, err := unmarshalProof(cdc, proofBytes)
 	if err != nil {
 		return err
 	}
-	if err := validateProof(cs, proof); err != nil {
+	proxyClientState, proxyConsensusState, err := cs.verifyProxyState(store, cdc, height, prefix, counterpartyClientIdentifier, proof)
+	if err != nil {
 		return err
 	}
-	head, branches, leaf := proof.Head, proof.Branches, proof.Leaf
+
+	// verify existence of target client state on proxy
+	store = makeMemStore(cdc, proxyConsensusState, proof.Leaf.ProofHeight)
+	return proxyClientState.IBCVerifyClientConsensusState(
+		store, cdc, proof.Leaf.ProofHeight, proxyClientState.UpstreamClientId, consensusHeight, proxyClientState.IbcPrefix, proof.Leaf.Proof, consensusState,
+	)
+}
+
+func (cs *ClientState) verifyProxyState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, counterpartyClientIdentifier string, proof *MultiProof) (*proxytypes.ClientState, *proxytypes.ConsensusState, error) {
+	/// Proof validation ///
+
+	if err := validateProof(cs, proof); err != nil {
+		return nil, nil, err
+	}
+	head, branches := proof.Head, proof.Branches
 	if !head.ProofHeight.EQ(height) {
-		return fmt.Errorf("first proof's height must be %v, but got %v", height, head.ProofHeight)
+		return nil, nil, fmt.Errorf("first proof's height must be %v, but got %v", height, head.ProofHeight)
 	}
 
 	/// Verification process ///
+
+	// c0: source, c1: counterparty, p: proxy
 
 	// step1-1. verify proxy client state on c0
 
 	// client for p on c0
 	proxyClientState, err := unpackProxyClientState(cdc, head.ClientState)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	if err := cs.GetUnderlyingClientState().VerifyClientState(
 		store, cdc, height, prefix, counterpartyClientIdentifier, head.ClientProof, proxyClientState,
 	); err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	// step1-2. verify proxy consensus state on c0
 
 	proxyConsensusState, err := unpackProxyConsensusState(cdc, head.ConsensusState)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	if err := cs.GetUnderlyingClientState().VerifyClientConsensusState(
 		store, cdc, height, counterpartyClientIdentifier, head.ConsensusHeight, prefix, head.ConsensusProof, proxyConsensusState,
 	); err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	// step2. verify state with nodes
+	// step2. verify state recursively
 
 	for _, branch := range branches {
 		targetClientState, err := unpackProxyClientState(cdc, branch.ClientState)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		targetConsensusState, err := unpackProxyConsensusState(cdc, branch.ConsensusState)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 
 		store := makeMemStore(cdc, proxyConsensusState, branch.ProofHeight)
@@ -250,27 +204,19 @@ func (cs *ClientState) VerifyClientConsensusState(store sdk.KVStore, cdc codec.B
 		if err := proxyClientState.IBCVerifyClientState(
 			store, cdc, branch.ProofHeight, proxyClientState.IbcPrefix, proxyClientState.UpstreamClientId, branch.ClientProof, targetClientState,
 		); err != nil {
-			return err
+			return nil, nil, err
 		}
 		if err := proxyClientState.IBCVerifyClientConsensusState(
 			store, cdc, branch.ProofHeight, proxyClientState.UpstreamClientId, branch.ConsensusHeight, proxyClientState.IbcPrefix, branch.ConsensusProof, targetConsensusState,
 		); err != nil {
-			return err
+			return nil, nil, err
 		}
 
 		proxyClientState = targetClientState
 		proxyConsensusState = targetConsensusState
 	}
 
-	// step3. verify existence of target client state on proxy
-	store = makeMemStore(cdc, proxyConsensusState, leaf.ProofHeight)
-	if err := proxyClientState.IBCVerifyClientConsensusState(
-		store, cdc, leaf.ProofHeight, proxyClientState.UpstreamClientId, consensusHeight, proxyClientState.IbcPrefix, leaf.Proof, consensusState,
-	); err != nil {
-		return err
-	}
-
-	return nil
+	return proxyClientState, proxyConsensusState, nil
 }
 
 func (cs *ClientState) VerifyConnectionState(store sdk.KVStore, cdc codec.BinaryCodec, height exported.Height, prefix exported.Prefix, proof []byte, connectionID string, connectionEnd exported.ConnectionI) error {
@@ -321,7 +267,7 @@ func unpackProxyClientState(cdc codec.BinaryCodec, anyClientState *types.Any) (*
 	}
 	s, ok := clientState.(*proxytypes.ClientState)
 	if !ok {
-		return nil, fmt.Errorf("the type of proxyClientState must be %T", &proxytypes.ClientState{})
+		return nil, fmt.Errorf("clientState must be %T, but got %T", &proxytypes.ClientState{}, clientState)
 	}
 	return s, nil
 }
@@ -333,7 +279,7 @@ func unpackProxyConsensusState(cdc codec.BinaryCodec, anyConsensusState *types.A
 	}
 	s, ok := consensusState.(*proxytypes.ConsensusState)
 	if !ok {
-		return nil, fmt.Errorf("the type of proxyConsensusState must be %T", &proxytypes.ConsensusState{})
+		return nil, fmt.Errorf("consensusState must be %T, but got %T", &proxytypes.ConsensusState{}, consensusState)
 	}
 	return s, nil
 }
