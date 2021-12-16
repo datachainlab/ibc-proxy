@@ -11,6 +11,7 @@ require (
 	github.com/confio/ics23/go v0.6.6
 	github.com/cosmos/cosmos-sdk v0.43.0-beta1
 	github.com/cosmos/ibc-go v1.0.0-beta1
+	github.com/gin-gonic/gin v1.7.0 // indirect
 	github.com/gogo/protobuf v1.3.3
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
