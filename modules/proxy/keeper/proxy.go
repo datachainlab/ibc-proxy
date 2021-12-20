@@ -48,7 +48,7 @@ func (k Keeper) VerifyAndProxyClientState(
 	if err := k.VerifyClientState(ctx, upstreamClientID, upstreamPrefix, counterpartyClientID, height, proof, clientState); err != nil {
 		return err
 	}
-	return k.setClientStateCommitment(
+	return k.SetProxyClientState(
 		ctx,
 		upstreamPrefix,
 		counterpartyClientID,
@@ -93,7 +93,7 @@ func (k Keeper) VerifyAndProxyClientConsensusState(
 	if err := k.VerifyClientConsensusState(ctx, upstreamClientID, upstreamPrefix, counterpartyClientID, height, consensusHeight, proof, consensusState); err != nil {
 		return err
 	}
-	return k.setClientConsensusStateCommitment(
+	return k.SetProxyClientConsensusState(
 		ctx,
 		upstreamPrefix,
 		counterpartyClientID,
@@ -123,13 +123,7 @@ func (k Keeper) VerifyConnectionState(
 		return sdkerrors.Wrapf(err, "failed connection state verification for client (%s)", upstreamClientID)
 	}
 
-	return k.setConnectionStateCommitment(
-		ctx,
-		upstreamPrefix,
-		upstreamClientID,
-		connectionID,
-		connection,
-	)
+	return nil
 }
 
 func (k Keeper) VerifyAndProxyConnectionState(
@@ -144,7 +138,7 @@ func (k Keeper) VerifyAndProxyConnectionState(
 	if err := k.VerifyConnectionState(ctx, upstreamClientID, upstreamPrefix, connection, height, proof, connectionID); err != nil {
 		return err
 	}
-	return k.setConnectionStateCommitment(
+	return k.SetProxyConnection(
 		ctx,
 		upstreamPrefix,
 		upstreamClientID,
@@ -194,7 +188,7 @@ func (k Keeper) VerifyAndProxyChannelState(
 	if err := k.VerifyChannelState(ctx, upstreamClientID, upstreamPrefix, connection, height, proof, portID, channelID, channel); err != nil {
 		return err
 	}
-	return k.setChannelStateCommitment(
+	return k.SetProxyChannel(
 		ctx,
 		upstreamPrefix,
 		upstreamClientID,
@@ -251,7 +245,7 @@ func (k Keeper) VerifyAndProxyPacketCommitment(
 		return err
 	}
 
-	return k.setPacketCommitment(
+	return k.SetProxyPacketCommitment(
 		ctx,
 		upstreamPrefix,
 		upstreamClientID,
@@ -309,7 +303,7 @@ func (k Keeper) VerifyAndProxyPacketAcknowledgement(
 		return err
 	}
 
-	return k.setPacketAcknowledgement(
+	return k.SetProxyPacketAcknowledgement(
 		ctx,
 		upstreamPrefix,
 		upstreamClientID,
@@ -366,7 +360,7 @@ func (k Keeper) VerifyAndProxyPacketReceiptAbsence(
 		return err
 	}
 
-	return k.setPacketReceiptAbsence(
+	return k.SetProxyPacketReceiptAbsence(
 		ctx,
 		upstreamPrefix,
 		upstreamClientID,
@@ -421,7 +415,7 @@ func (k Keeper) VerifyAndProxyNextSequenceRecv(
 		return err
 	}
 
-	return k.setNextSequenceRecv(
+	return k.SetProxyNextSequenceRecv(
 		ctx,
 		upstreamPrefix,
 		upstreamClientID,

@@ -30,7 +30,7 @@ func (k Keeper) ConnOpenTry(
 		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
 	}
 
-	_, found := k.GetConnection(ctx, upstreamClientID, connectionID)
+	_, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
 	if found {
 		return fmt.Errorf("connection '%v:%v' already exists", upstreamClientID, connectionID)
 	}
@@ -58,7 +58,6 @@ func (k Keeper) ConnOpenTry(
 		return err
 	}
 
-	k.SetConnection(ctx, upstreamClientID, connectionID, connection)
 	return nil
 }
 
@@ -83,7 +82,7 @@ func (k Keeper) ConnOpenAck(
 		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
 	}
 
-	_, found := k.GetConnection(ctx, upstreamClientID, connectionID)
+	_, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
 	if found {
 		return fmt.Errorf("connection '%v:%v' already exists", upstreamClientID, connectionID)
 	}
@@ -111,7 +110,6 @@ func (k Keeper) ConnOpenAck(
 		return err
 	}
 
-	k.SetConnection(ctx, upstreamClientID, connectionID, connection)
 	return nil
 }
 
@@ -131,7 +129,7 @@ func (k Keeper) ConnOpenConfirm(
 	}
 
 	// TODO validate the connection with a given connection
-	_, found := k.GetConnection(ctx, upstreamClientID, connectionID)
+	_, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
 	if !found {
 		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, connectionID)
 	}
@@ -147,6 +145,5 @@ func (k Keeper) ConnOpenConfirm(
 		return err
 	}
 
-	k.SetConnection(ctx, upstreamClientID, connectionID, connection)
 	return nil
 }

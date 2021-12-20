@@ -868,7 +868,7 @@ func (chain *TestChain) acknowledgePacket(coord *Coordinator, counterparty *Test
 
 func (chain *TestChain) QueryProxyClientStateProof(clientID string, upstreamPrefix exported.Prefix, upstreamClientID string) (exported.ClientState, []byte) {
 	// retrieve client state to provide proof for
-	clientState, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetClientStateCommitment(
+	clientState, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetProxyClientState(
 		chain.GetContext(),
 		upstreamPrefix,
 		clientID,
@@ -880,7 +880,7 @@ func (chain *TestChain) QueryProxyClientStateProof(clientID string, upstreamPref
 }
 
 func (chain *TestChain) QueryProxyConsensusStateProof(clientID string, upstreamPrefix exported.Prefix, upstreamClientID string) ([]byte, clienttypes.Height) {
-	clientState, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetClientStateCommitment(
+	clientState, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetProxyClientState(
 		chain.GetContext(),
 		upstreamPrefix,
 		clientID,

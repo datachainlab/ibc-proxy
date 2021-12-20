@@ -25,7 +25,7 @@ func (k Keeper) ChanOpenTry(
 	proofHeight exported.Height,
 ) error {
 
-	connectionEnd, found := k.GetConnection(ctx, upstreamClientID, connectionHops[0])
+	connectionEnd, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionHops[0])
 	if !found {
 		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, connectionHops[0])
 	}
@@ -63,7 +63,6 @@ func (k Keeper) ChanOpenTry(
 		return err
 	}
 
-	k.SetChannel(ctx, upstreamClientID, upstreamPortID, upstreamChannelID, expectedChannel)
 	return nil
 }
 
@@ -85,7 +84,7 @@ func (k Keeper) ChanOpenAck(
 	proofHeight exported.Height,
 ) error {
 
-	connectionEnd, found := k.GetConnection(ctx, upstreamClientID, connectionHops[0])
+	connectionEnd, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionHops[0])
 	if !found {
 		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, connectionHops[0])
 	}
@@ -104,7 +103,6 @@ func (k Keeper) ChanOpenAck(
 		return err
 	}
 
-	k.SetChannel(ctx, upstreamClientID, portID, channelID, expectedChannel)
 	return nil
 }
 
@@ -122,7 +120,7 @@ func (k Keeper) ChanOpenConfirm(
 	proofHeight exported.Height,
 ) error {
 
-	channel, found := k.GetChannel(ctx, upstreamClientID, portID, channelID)
+	channel, found := k.GetProxyChannel(ctx, upstreamPrefix, upstreamClientID, portID, channelID)
 	if !found {
 		return fmt.Errorf("channel '%v:%v:%v' not found", upstreamClientID, portID, channelID)
 	} else if channel.Counterparty.ChannelId != "" {
@@ -130,7 +128,7 @@ func (k Keeper) ChanOpenConfirm(
 	} else if channel.State != channeltypes.INIT {
 		return fmt.Errorf("channel state must be %s", channeltypes.INIT)
 	}
-	connectionEnd, found := k.GetConnection(ctx, upstreamClientID, channel.ConnectionHops[0])
+	connectionEnd, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, channel.ConnectionHops[0])
 	if !found {
 		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, channel.ConnectionHops[0])
 	}
@@ -146,6 +144,5 @@ func (k Keeper) ChanOpenConfirm(
 		return err
 	}
 
-	k.SetChannel(ctx, upstreamClientID, portID, channelID, channel)
 	return nil
 }

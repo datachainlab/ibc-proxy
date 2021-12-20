@@ -19,7 +19,7 @@ func (k Keeper) RecvPacket(
 	proof []byte,
 	proofHeight exported.Height,
 ) error {
-	channel, found := k.GetChannel(ctx, upstreamClientID, packet.GetSourcePort(), packet.GetSourceChannel())
+	channel, found := k.GetProxyChannel(ctx, upstreamPrefix, upstreamClientID, packet.GetSourcePort(), packet.GetSourceChannel())
 	if !found {
 		return sdkerrors.Wrap(channeltypes.ErrChannelNotFound, packet.GetDestChannel())
 	}
@@ -42,7 +42,7 @@ func (k Keeper) RecvPacket(
 	// Connection must be OPEN to receive a packet. It is possible for connection to not yet be open if packet was
 	// sent optimistically before connection and channel handshake completed. However, to receive a packet,
 	// connection and channel must both be open
-	connectionEnd, found := k.GetConnection(ctx, upstreamClientID, channel.ConnectionHops[0])
+	connectionEnd, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, channel.ConnectionHops[0])
 	if !found {
 		return sdkerrors.Wrap(connectiontypes.ErrConnectionNotFound, channel.ConnectionHops[0])
 	}
@@ -81,7 +81,7 @@ func (k Keeper) AcknowledgePacket(
 	proof []byte,
 	proofHeight exported.Height,
 ) error {
-	channel, found := k.GetChannel(ctx, upstreamClientID, packet.GetDestPort(), packet.GetDestChannel())
+	channel, found := k.GetProxyChannel(ctx, upstreamPrefix, upstreamClientID, packet.GetDestPort(), packet.GetDestChannel())
 	if !found {
 		return sdkerrors.Wrapf(
 			channeltypes.ErrChannelNotFound,
@@ -92,7 +92,7 @@ func (k Keeper) AcknowledgePacket(
 	// Connection must be OPEN to receive a packet. It is possible for connection to not yet be open if packet was
 	// sent optimistically before connection and channel handshake completed. However, to receive a packet,
 	// connection and channel must both be open
-	connectionEnd, found := k.GetConnection(ctx, upstreamClientID, channel.ConnectionHops[0])
+	connectionEnd, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, channel.ConnectionHops[0])
 	if !found {
 		return sdkerrors.Wrap(connectiontypes.ErrConnectionNotFound, channel.ConnectionHops[0])
 	}
