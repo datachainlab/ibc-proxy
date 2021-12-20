@@ -55,7 +55,7 @@ func (k Keeper) RecvPacket(
 		)
 	}
 
-	if err := k.VerifyPacketCommitment(
+	if err := k.VerifyAndProxyPacketCommitment(
 		ctx,
 		upstreamClientID,
 		upstreamPrefix,
@@ -97,7 +97,7 @@ func (k Keeper) AcknowledgePacket(
 		return sdkerrors.Wrap(connectiontypes.ErrConnectionNotFound, channel.ConnectionHops[0])
 	}
 
-	if err := k.VerifyPacketAcknowledgement(
+	if err := k.VerifyAndProxyPacketAcknowledgement(
 		ctx,
 		upstreamClientID,
 		upstreamPrefix,

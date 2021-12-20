@@ -55,7 +55,7 @@ func (k Keeper) ChanOpenTry(
 		connectionHops, version,
 	)
 
-	if err := k.VerifyChannelState(
+	if err := k.VerifyAndProxyChannelState(
 		ctx, upstreamClientID, upstreamPrefix, connectionEnd,
 		proofHeight, proofInit,
 		upstreamPortID, upstreamChannelID, expectedChannel,
@@ -96,7 +96,7 @@ func (k Keeper) ChanOpenAck(
 		connectionHops, version,
 	)
 
-	if err := k.VerifyChannelState(
+	if err := k.VerifyAndProxyChannelState(
 		ctx, upstreamClientID, upstreamPrefix, connectionEnd,
 		proofHeight, proofTry,
 		portID, channelID, expectedChannel,
@@ -138,7 +138,7 @@ func (k Keeper) ChanOpenConfirm(
 	channel.Counterparty.ChannelId = downstreamChannelID
 	channel.State = channeltypes.OPEN
 
-	if err := k.VerifyChannelState(
+	if err := k.VerifyAndProxyChannelState(
 		ctx, upstreamClientID, upstreamPrefix, connectionEnd,
 		proofHeight, proofAck,
 		portID, channelID, channel,
