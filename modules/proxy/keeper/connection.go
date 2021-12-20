@@ -120,7 +120,7 @@ func (k Keeper) ConnOpenConfirm(
 	connectionID string, // the connection ID corresponding to A on B
 	upstreamClientID string, // the client ID corresponding to A
 	upstreamPrefix exported.Prefix,
-	connection connectiontypes.ConnectionEnd, // the connection corresponding to A on B (its state must be OPEN)
+	counterpartyConnectionID string,
 	proofAck []byte, // proof that connection opened on ChainA during ConnOpenAck
 	proofHeight exported.Height, // height that relayer constructed proofAck
 ) error {
@@ -128,15 +128,17 @@ func (k Keeper) ConnOpenConfirm(
 		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
 	}
 
-	// TODO validate the connection with a given connection
-	_, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
+	connection, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
 	if !found {
 		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, connectionID)
 	}
 
-	if connection.State != connectiontypes.OPEN {
-		return fmt.Errorf("connection state must be %s", connectiontypes.OPEN)
+	if connection.State != connectiontypes.INIT {
+		return fmt.Errorf("connection state must be %s", connectiontypes.INIT)
 	}
+
+	connection.State = connectiontypes.OPEN
+	connection.Counterparty.ConnectionId = counterpartyConnectionID
 
 	// Ensure that ChainB stored expected connectionEnd in its state during ConnOpenTry
 	if err := k.VerifyAndProxyConnectionState(

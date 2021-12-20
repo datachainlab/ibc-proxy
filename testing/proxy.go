@@ -384,7 +384,7 @@ func (coord *Coordinator) ConnOpenConfirmWithProxy(
 			counterpartyConnection.ID,
 			proxies[0].UpstreamClientID,
 			proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
-			connection,
+			connection.Counterparty.ConnectionId,
 			proofAck,
 			proofHeight,
 			proxy.SenderAccount.GetAddress().String(),
