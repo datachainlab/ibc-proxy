@@ -5,7 +5,6 @@ option go_package = "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-
 
 import "gogoproto/gogo.proto";
 import "google/protobuf/any.proto";
-import "ibc/core/client/v1/client.proto";
 import "ibc/core/commitment/v1/commitment.proto";
 
 message ClientState {
