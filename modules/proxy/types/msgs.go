@@ -210,19 +210,19 @@ func NewMsgProxyConnectionOpenConfirm(
 	connectionID string,
 	upstreamClientID string,
 	upstreamPrefix commitmenttypes.MerklePrefix,
-	connection connectiontypes.ConnectionEnd,
+	counterpartyConnectionID string,
 	proofAck []byte,
 	proofHeight clienttypes.Height,
 	signer string,
 ) (*MsgProxyConnectionOpenConfirm, error) {
 	return &MsgProxyConnectionOpenConfirm{
-		ConnectionId:     connectionID,
-		UpstreamClientId: upstreamClientID,
-		UpstreamPrefix:   upstreamPrefix,
-		Connection:       connection,
-		ProofAck:         proofAck,
-		ProofHeight:      proofHeight,
-		Signer:           signer,
+		ConnectionId:             connectionID,
+		UpstreamClientId:         upstreamClientID,
+		UpstreamPrefix:           upstreamPrefix,
+		CounterpartyConnectionId: counterpartyConnectionID,
+		ProofAck:                 proofAck,
+		ProofHeight:              proofHeight,
+		Signer:                   signer,
 	}, nil
 }
 

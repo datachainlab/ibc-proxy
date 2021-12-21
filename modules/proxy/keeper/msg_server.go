@@ -74,7 +74,7 @@ func (k *Keeper) ProxyConnectionOpenAck(goCtx context.Context, msg *types.MsgPro
 func (k *Keeper) ProxyConnectionOpenConfirm(goCtx context.Context, msg *types.MsgProxyConnectionOpenConfirm) (*types.MsgProxyConnectionOpenConfirmResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	err := k.ConnOpenConfirm(ctx, msg.ConnectionId, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Connection, msg.ProofAck, msg.ProofHeight)
+	err := k.ConnOpenConfirm(ctx, msg.ConnectionId, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.CounterpartyConnectionId, msg.ProofAck, msg.ProofHeight)
 	if err != nil {
 		return nil, err
 	}

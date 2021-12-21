@@ -26,12 +26,12 @@ func (k Keeper) ClientState(
 	}
 
 	// Check that ChainA stored the clientState provided in the msg
-	if err := k.VerifyClientState(ctx, upstreamClientID, upstreamPrefix, counterpartyClientID, proofHeight, proofClient, clientState); err != nil {
+	if err := k.VerifyAndProxyClientState(ctx, upstreamClientID, upstreamPrefix, counterpartyClientID, proofHeight, proofClient, clientState); err != nil {
 		return err
 	}
 
 	// Check that ChainA stored the correct ConsensusState of chainB or proxy at the given consensusHeight
-	if err := k.VerifyClientConsensusState(
+	if err := k.VerifyAndProxyClientConsensusState(
 		ctx, upstreamClientID, upstreamPrefix, counterpartyClientID, proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
 	); err != nil {
 		return err

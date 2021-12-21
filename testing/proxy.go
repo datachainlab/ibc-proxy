@@ -6,7 +6,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	connectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
-	"github.com/cosmos/ibc-go/modules/core/04-channel/types"
 	channeltypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
 	commitmenttypes "github.com/cosmos/ibc-go/modules/core/23-commitment/types"
 	host "github.com/cosmos/ibc-go/modules/core/24-host"
@@ -49,7 +48,7 @@ func (coord *Coordinator) SetupProxy(
 
 	clientA, clientB := coord.SetupClients(downstream, proxy, exported.Tendermint)
 	connA, connB := coord.CreateConnection(downstream, proxy, clientA, clientB, proxytypes.Version)
-	chanA, _ := coord.CreateChannel(downstream, proxy, connA, connB, proxytypes.PortID, proxytypes.PortID, types.UNORDERED)
+	chanA, _ := coord.CreateChannel(downstream, proxy, connA, connB, proxytypes.PortID, proxytypes.PortID, channeltypes.UNORDERED)
 
 	// begin proxy handshake
 
@@ -185,21 +184,6 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 		}
 		coord.IncrementTime()
 	} else {
-		// source: downstream, counterparty: upstream
-		proxy := proxies[0].Chain
-
-		proxyConnection := connectiontypes.NewConnectionEnd(
-			connectiontypes.INIT,
-			counterpartyConnection.ClientID,
-			connectiontypes.Counterparty{
-				ClientId:     proxies[0].ClientID,
-				ConnectionId: "",
-				Prefix:       counterparty.GetPrefix(),
-			},
-			[]*connectiontypes.Version{ConnectionVersion},
-			DefaultDelayPeriod,
-		)
-
 		var (
 			counterpartyClient exported.ClientState
 			proofClient        []byte
@@ -207,6 +191,10 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 			proofConsensus     []byte
 			consensusHeight    clienttypes.Height
 		)
+
+		// source: downstream, counterparty: upstream
+		proxy := proxies[0].Chain
+		connection := counterparty.GetConnection(counterpartyConnection)
 
 		if proxies[1] == nil {
 			var found bool
@@ -228,7 +216,7 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 			counterpartyConnection.ID,
 			proxies[0].UpstreamClientID,
 			proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
-			proxyConnection,
+			connection,
 			counterpartyClient,
 			consensusState,
 			proofInit, proofClient, proofConsensus, proofHeight, consensusHeight, proxy.SenderAccount.GetAddress().String(),
@@ -287,70 +275,57 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 		}
 		coord.IncrementTime()
 	} else {
-		// source: downstream, counterparty: upstream
-		proxy := proxies[0].Chain
-
-		proxyConnection := connectiontypes.NewConnectionEnd(
-			connectiontypes.TRYOPEN,
-			counterpartyConnection.ClientID,
-			connectiontypes.Counterparty{
-				ClientId:     sourceConnection.ClientID,
-				ConnectionId: sourceConnection.ID,
-				Prefix:       counterparty.GetPrefix(),
-			},
-			[]*connectiontypes.Version{ConnectionVersion},
-			DefaultDelayPeriod,
+		var (
+			counterpartyClient exported.ClientState
+			proofClient        []byte
+			consensusState     exported.ConsensusState
+			proofConsensus     []byte
+			consensusHeight    clienttypes.Height
 		)
 
-		{
-			var (
-				counterpartyClient exported.ClientState
-				proofClient        []byte
-				consensusState     exported.ConsensusState
-				proofConsensus     []byte
-				consensusHeight    clienttypes.Height
-			)
+		// source: downstream, counterparty: upstream
+		proxy := proxies[0].Chain
+		connection := counterparty.GetConnection(counterpartyConnection)
 
-			if proxies[1] == nil {
-				var found bool
-				counterpartyClient, proofClient = counterparty.QueryClientStateProof(counterpartyConnection.ClientID)
-				proofConsensus, consensusHeight = counterparty.QueryConsensusStateProof(counterpartyConnection.ClientID)
-				consensusState, found = counterparty.GetConsensusState(counterpartyConnection.ClientID, consensusHeight)
-				if !found {
-					return fmt.Errorf("consensusState '%v-%v' not found", counterpartyConnection.ClientID, consensusHeight)
-				}
-			} else {
-				head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
-				counterpartyProxy := *proxies[1]
-				counterpartyClient, proofClient = counterpartyProxy.Chain.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID)
-				consensusState, proofConsensus, consensusHeight = counterpartyProxy.Chain.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID)
+		if proxies[1] == nil {
+			var found bool
+			counterpartyClient, proofClient = counterparty.QueryClientStateProof(counterpartyConnection.ClientID)
+			proofConsensus, consensusHeight = counterparty.QueryConsensusStateProof(counterpartyConnection.ClientID)
+			consensusState, found = counterparty.GetConsensusState(counterpartyConnection.ClientID, consensusHeight)
+			if !found {
+				return fmt.Errorf("consensusState '%v-%v' not found", counterpartyConnection.ClientID, consensusHeight)
 			}
-
-			proofTry, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
-
-			msg, err := proxytypes.NewMsgProxyConnectionOpenAck(
-				counterpartyConnection.ID,
-				proxies[0].UpstreamClientID,
-				proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
-				proxyConnection,
-				counterpartyClient,
-				consensusState,
-				ConnectionVersion,
-				proofTry,
-				proofClient,
-				proofConsensus,
-				proofHeight,
-				consensusHeight,
-				proxy.SenderAccount.GetAddress().String(),
-			)
-			if err != nil {
-				return err
-			}
-			if _, err := proxy.SendMsgs(msg); err != nil {
-				return err
-			}
-			coord.CommitBlock(proxy)
+		} else {
+			head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
+			counterpartyProxy := *proxies[1]
+			counterpartyClient, proofClient = counterpartyProxy.Chain.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID)
+			consensusState, proofConsensus, consensusHeight = counterpartyProxy.Chain.QueryMultiVLeafConsensusProof(head, counterpartyProxy.UpstreamClientID)
 		}
+
+		proofTry, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
+
+		msg, err := proxytypes.NewMsgProxyConnectionOpenAck(
+			counterpartyConnection.ID,
+			proxies[0].UpstreamClientID,
+			proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
+			connection,
+			counterpartyClient,
+			consensusState,
+			ConnectionVersion,
+			proofTry,
+			proofClient,
+			proofConsensus,
+			proofHeight,
+			consensusHeight,
+			proxy.SenderAccount.GetAddress().String(),
+		)
+		if err != nil {
+			return err
+		}
+		if _, err := proxy.SendMsgs(msg); err != nil {
+			return err
+		}
+		coord.CommitBlock(proxy)
 
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
 			return err
@@ -366,7 +341,7 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 				sourceConnection.ID, counterpartyConnection.ID, client, // testing doesn't use flexible selection
 				proofTry, proofClient, proofConsensus,
 				proofHeight, consensusHeight,
-				proxyConnection.Versions[0],
+				connection.Versions[0],
 				source.SenderAccount.GetAddress().String(),
 			)
 			if _, err := source.SendMsgs(msg); err != nil {
@@ -400,18 +375,7 @@ func (coord *Coordinator) ConnOpenConfirmWithProxy(
 	} else {
 		// source: downstream, counterparty: upstream
 		proxy := proxies[0].Chain
-
-		proxyConnection := connectiontypes.NewConnectionEnd(
-			connectiontypes.OPEN,
-			counterpartyConnection.ClientID,
-			connectiontypes.Counterparty{
-				ClientId:     sourceConnection.ClientID,
-				ConnectionId: sourceConnection.ID,
-				Prefix:       counterparty.GetPrefix(),
-			},
-			[]*connectiontypes.Version{ConnectionVersion},
-			DefaultDelayPeriod,
-		)
+		connection := counterparty.GetConnection(counterpartyConnection)
 
 		connectionKey := host.ConnectionKey(counterpartyConnection.ID)
 		proofAck, proofHeight := counterparty.QueryProof(connectionKey)
@@ -420,7 +384,7 @@ func (coord *Coordinator) ConnOpenConfirmWithProxy(
 			counterpartyConnection.ID,
 			proxies[0].UpstreamClientID,
 			proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
-			proxyConnection,
+			connection.Counterparty.ConnectionId,
 			proofAck,
 			proofHeight,
 			proxy.SenderAccount.GetAddress().String(),
@@ -868,7 +832,7 @@ func (chain *TestChain) acknowledgePacket(coord *Coordinator, counterparty *Test
 
 func (chain *TestChain) QueryProxyClientStateProof(clientID string, upstreamPrefix exported.Prefix, upstreamClientID string) (exported.ClientState, []byte) {
 	// retrieve client state to provide proof for
-	clientState, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetClientStateCommitment(
+	clientState, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetProxyClientState(
 		chain.GetContext(),
 		upstreamPrefix,
 		clientID,
@@ -880,7 +844,7 @@ func (chain *TestChain) QueryProxyClientStateProof(clientID string, upstreamPref
 }
 
 func (chain *TestChain) QueryProxyConsensusStateProof(clientID string, upstreamPrefix exported.Prefix, upstreamClientID string) ([]byte, clienttypes.Height) {
-	clientState, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetClientStateCommitment(
+	clientState, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetProxyClientState(
 		chain.GetContext(),
 		upstreamPrefix,
 		clientID,

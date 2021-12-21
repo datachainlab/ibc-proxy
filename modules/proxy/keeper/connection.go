@@ -16,7 +16,7 @@ func (k Keeper) ConnOpenTry(
 	connectionID string, // the connection ID corresponding to B on A
 	upstreamClientID string, // the client ID corresponding to A on P
 	upstreamPrefix exported.Prefix,
-	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to B on A (its state must be INIT)
+	connection connectiontypes.ConnectionEnd, // the connection corresponding to B on A (its state must be INIT)
 
 	clientState exported.ClientState, // clientState for chainB
 	proofInit []byte, // proof that chainA stored connectionEnd in state (on ConnOpenInit)
@@ -30,35 +30,34 @@ func (k Keeper) ConnOpenTry(
 		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
 	}
 
-	_, found := k.GetConnection(ctx, upstreamClientID, connectionID)
+	_, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
 	if found {
 		return fmt.Errorf("connection '%v:%v' already exists", upstreamClientID, connectionID)
 	}
 
-	if proxyConnection.State != connectiontypes.INIT {
+	if connection.State != connectiontypes.INIT {
 		return fmt.Errorf("connection state must be %s", connectiontypes.INIT)
 	}
 
 	// Check that ChainA stored the clientState provided in the msg
-	if err := k.VerifyClientState(ctx, upstreamClientID, upstreamPrefix, proxyConnection.GetClientID(), proofHeight, proofClient, clientState); err != nil {
+	if err := k.VerifyAndProxyClientState(ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, proofClient, clientState); err != nil {
 		return err
 	}
 
 	// Ensure that ChainB stored expected connectionEnd in its state during ConnOpenTry
-	if err := k.VerifyConnectionState(
-		ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, proofInit, connectionID,
+	if err := k.VerifyAndProxyConnectionState(
+		ctx, upstreamClientID, upstreamPrefix, connection, proofHeight, proofInit, connectionID,
 	); err != nil {
 		return err
 	}
 
 	// Check that ChainA stored the correct ConsensusState of chainB or proxy at the given consensusHeight
-	if err := k.VerifyClientConsensusState(
-		ctx, upstreamClientID, upstreamPrefix, proxyConnection.GetClientID(), proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
+	if err := k.VerifyAndProxyClientConsensusState(
+		ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
 	); err != nil {
 		return err
 	}
 
-	k.SetConnection(ctx, upstreamClientID, connectionID, proxyConnection)
 	return nil
 }
 
@@ -69,7 +68,7 @@ func (k Keeper) ConnOpenAck(
 	connectionID string, // connectionID corresponding to B on A
 	upstreamClientID string, // clientID corresponding to B on P
 	upstreamPrefix exported.Prefix,
-	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to A on B (its state must be TRYOPEN)
+	connection connectiontypes.ConnectionEnd, // the connection corresponding to A on B (its state must be TRYOPEN)
 	clientState exported.ClientState, // client state for chainA on chainB
 	version *connectiontypes.Version, // version that ChainB chose in ConnOpenTry
 	proofTry []byte, // proof that connectionEnd was added to ChainB state in ConnOpenTry
@@ -83,35 +82,34 @@ func (k Keeper) ConnOpenAck(
 		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
 	}
 
-	_, found := k.GetConnection(ctx, upstreamClientID, connectionID)
+	_, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
 	if found {
 		return fmt.Errorf("connection '%v:%v' already exists", upstreamClientID, connectionID)
 	}
 
-	if proxyConnection.State != connectiontypes.TRYOPEN {
+	if connection.State != connectiontypes.TRYOPEN {
 		return fmt.Errorf("connection state must be %s", connectiontypes.TRYOPEN)
 	}
 
 	// Check that ChainB stored the clientState provided in the msg
-	if err := k.VerifyClientState(ctx, upstreamClientID, upstreamPrefix, proxyConnection.GetClientID(), proofHeight, proofClient, clientState); err != nil {
+	if err := k.VerifyAndProxyClientState(ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, proofClient, clientState); err != nil {
 		return err
 	}
 
 	// Ensure that ChainB stored expected connectionEnd in its state during ConnOpenTry
-	if err := k.VerifyConnectionState(
-		ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, proofTry, connectionID,
+	if err := k.VerifyAndProxyConnectionState(
+		ctx, upstreamClientID, upstreamPrefix, connection, proofHeight, proofTry, connectionID,
 	); err != nil {
 		return err
 	}
 
 	// Ensure that ChainB has stored the correct ConsensusState for chainA at the consensusHeight
-	if err := k.VerifyClientConsensusState(
-		ctx, upstreamClientID, upstreamPrefix, proxyConnection.GetClientID(), proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
+	if err := k.VerifyAndProxyClientConsensusState(
+		ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
 	); err != nil {
 		return err
 	}
 
-	k.SetConnection(ctx, upstreamClientID, connectionID, proxyConnection)
 	return nil
 }
 
@@ -122,7 +120,7 @@ func (k Keeper) ConnOpenConfirm(
 	connectionID string, // the connection ID corresponding to A on B
 	upstreamClientID string, // the client ID corresponding to A
 	upstreamPrefix exported.Prefix,
-	proxyConnection connectiontypes.ConnectionEnd, // the connection corresponding to A on B (its state must be OPEN)
+	counterpartyConnectionID string,
 	proofAck []byte, // proof that connection opened on ChainA during ConnOpenAck
 	proofHeight exported.Height, // height that relayer constructed proofAck
 ) error {
@@ -130,23 +128,24 @@ func (k Keeper) ConnOpenConfirm(
 		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
 	}
 
-	// TODO validate the connection with a given proxyConnection
-	_, found := k.GetConnection(ctx, upstreamClientID, connectionID)
+	connection, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
 	if !found {
 		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, connectionID)
 	}
 
-	if proxyConnection.State != connectiontypes.OPEN {
-		return fmt.Errorf("connection state must be %s", connectiontypes.OPEN)
+	if connection.State != connectiontypes.INIT {
+		return fmt.Errorf("connection state must be %s", connectiontypes.INIT)
 	}
 
+	connection.State = connectiontypes.OPEN
+	connection.Counterparty.ConnectionId = counterpartyConnectionID
+
 	// Ensure that ChainB stored expected connectionEnd in its state during ConnOpenTry
-	if err := k.VerifyConnectionState(
-		ctx, upstreamClientID, upstreamPrefix, proxyConnection, proofHeight, proofAck, connectionID,
+	if err := k.VerifyAndProxyConnectionState(
+		ctx, upstreamClientID, upstreamPrefix, connection, proofHeight, proofAck, connectionID,
 	); err != nil {
 		return err
 	}
 
-	k.SetConnection(ctx, upstreamClientID, connectionID, proxyConnection)
 	return nil
 }
