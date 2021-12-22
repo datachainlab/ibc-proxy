@@ -72,18 +72,22 @@ message MsgProxyConnectionOpenAck {
   option (gogoproto.goproto_getters) = false;
 
   string connection_id = 1;
-  string upstream_client_id = 2;
-  ibc.core.commitment.v1.MerklePrefix upstream_prefix = 3 [(gogoproto.nullable) = false];
-  ibc.core.connection.v1.ConnectionEnd connection = 4 [(gogoproto.nullable) = false];
-  google.protobuf.Any client_state = 5;
-  google.protobuf.Any consensus_state = 6;
-  ibc.core.connection.v1.Version version = 7;
+  ibc.core.commitment.v1.MerklePrefix upstream_prefix = 2 [(gogoproto.nullable) = false];
+  ibc.core.connection.v1.ConnectionEnd connection = 3 [(gogoproto.nullable) = false];
+  google.protobuf.Any downstream_client_state = 4;
+  google.protobuf.Any downstream_consensus_state = 5;
+  google.protobuf.Any proxy_client_state = 6;
+  google.protobuf.Any proxy_consensus_state = 7;
   bytes proof_try = 8;
   bytes proof_client = 9;
   bytes proof_consensus = 10;
   ibc.core.client.v1.Height proof_height = 11 [(gogoproto.nullable) = false];
   ibc.core.client.v1.Height consensus_height = 12 [(gogoproto.nullable) = false];
-  string signer = 13;
+  bytes proof_proxy_client = 13;
+  bytes proof_proxy_consensus = 14;
+  ibc.core.client.v1.Height proof_proxy_height = 15 [(gogoproto.nullable) = false];
+  ibc.core.client.v1.Height proxy_consensus_height = 16 [(gogoproto.nullable) = false];
+  string signer = 17;
 }
 
 message MsgProxyConnectionOpenAckResponse {}

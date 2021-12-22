@@ -62,16 +62,24 @@ func (k *Keeper) ProxyConnectionOpenTry(goCtx context.Context, msg *types.MsgPro
 func (k *Keeper) ProxyConnectionOpenAck(goCtx context.Context, msg *types.MsgProxyConnectionOpenAck) (*types.MsgProxyConnectionOpenAckResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	clientState, err := clienttypes.UnpackClientState(msg.ClientState)
+	downstreamClientState, err := clienttypes.UnpackClientState(msg.DownstreamClientState)
 	if err != nil {
 		return nil, err
 	}
-	consensusState, err := clienttypes.UnpackConsensusState(msg.ConsensusState)
+	downstreamConsensusState, err := clienttypes.UnpackConsensusState(msg.DownstreamConsensusState)
+	if err != nil {
+		return nil, err
+	}
+	proxyClientState, err := clienttypes.UnpackClientState(msg.ProxyClientState)
+	if err != nil {
+		return nil, err
+	}
+	proxyConsensusState, err := clienttypes.UnpackConsensusState(msg.ProxyConsensusState)
 	if err != nil {
 		return nil, err
 	}
 
-	err = k.ConnOpenAck(ctx, msg.ConnectionId, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.Connection, clientState, msg.Version, msg.ProofTry, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight, consensusState)
+	err = k.ConnOpenAck(ctx, msg.ConnectionId, &msg.UpstreamPrefix, msg.Connection, downstreamClientState, downstreamConsensusState, proxyClientState, proxyConsensusState, msg.ProofTry, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight, msg.ProofProxyClient, msg.ProofProxyConsensus, msg.ProofProxyHeight, msg.ProxyConsensusHeight)
 	if err != nil {
 		return nil, err
 	}

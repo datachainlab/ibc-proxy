@@ -45,11 +45,8 @@ func (k Keeper) ConnOpenTry(
 	if !ok {
 		return fmt.Errorf("clientType mismatch %v", proxyClientState.ClientType())
 	}
-	if !bytes.Equal(k.GetIBCCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), proxyClientState2.IbcPrefix.Bytes()) {
-		return fmt.Errorf("IBC commitment prefix mismatch: %X != %X", k.GetIBCCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), proxyClientState2.IbcPrefix.Bytes())
-	}
-	if !bytes.Equal(k.GetProxyCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), proxyClientState2.ProxyPrefix.Bytes()) {
-		return fmt.Errorf("Proxy commitment prefix mismatch: %X != %X", k.GetProxyCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), proxyClientState2.ProxyPrefix.Bytes())
+	if err := k.ValidateSelfClient(proxyClientState2); err != nil {
+		return err
 	}
 	upstreamClientID := proxyClientState2.UpstreamClientId
 
@@ -96,7 +93,7 @@ func (k Keeper) ConnOpenTry(
 		return err
 	}
 
-	// Ensure that ChainB stored expected connectionEnd in its state during ConnOpenTry
+	// Ensure that ChainA stored expected connectionEnd in its state during ConnOpenTry
 	if err := k.VerifyAndProxyConnectionState(
 		ctx, upstreamClientID, upstreamPrefix, connection, proofHeight, proofInit, connectionID,
 	); err != nil {
@@ -111,18 +108,31 @@ func (k Keeper) ConnOpenTry(
 func (k Keeper) ConnOpenAck(
 	ctx sdk.Context,
 	connectionID string, // connectionID corresponding to B on A
-	upstreamClientID string, // clientID corresponding to B on P
 	upstreamPrefix exported.Prefix,
 	connection connectiontypes.ConnectionEnd, // the connection corresponding to A on B (its state must be TRYOPEN)
-	clientState exported.ClientState, // client state for chainA on chainB
-	version *connectiontypes.Version, // version that ChainB chose in ConnOpenTry
+	downstreamClientState exported.ClientState, // clientState for chainA
+	downstreamConsensusState exported.ConsensusState, // consensusState for chainA
+	proxyClientState exported.ClientState, // clientState for proxy
+	proxyConsensusState exported.ConsensusState, // consensusState for proxy
 	proofTry []byte, // proof that connectionEnd was added to ChainB state in ConnOpenTry
 	proofClient []byte, // proof of client state on chainB for chainA
 	proofConsensus []byte, // proof that chainB has stored ConsensusState of chainA on its client
 	proofHeight exported.Height, // height that relayer constructed proofTry
 	consensusHeight exported.Height, // latest height of chainA that chainB has stored on its chainA client
-	expectedConsensusState exported.ConsensusState,
+	proofProxyClient []byte,
+	proofProxyConsensus []byte,
+	proofProxyHeight exported.Height,
+	proxyConsensusHeight exported.Height,
 ) error {
+	proxyClientState2, ok := proxyClientState.(*proxytypes.ClientState)
+	if !ok {
+		return fmt.Errorf("clientType mismatch %v", proxyClientState.ClientType())
+	}
+	if err := k.ValidateSelfClient(proxyClientState2); err != nil {
+		return err
+	}
+	upstreamClientID := proxyClientState2.UpstreamClientId
+
 	if !k.IsProxyEnabled(ctx, upstreamClientID) {
 		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
 	}
@@ -137,20 +147,38 @@ func (k Keeper) ConnOpenAck(
 	}
 
 	// Check that ChainB stored the clientState provided in the msg
-	if err := k.VerifyAndProxyClientState(ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, proofClient, clientState); err != nil {
+	if err := k.VerifyAndProxyClientState(ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, proofClient, downstreamClientState); err != nil {
+		return err
+	}
+
+	// Ensure that ChainB has stored the correct ConsensusState for chainA at the consensusHeight
+	if err := k.VerifyAndProxyClientConsensusState(
+		ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, consensusHeight, proofConsensus, downstreamConsensusState,
+	); err != nil {
+		return err
+	}
+
+	if dcs, ok := downstreamClientState.(*multivtypes.ClientState); ok {
+		downstreamClientState = dcs.GetUnderlyingClientState()
+	}
+
+	store := makeMemStore(k.cdc, downstreamConsensusState, proofProxyHeight)
+
+	if err := downstreamClientState.VerifyClientState(
+		store, k.cdc, proofProxyHeight, connection.Counterparty.GetPrefix(), connection.Counterparty.ClientId, proofProxyClient, proxyClientState,
+	); err != nil {
+		return err
+	}
+
+	if err := downstreamClientState.VerifyClientConsensusState(
+		store, k.cdc, proofProxyHeight, connection.Counterparty.ClientId, proxyConsensusHeight, connection.Counterparty.GetPrefix(), proofProxyConsensus, proxyConsensusState,
+	); err != nil {
 		return err
 	}
 
 	// Ensure that ChainB stored expected connectionEnd in its state during ConnOpenTry
 	if err := k.VerifyAndProxyConnectionState(
 		ctx, upstreamClientID, upstreamPrefix, connection, proofHeight, proofTry, connectionID,
-	); err != nil {
-		return err
-	}
-
-	// Ensure that ChainB has stored the correct ConsensusState for chainA at the consensusHeight
-	if err := k.VerifyAndProxyClientConsensusState(
-		ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
 	); err != nil {
 		return err
 	}
@@ -185,13 +213,23 @@ func (k Keeper) ConnOpenConfirm(
 	connection.State = connectiontypes.OPEN
 	connection.Counterparty.ConnectionId = counterpartyConnectionID
 
-	// Ensure that ChainB stored expected connectionEnd in its state during ConnOpenTry
+	// Ensure that ChainA stored expected connectionEnd in its state during ConnOpenTry
 	if err := k.VerifyAndProxyConnectionState(
 		ctx, upstreamClientID, upstreamPrefix, connection, proofHeight, proofAck, connectionID,
 	); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (k Keeper) ValidateSelfClient(clientState *proxytypes.ClientState) error {
+	if !bytes.Equal(k.GetIBCCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), clientState.IbcPrefix.Bytes()) {
+		return fmt.Errorf("IBC commitment prefix mismatch: %X != %X", k.GetIBCCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), clientState.IbcPrefix.Bytes())
+	}
+	if !bytes.Equal(k.GetProxyCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), clientState.ProxyPrefix.Bytes()) {
+		return fmt.Errorf("Proxy commitment prefix mismatch: %X != %X", k.GetProxyCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), clientState.ProxyPrefix.Bytes())
+	}
 	return nil
 }
 

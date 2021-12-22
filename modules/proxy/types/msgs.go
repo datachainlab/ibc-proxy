@@ -157,41 +157,41 @@ func (msg MsgProxyConnectionOpenTry) UnpackInterfaces(unpacker codectypes.AnyUnp
 
 func NewMsgProxyConnectionOpenAck(
 	connectionID string,
-	upstreamClientID string,
 	upstreamPrefix commitmenttypes.MerklePrefix,
 	connection connectiontypes.ConnectionEnd,
-	clientState exported.ClientState,
-	consensusState exported.ConsensusState,
-	version *connectiontypes.Version,
+	downstreamClientState exported.ClientState,
+	downstreamConsensusState exported.ConsensusState,
+	proxyClientState exported.ClientState,
+	proxyConsensusState exported.ConsensusState,
 	proofTry []byte,
 	proofClient []byte,
 	proofConsensus []byte,
 	proofHeight clienttypes.Height,
 	consensusHeight clienttypes.Height,
+	proofProxyClient []byte,
+	proofProxyConsensus []byte,
+	proofProxyHeight clienttypes.Height,
+	proxyConsensusHeight clienttypes.Height,
 	signer string,
 ) (*MsgProxyConnectionOpenAck, error) {
-	anyClient, err := clienttypes.PackClientState(clientState)
-	if err != nil {
-		return nil, err
-	}
-	anyConsensus, err := clienttypes.PackConsensusState(consensusState)
-	if err != nil {
-		return nil, err
-	}
 	return &MsgProxyConnectionOpenAck{
-		ConnectionId:     connectionID,
-		UpstreamClientId: upstreamClientID,
-		UpstreamPrefix:   upstreamPrefix,
-		Connection:       connection,
-		ClientState:      anyClient,
-		ConsensusState:   anyConsensus,
-		Version:          version,
-		ProofTry:         proofTry,
-		ProofClient:      proofClient,
-		ProofConsensus:   proofConsensus,
-		ProofHeight:      proofHeight,
-		ConsensusHeight:  consensusHeight,
-		Signer:           signer,
+		ConnectionId:             connectionID,
+		UpstreamPrefix:           upstreamPrefix,
+		Connection:               connection,
+		DownstreamClientState:    mustPackClientState(downstreamClientState),
+		DownstreamConsensusState: mustPackConsensusState(downstreamConsensusState),
+		ProxyClientState:         mustPackClientState(proxyClientState),
+		ProxyConsensusState:      mustPackConsensusState(proxyConsensusState),
+		ProofTry:                 proofTry,
+		ProofClient:              proofClient,
+		ProofConsensus:           proofConsensus,
+		ProofHeight:              proofHeight,
+		ConsensusHeight:          consensusHeight,
+		ProofProxyClient:         proofProxyClient,
+		ProofProxyConsensus:      proofProxyConsensus,
+		ProofProxyHeight:         proofProxyHeight,
+		ProxyConsensusHeight:     proxyConsensusHeight,
+		Signer:                   signer,
 	}, nil
 }
 
@@ -211,14 +211,27 @@ func (msg MsgProxyConnectionOpenAck) GetSigners() []sdk.AccAddress {
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
 func (msg MsgProxyConnectionOpenAck) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	var clientState exported.ClientState
-	err := unpacker.UnpackAny(msg.ClientState, &clientState)
-	if err != nil {
+	var downstreamClientState exported.ClientState
+	if err := unpacker.UnpackAny(msg.DownstreamClientState, &downstreamClientState); err != nil {
 		return err
 	}
 
-	var consensusState exported.ConsensusState
-	return unpacker.UnpackAny(msg.ConsensusState, &consensusState)
+	var downstreamConsensusState exported.ConsensusState
+	if err := unpacker.UnpackAny(msg.DownstreamConsensusState, &downstreamConsensusState); err != nil {
+		return err
+	}
+
+	var proxyClientState exported.ClientState
+	if err := unpacker.UnpackAny(msg.ProxyClientState, &proxyClientState); err != nil {
+		return err
+	}
+
+	var proxyConsensusState exported.ConsensusState
+	if err := unpacker.UnpackAny(msg.ProxyConsensusState, &proxyConsensusState); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func NewMsgProxyConnectionOpenConfirm(
