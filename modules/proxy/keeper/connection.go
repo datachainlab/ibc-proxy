@@ -45,7 +45,7 @@ func (k Keeper) ConnOpenTry(
 	if !ok {
 		return fmt.Errorf("clientType mismatch %v", proxyClientState.ClientType())
 	}
-	if err := k.ValidateSelfClient(proxyClientState2); err != nil {
+	if err := k.ValidateSelfClient(ctx, proxyClientState2); err != nil {
 		return err
 	}
 	upstreamClientID := proxyClientState2.UpstreamClientId
@@ -124,7 +124,7 @@ func (k Keeper) ConnOpenAck(
 	if !ok {
 		return fmt.Errorf("clientType mismatch %v", proxyClientState.ClientType())
 	}
-	if err := k.ValidateSelfClient(proxyClientState2); err != nil {
+	if err := k.ValidateSelfClient(ctx, proxyClientState2); err != nil {
 		return err
 	}
 	upstreamClientID := proxyClientState2.UpstreamClientId
@@ -212,14 +212,14 @@ func (k Keeper) ConnOpenConfirm(
 	return nil
 }
 
-func (k Keeper) ValidateSelfClient(clientState *proxytypes.ClientState) error {
+func (k Keeper) ValidateSelfClient(ctx sdk.Context, clientState *proxytypes.ClientState) error {
 	if !bytes.Equal(k.GetIBCCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), clientState.IbcPrefix.Bytes()) {
 		return fmt.Errorf("IBC commitment prefix mismatch: %X != %X", k.GetIBCCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), clientState.IbcPrefix.Bytes())
 	}
 	if !bytes.Equal(k.GetProxyCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), clientState.ProxyPrefix.Bytes()) {
 		return fmt.Errorf("Proxy commitment prefix mismatch: %X != %X", k.GetProxyCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), clientState.ProxyPrefix.Bytes())
 	}
-	return nil
+	return k.clientKeeper.ValidateSelfClient(ctx, clientState.GetProxyClientState())
 }
 
 func makeMemStore(cdc codec.BinaryCodec, consensusState exported.ConsensusState, proofHeight exported.Height) dbadapter.Store {

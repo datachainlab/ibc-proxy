@@ -8,4 +8,5 @@ import (
 type ClientKeeper interface {
 	ClientStore(ctx sdk.Context, clientID string) sdk.KVStore
 	GetClientState(ctx sdk.Context, clientID string) (exported.ClientState, bool)
+	ValidateSelfClient(ctx sdk.Context, clientState exported.ClientState) error
 }
