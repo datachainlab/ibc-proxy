@@ -46,12 +46,8 @@ func (k *Keeper) ProxyConnectionOpenTry(goCtx context.Context, msg *types.MsgPro
 	if err != nil {
 		return nil, err
 	}
-	proxyConsensusState, err := clienttypes.UnpackConsensusState(msg.ProxyConsensusState)
-	if err != nil {
-		return nil, err
-	}
 
-	err = k.ConnOpenTry(ctx, msg.ConnectionId, &msg.UpstreamPrefix, msg.Connection, downstreamClientState, downstreamConsensusState, proxyClientState, proxyConsensusState, msg.ProofInit, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight, msg.ProofProxyClient, msg.ProofProxyConsensus, msg.ProofProxyHeight, msg.ProxyConsensusHeight)
+	err = k.ConnOpenTry(ctx, msg.ConnectionId, &msg.UpstreamPrefix, msg.Connection, downstreamClientState, downstreamConsensusState, proxyClientState, msg.ProofInit, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight, msg.ProofProxyClient, msg.ProofProxyConsensus, msg.ProofProxyHeight, msg.ProxyConsensusHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -74,12 +70,8 @@ func (k *Keeper) ProxyConnectionOpenAck(goCtx context.Context, msg *types.MsgPro
 	if err != nil {
 		return nil, err
 	}
-	proxyConsensusState, err := clienttypes.UnpackConsensusState(msg.ProxyConsensusState)
-	if err != nil {
-		return nil, err
-	}
 
-	err = k.ConnOpenAck(ctx, msg.ConnectionId, &msg.UpstreamPrefix, msg.Connection, downstreamClientState, downstreamConsensusState, proxyClientState, proxyConsensusState, msg.ProofTry, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight, msg.ProofProxyClient, msg.ProofProxyConsensus, msg.ProofProxyHeight, msg.ProxyConsensusHeight)
+	err = k.ConnOpenAck(ctx, msg.ConnectionId, &msg.UpstreamPrefix, msg.Connection, downstreamClientState, downstreamConsensusState, proxyClientState, msg.ProofTry, msg.ProofClient, msg.ProofConsensus, msg.ProofHeight, msg.ConsensusHeight, msg.ProofProxyClient, msg.ProofProxyConsensus, msg.ProofProxyHeight, msg.ProxyConsensusHeight)
 	if err != nil {
 		return nil, err
 	}

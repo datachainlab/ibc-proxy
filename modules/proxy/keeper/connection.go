@@ -28,7 +28,6 @@ func (k Keeper) ConnOpenTry(
 	downstreamClientState exported.ClientState, // clientState for chainB
 	downstreamConsensusState exported.ConsensusState, // consensusState for chainB
 	proxyClientState exported.ClientState, // clientState for proxy
-	proxyConsensusState exported.ConsensusState, // consensusState for proxy
 
 	proofInit []byte, // proof that chainA stored connectionEnd in state (on ConnOpenInit)
 	proofClient []byte, // proof that chainA stored a light client of chainB
@@ -75,6 +74,11 @@ func (k Keeper) ConnOpenTry(
 		downstreamClientState = dcs.GetUnderlyingClientState()
 	}
 
+	proxyConsensusState, err := k.GetSelfConsensusState(ctx, proxyConsensusHeight)
+	if err != nil {
+		return err
+	}
+
 	store := makeMemStore(k.cdc, downstreamConsensusState, proofProxyHeight)
 
 	if err := downstreamClientState.VerifyClientState(
@@ -103,13 +107,15 @@ func (k Keeper) ConnOpenTry(
 // CONTRACT: upstream is B, downstream is A, we are proxy(P)
 func (k Keeper) ConnOpenAck(
 	ctx sdk.Context,
+
 	connectionID string, // connectionID corresponding to B on A
 	upstreamPrefix exported.Prefix,
 	connection connectiontypes.ConnectionEnd, // the connection corresponding to A on B (its state must be TRYOPEN)
+
 	downstreamClientState exported.ClientState, // clientState for chainA
 	downstreamConsensusState exported.ConsensusState, // consensusState for chainA
 	proxyClientState exported.ClientState, // clientState for proxy
-	proxyConsensusState exported.ConsensusState, // consensusState for proxy
+
 	proofTry []byte, // proof that connectionEnd was added to ChainB state in ConnOpenTry
 	proofClient []byte, // proof of client state on chainB for chainA
 	proofConsensus []byte, // proof that chainB has stored ConsensusState of chainA on its client
@@ -154,6 +160,11 @@ func (k Keeper) ConnOpenAck(
 		downstreamClientState = dcs.GetUnderlyingClientState()
 	}
 
+	proxyConsensusState, err := k.GetSelfConsensusState(ctx, proxyConsensusHeight)
+	if err != nil {
+		return err
+	}
+
 	store := makeMemStore(k.cdc, downstreamConsensusState, proofProxyHeight)
 
 	if err := downstreamClientState.VerifyClientState(
@@ -182,10 +193,12 @@ func (k Keeper) ConnOpenAck(
 // CONTRACT: upstream is A, downstream is B, we are proxy(P)
 func (k Keeper) ConnOpenConfirm(
 	ctx sdk.Context,
+
 	connectionID string, // the connection ID corresponding to A on B
 	upstreamClientID string, // the client ID corresponding to A
 	upstreamPrefix exported.Prefix,
 	counterpartyConnectionID string,
+
 	proofAck []byte, // proof that connection opened on ChainA during ConnOpenAck
 	proofHeight exported.Height, // height that relayer constructed proofAck
 ) error {
@@ -220,6 +233,18 @@ func (k Keeper) ValidateSelfClient(ctx sdk.Context, clientState *proxytypes.Clie
 		return fmt.Errorf("Proxy commitment prefix mismatch: %X != %X", k.GetProxyCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), clientState.ProxyPrefix.Bytes())
 	}
 	return k.clientKeeper.ValidateSelfClient(ctx, clientState.GetProxyClientState())
+}
+
+func (k Keeper) GetSelfConsensusState(ctx sdk.Context, consensusHeight exported.Height) (*proxytypes.ConsensusState, error) {
+	selfConsensusState, ok := k.clientKeeper.GetSelfConsensusState(ctx, consensusHeight)
+	if !ok {
+		return nil, fmt.Errorf("self consensus state not found: height=%v", consensusHeight)
+	}
+	anyConsensusState, err := clienttypes.PackConsensusState(selfConsensusState)
+	if err != nil {
+		return nil, err
+	}
+	return proxytypes.NewConsensusState(anyConsensusState), nil
 }
 
 func makeMemStore(cdc codec.BinaryCodec, consensusState exported.ConsensusState, proofHeight exported.Height) dbadapter.Store {

@@ -83,7 +83,6 @@ func NewMsgProxyConnectionOpenTry(
 	downstreamClientState exported.ClientState,
 	downstreamConsensusState exported.ConsensusState,
 	proxyClientState exported.ClientState,
-	proxyConsensusState exported.ConsensusState,
 	proofInit []byte,
 	proofClient []byte,
 	proofConsensus []byte,
@@ -102,7 +101,6 @@ func NewMsgProxyConnectionOpenTry(
 		DownstreamClientState:    mustPackClientState(downstreamClientState),
 		DownstreamConsensusState: mustPackConsensusState(downstreamConsensusState),
 		ProxyClientState:         mustPackClientState(proxyClientState),
-		ProxyConsensusState:      mustPackConsensusState(proxyConsensusState),
 		ProofInit:                proofInit,
 		ProofClient:              proofClient,
 		ProofConsensus:           proofConsensus,
@@ -147,11 +145,6 @@ func (msg MsgProxyConnectionOpenTry) UnpackInterfaces(unpacker codectypes.AnyUnp
 		return err
 	}
 
-	var proxyConsensusState exported.ConsensusState
-	if err := unpacker.UnpackAny(msg.ProxyConsensusState, &proxyConsensusState); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -162,7 +155,6 @@ func NewMsgProxyConnectionOpenAck(
 	downstreamClientState exported.ClientState,
 	downstreamConsensusState exported.ConsensusState,
 	proxyClientState exported.ClientState,
-	proxyConsensusState exported.ConsensusState,
 	proofTry []byte,
 	proofClient []byte,
 	proofConsensus []byte,
@@ -181,7 +173,6 @@ func NewMsgProxyConnectionOpenAck(
 		DownstreamClientState:    mustPackClientState(downstreamClientState),
 		DownstreamConsensusState: mustPackConsensusState(downstreamConsensusState),
 		ProxyClientState:         mustPackClientState(proxyClientState),
-		ProxyConsensusState:      mustPackConsensusState(proxyConsensusState),
 		ProofTry:                 proofTry,
 		ProofClient:              proofClient,
 		ProofConsensus:           proofConsensus,
@@ -223,11 +214,6 @@ func (msg MsgProxyConnectionOpenAck) UnpackInterfaces(unpacker codectypes.AnyUnp
 
 	var proxyClientState exported.ClientState
 	if err := unpacker.UnpackAny(msg.ProxyClientState, &proxyClientState); err != nil {
-		return err
-	}
-
-	var proxyConsensusState exported.ConsensusState
-	if err := unpacker.UnpackAny(msg.ProxyConsensusState, &proxyConsensusState); err != nil {
 		return err
 	}
 

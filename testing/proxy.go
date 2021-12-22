@@ -222,17 +222,12 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 		proofInit, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
 		proxyClientState, proofProxyClient, proofProxyHeight := source.queryClientStateProof(sourceConnection.ClientID, int64(counterpartyClient.GetLatestHeight().GetRevisionHeight()-1))
 		proofProxyConsensus, proxyConsensusHeight, _ := source.queryConsensusStateProof(sourceConnection.ClientID, int64(counterpartyClient.GetLatestHeight().GetRevisionHeight()-1))
-		proxyConsensusState, found := source.GetConsensusState(sourceConnection.ClientID, proxyConsensusHeight)
-		if !found {
-			return fmt.Errorf("consensusState '%v-%v' not found", sourceConnection.ClientID, proxyConsensusHeight)
-		}
 
 		msg, err := proxytypes.NewMsgProxyConnectionOpenTry(
 			counterpartyConnection.ID,
 			proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
 			connection,
-			counterpartyClient, consensusState,
-			proxyClientState, proxyConsensusState,
+			counterpartyClient, consensusState, proxyClientState,
 			proofInit, proofClient, proofConsensus, proofHeight, consensusHeight, proofProxyClient, proofProxyConsensus, proofProxyHeight, proxyConsensusHeight, proxy.SenderAccount.GetAddress().String(),
 		)
 		if err != nil {
@@ -331,17 +326,12 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 		proofTry, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
 		proxyClientState, proofProxyClient, proofProxyHeight := source.queryClientStateProof(sourceConnection.ClientID, int64(counterpartyClient.GetLatestHeight().GetRevisionHeight()-1))
 		proofProxyConsensus, proxyConsensusHeight, _ := source.queryConsensusStateProof(sourceConnection.ClientID, int64(counterpartyClient.GetLatestHeight().GetRevisionHeight()-1))
-		proxyConsensusState, found := source.GetConsensusState(sourceConnection.ClientID, proxyConsensusHeight)
-		if !found {
-			return fmt.Errorf("consensusState '%v-%v' not found", sourceConnection.ClientID, proxyConsensusHeight)
-		}
 
 		msg, err := proxytypes.NewMsgProxyConnectionOpenAck(
 			counterpartyConnection.ID,
 			proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
 			connection,
-			counterpartyClient, consensusState,
-			proxyClientState, proxyConsensusState,
+			counterpartyClient, consensusState, proxyClientState,
 			proofTry, proofClient, proofConsensus, proofHeight,
 			consensusHeight, proofProxyClient, proofProxyConsensus, proofProxyHeight, proxyConsensusHeight, proxy.SenderAccount.GetAddress().String(),
 		)

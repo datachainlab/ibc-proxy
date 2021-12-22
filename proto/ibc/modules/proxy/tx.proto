@@ -52,17 +52,16 @@ message MsgProxyConnectionOpenTry {
   google.protobuf.Any downstream_client_state = 4;
   google.protobuf.Any downstream_consensus_state = 5;
   google.protobuf.Any proxy_client_state = 6;
-  google.protobuf.Any proxy_consensus_state = 7;
-  bytes proof_init = 8;
-  bytes proof_client = 9;
-  bytes proof_consensus = 10;
-  ibc.core.client.v1.Height proof_height = 11 [(gogoproto.nullable) = false];
-  ibc.core.client.v1.Height consensus_height = 12 [(gogoproto.nullable) = false];
-  bytes proof_proxy_client = 13;
-  bytes proof_proxy_consensus = 14;
-  ibc.core.client.v1.Height proof_proxy_height = 15 [(gogoproto.nullable) = false];
-  ibc.core.client.v1.Height proxy_consensus_height = 16 [(gogoproto.nullable) = false];
-  string signer = 17;
+  bytes proof_init = 7;
+  bytes proof_client = 8;
+  bytes proof_consensus = 9;
+  ibc.core.client.v1.Height proof_height = 10 [(gogoproto.nullable) = false];
+  ibc.core.client.v1.Height consensus_height = 11 [(gogoproto.nullable) = false];
+  bytes proof_proxy_client = 12;
+  bytes proof_proxy_consensus = 13;
+  ibc.core.client.v1.Height proof_proxy_height = 14 [(gogoproto.nullable) = false];
+  ibc.core.client.v1.Height proxy_consensus_height = 15 [(gogoproto.nullable) = false];
+  string signer = 16;
 }
 
 message MsgProxyConnectionOpenTryResponse {}
@@ -77,17 +76,16 @@ message MsgProxyConnectionOpenAck {
   google.protobuf.Any downstream_client_state = 4;
   google.protobuf.Any downstream_consensus_state = 5;
   google.protobuf.Any proxy_client_state = 6;
-  google.protobuf.Any proxy_consensus_state = 7;
-  bytes proof_try = 8;
-  bytes proof_client = 9;
-  bytes proof_consensus = 10;
-  ibc.core.client.v1.Height proof_height = 11 [(gogoproto.nullable) = false];
-  ibc.core.client.v1.Height consensus_height = 12 [(gogoproto.nullable) = false];
-  bytes proof_proxy_client = 13;
-  bytes proof_proxy_consensus = 14;
-  ibc.core.client.v1.Height proof_proxy_height = 15 [(gogoproto.nullable) = false];
-  ibc.core.client.v1.Height proxy_consensus_height = 16 [(gogoproto.nullable) = false];
-  string signer = 17;
+  bytes proof_try = 7;
+  bytes proof_client = 8;
+  bytes proof_consensus = 9;
+  ibc.core.client.v1.Height proof_height = 10 [(gogoproto.nullable) = false];
+  ibc.core.client.v1.Height consensus_height = 11 [(gogoproto.nullable) = false];
+  bytes proof_proxy_client = 12;
+  bytes proof_proxy_consensus = 13;
+  ibc.core.client.v1.Height proof_proxy_height = 14 [(gogoproto.nullable) = false];
+  ibc.core.client.v1.Height proxy_consensus_height = 15 [(gogoproto.nullable) = false];
+  string signer = 16;
 }
 
 message MsgProxyConnectionOpenAckResponse {}
