@@ -50,10 +50,6 @@ func (k Keeper) ConnOpenTry(
 	}
 	upstreamClientID := proxyClientState2.UpstreamClientId
 
-	if !k.IsProxyEnabled(ctx, upstreamClientID) {
-		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
-	}
-
 	_, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
 	if found {
 		return fmt.Errorf("connection '%v:%v' already exists", upstreamClientID, connectionID)
@@ -133,10 +129,6 @@ func (k Keeper) ConnOpenAck(
 	}
 	upstreamClientID := proxyClientState2.UpstreamClientId
 
-	if !k.IsProxyEnabled(ctx, upstreamClientID) {
-		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
-	}
-
 	_, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
 	if found {
 		return fmt.Errorf("connection '%v:%v' already exists", upstreamClientID, connectionID)
@@ -197,9 +189,6 @@ func (k Keeper) ConnOpenConfirm(
 	proofAck []byte, // proof that connection opened on ChainA during ConnOpenAck
 	proofHeight exported.Height, // height that relayer constructed proofAck
 ) error {
-	if !k.IsProxyEnabled(ctx, upstreamClientID) {
-		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
-	}
 
 	connection, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
 	if !found {

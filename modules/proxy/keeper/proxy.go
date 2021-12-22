@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"math"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
@@ -428,14 +426,5 @@ func (k Keeper) VerifyAndProxyNextSequenceRecv(
 // getBlockDelay calculates the block delay period from the time delay of the connection
 // and the maximum expected time per block.
 func (k Keeper) getBlockDelay(ctx sdk.Context, connection exported.ConnectionI) uint64 {
-	// expectedTimePerBlock should never be zero, however if it is then return a 0 blcok delay for safety
-	// as the expectedTimePerBlock parameter was not set.
-	expectedTimePerBlock := k.connectionKeeper.GetMaxExpectedTimePerBlock(ctx)
-	if expectedTimePerBlock == 0 {
-		return 0
-	}
-	// calculate minimum block delay by dividing time delay period
-	// by the expected time per block. Round up the block delay.
-	timeDelay := connection.GetDelayPeriod()
-	return uint64(math.Ceil(float64(timeDelay) / float64(expectedTimePerBlock)))
+	return 0
 }

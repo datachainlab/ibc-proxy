@@ -7,7 +7,7 @@ import (
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-sdk/codec/types"
 	_ "github.com/cosmos/ibc-go/modules/core/02-client/types"
-	types "github.com/cosmos/ibc-go/modules/core/23-commitment/types"
+	_ "github.com/cosmos/ibc-go/modules/core/23-commitment/types"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	io "io"
@@ -26,146 +26,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type Status int32
-
-const (
-	UNINITIALIZED Status = 0
-	OK            Status = 1
-	FAILED        Status = 2
-)
-
-var Status_name = map[int32]string{
-	0: "STATUS_UNINITIALIZED_UNSPECIFIED",
-	1: "STATE_OK",
-	2: "STATE_FAILED",
-}
-
-var Status_value = map[string]int32{
-	"STATUS_UNINITIALIZED_UNSPECIFIED": 0,
-	"STATE_OK":                         1,
-	"STATE_FAILED":                     2,
-}
-
-func (x Status) String() string {
-	return proto.EnumName(Status_name, int32(x))
-}
-
-func (Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_cd60f0f20217e257, []int{0}
-}
-
-type ProxyRequestPacketData struct {
-	UpstreamClientId string `protobuf:"bytes,1,opt,name=upstream_client_id,json=upstreamClientId,proto3" json:"upstream_client_id,omitempty"`
-	ProxyClientId    string `protobuf:"bytes,2,opt,name=proxy_client_id,json=proxyClientId,proto3" json:"proxy_client_id,omitempty"`
-}
-
-func (m *ProxyRequestPacketData) Reset()         { *m = ProxyRequestPacketData{} }
-func (m *ProxyRequestPacketData) String() string { return proto.CompactTextString(m) }
-func (*ProxyRequestPacketData) ProtoMessage()    {}
-func (*ProxyRequestPacketData) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cd60f0f20217e257, []int{0}
-}
-func (m *ProxyRequestPacketData) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ProxyRequestPacketData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ProxyRequestPacketData.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ProxyRequestPacketData) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProxyRequestPacketData.Merge(m, src)
-}
-func (m *ProxyRequestPacketData) XXX_Size() int {
-	return m.Size()
-}
-func (m *ProxyRequestPacketData) XXX_DiscardUnknown() {
-	xxx_messageInfo_ProxyRequestPacketData.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ProxyRequestPacketData proto.InternalMessageInfo
-
-func (m *ProxyRequestPacketData) GetUpstreamClientId() string {
-	if m != nil {
-		return m.UpstreamClientId
-	}
-	return ""
-}
-
-func (m *ProxyRequestPacketData) GetProxyClientId() string {
-	if m != nil {
-		return m.ProxyClientId
-	}
-	return ""
-}
-
-type ProxyRequestAcknowledgement struct {
-	Status      Status              `protobuf:"varint,1,opt,name=status,proto3,enum=ibc.proxy.v1.Status" json:"status,omitempty"`
-	ProxyPrefix *types.MerklePrefix `protobuf:"bytes,2,opt,name=proxy_prefix,json=proxyPrefix,proto3" json:"proxy_prefix,omitempty"`
-	IbcPrefix   *types.MerklePrefix `protobuf:"bytes,3,opt,name=ibc_prefix,json=ibcPrefix,proto3" json:"ibc_prefix,omitempty"`
-}
-
-func (m *ProxyRequestAcknowledgement) Reset()         { *m = ProxyRequestAcknowledgement{} }
-func (m *ProxyRequestAcknowledgement) String() string { return proto.CompactTextString(m) }
-func (*ProxyRequestAcknowledgement) ProtoMessage()    {}
-func (*ProxyRequestAcknowledgement) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cd60f0f20217e257, []int{1}
-}
-func (m *ProxyRequestAcknowledgement) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ProxyRequestAcknowledgement) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ProxyRequestAcknowledgement.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ProxyRequestAcknowledgement) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProxyRequestAcknowledgement.Merge(m, src)
-}
-func (m *ProxyRequestAcknowledgement) XXX_Size() int {
-	return m.Size()
-}
-func (m *ProxyRequestAcknowledgement) XXX_DiscardUnknown() {
-	xxx_messageInfo_ProxyRequestAcknowledgement.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ProxyRequestAcknowledgement proto.InternalMessageInfo
-
-func (m *ProxyRequestAcknowledgement) GetStatus() Status {
-	if m != nil {
-		return m.Status
-	}
-	return UNINITIALIZED
-}
-
-func (m *ProxyRequestAcknowledgement) GetProxyPrefix() *types.MerklePrefix {
-	if m != nil {
-		return m.ProxyPrefix
-	}
-	return nil
-}
-
-func (m *ProxyRequestAcknowledgement) GetIbcPrefix() *types.MerklePrefix {
-	if m != nil {
-		return m.IbcPrefix
-	}
-	return nil
-}
-
 type Params struct {
 	ProxyClientEnabled  bool `protobuf:"varint,1,opt,name=proxy_client_enabled,json=proxyClientEnabled,proto3" json:"proxy_client_enabled,omitempty"`
 	ProxyServiceEnabled bool `protobuf:"varint,2,opt,name=proxy_service_enabled,json=proxyServiceEnabled,proto3" json:"proxy_service_enabled,omitempty"`
@@ -175,7 +35,7 @@ func (m *Params) Reset()         { *m = Params{} }
 func (m *Params) String() string { return proto.CompactTextString(m) }
 func (*Params) ProtoMessage()    {}
 func (*Params) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cd60f0f20217e257, []int{2}
+	return fileDescriptor_cd60f0f20217e257, []int{0}
 }
 func (m *Params) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -225,7 +85,7 @@ func (m *GenesisState) Reset()         { *m = GenesisState{} }
 func (m *GenesisState) String() string { return proto.CompactTextString(m) }
 func (*GenesisState) ProtoMessage()    {}
 func (*GenesisState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cd60f0f20217e257, []int{3}
+	return fileDescriptor_cd60f0f20217e257, []int{1}
 }
 func (m *GenesisState) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -255,9 +115,6 @@ func (m *GenesisState) XXX_DiscardUnknown() {
 var xxx_messageInfo_GenesisState proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterEnum("ibc.proxy.v1.Status", Status_name, Status_value)
-	proto.RegisterType((*ProxyRequestPacketData)(nil), "ibc.proxy.v1.ProxyRequestPacketData")
-	proto.RegisterType((*ProxyRequestAcknowledgement)(nil), "ibc.proxy.v1.ProxyRequestAcknowledgement")
 	proto.RegisterType((*Params)(nil), "ibc.proxy.v1.Params")
 	proto.RegisterType((*GenesisState)(nil), "ibc.proxy.v1.GenesisState")
 }
@@ -265,129 +122,25 @@ func init() {
 func init() { proto.RegisterFile("ibc/modules/proxy/proxy.proto", fileDescriptor_cd60f0f20217e257) }
 
 var fileDescriptor_cd60f0f20217e257 = []byte{
-	// 528 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x93, 0x4f, 0x6f, 0xd3, 0x30,
-	0x18, 0xc6, 0x9b, 0x82, 0xa2, 0xcd, 0xeb, 0x46, 0x31, 0x05, 0x41, 0x80, 0x50, 0x55, 0x08, 0x10,
-	0x1a, 0x09, 0x2d, 0x42, 0x9c, 0x4b, 0x9b, 0x4d, 0xd1, 0x46, 0x5b, 0xf5, 0xcf, 0x65, 0x97, 0xca,
-	0x71, 0xdf, 0x65, 0x56, 0x93, 0xb8, 0x24, 0x4e, 0xd9, 0xc4, 0x17, 0x40, 0x3d, 0xf1, 0x05, 0x7a,
-	0xe2, 0xcb, 0x70, 0xdc, 0x11, 0x6e, 0xa8, 0xfd, 0x22, 0x28, 0x76, 0x3b, 0xda, 0x23, 0x97, 0xc8,
-	0xaf, 0x9f, 0xdf, 0xf3, 0xbe, 0xf6, 0xa3, 0x18, 0x3d, 0x65, 0x1e, 0xb5, 0x43, 0x3e, 0x4a, 0x03,
-	0x48, 0xec, 0x49, 0xcc, 0x2f, 0xaf, 0xd4, 0xd7, 0x9a, 0xc4, 0x5c, 0x70, 0x5c, 0x60, 0x1e, 0xb5,
-	0xd4, 0xc6, 0xb4, 0x6a, 0x94, 0x7c, 0xee, 0x73, 0x29, 0xd8, 0xd9, 0x4a, 0x31, 0xc6, 0x23, 0x9f,
-	0x73, 0x3f, 0x00, 0x5b, 0x56, 0x5e, 0x7a, 0x6e, 0x93, 0x68, 0x65, 0x37, 0x9e, 0x65, 0xdd, 0x29,
-	0x8f, 0xc1, 0xa6, 0x01, 0x83, 0x48, 0xd8, 0xd3, 0xea, 0x6a, 0xb5, 0x02, 0x5e, 0xfe, 0x03, 0x78,
-	0x18, 0x32, 0x11, 0xae, 0xa1, 0x9b, 0x4a, 0x81, 0x95, 0x08, 0x3d, 0xe8, 0x64, 0xc7, 0xe8, 0xc2,
-	0xe7, 0x14, 0x12, 0xd1, 0x21, 0x74, 0x0c, 0xa2, 0x49, 0x04, 0xc1, 0x87, 0x08, 0xa7, 0x93, 0x44,
-	0xc4, 0x40, 0xc2, 0xa1, 0xea, 0x3d, 0x64, 0xa3, 0x87, 0x5a, 0x59, 0x7b, 0xb5, 0xdb, 0x2d, 0xae,
-	0x95, 0x86, 0x14, 0xdc, 0x11, 0x7e, 0x81, 0xee, 0xc8, 0xeb, 0x6c, 0xa0, 0x79, 0x89, 0xee, 0xcb,
-	0xed, 0x35, 0x57, 0xf9, 0xad, 0xa1, 0xc7, 0x9b, 0x03, 0xeb, 0x74, 0x1c, 0xf1, 0x2f, 0x01, 0x8c,
-	0x7c, 0xc8, 0x4e, 0x85, 0x0f, 0x91, 0x9e, 0x08, 0x22, 0xd2, 0x44, 0x4e, 0x3a, 0xa8, 0x95, 0xac,
-	0xcd, 0xa4, 0xac, 0x9e, 0xd4, 0xba, 0x2b, 0x06, 0x1f, 0xa3, 0x82, 0x9a, 0x3a, 0x89, 0xe1, 0x9c,
-	0x5d, 0xca, 0x91, 0x7b, 0xb5, 0xe7, 0xd2, 0x93, 0xdd, 0xde, 0xda, 0xb8, 0xef, 0xb4, 0x6a, 0x7d,
-	0x82, 0x78, 0x1c, 0x40, 0x47, 0xb2, 0xdd, 0x3d, 0xe9, 0x54, 0x05, 0x6e, 0x20, 0xc4, 0x3c, 0xba,
-	0x6e, 0x73, 0xeb, 0x3f, 0xda, 0xec, 0x32, 0x8f, 0xaa, 0x65, 0x25, 0x42, 0x7a, 0x87, 0xc4, 0x24,
-	0x4c, 0xf0, 0x5b, 0x54, 0xda, 0x4a, 0x03, 0x22, 0xe2, 0x05, 0xa0, 0xd2, 0xdb, 0xe9, 0xe2, 0x8d,
-	0x48, 0x1c, 0xa5, 0xe0, 0x1a, 0xba, 0xaf, 0x1c, 0x09, 0xc4, 0x53, 0x46, 0xe1, 0xc6, 0x92, 0x97,
-	0x96, 0x7b, 0x52, 0xec, 0x29, 0x6d, 0xe5, 0xa9, 0x1c, 0xa0, 0xc2, 0x31, 0x44, 0x90, 0xb0, 0x24,
-	0x8b, 0x05, 0x5e, 0x7f, 0x45, 0xba, 0xca, 0x07, 0x7f, 0x40, 0xe5, 0x5e, 0xbf, 0xde, 0x1f, 0xf4,
-	0x86, 0x83, 0x96, 0xdb, 0x72, 0xfb, 0x6e, 0xfd, 0xd4, 0x3d, 0x73, 0x9a, 0xc3, 0x41, 0xab, 0xd7,
-	0x71, 0x1a, 0xee, 0x91, 0xeb, 0x34, 0x8b, 0x39, 0xe3, 0xee, 0x6c, 0x5e, 0xde, 0xdf, 0x02, 0x70,
-	0x09, 0xed, 0x64, 0x46, 0x67, 0xd8, 0x3e, 0x29, 0x6a, 0x86, 0x3e, 0x9b, 0x97, 0xf3, 0xed, 0x13,
-	0xfc, 0x04, 0x15, 0xd4, 0xee, 0x51, 0xdd, 0x3d, 0x75, 0x9a, 0xc5, 0xbc, 0x81, 0x66, 0xf3, 0xb2,
-	0xae, 0x2a, 0xe3, 0xf6, 0xb7, 0x1f, 0x66, 0xee, 0x63, 0xfb, 0xe7, 0xc2, 0xd4, 0xae, 0x17, 0xa6,
-	0xf6, 0x67, 0x61, 0x6a, 0xdf, 0x97, 0x66, 0xee, 0x7a, 0x69, 0xe6, 0x7e, 0x2d, 0xcd, 0xdc, 0xd9,
-	0x7b, 0x9f, 0x89, 0x8b, 0xd4, 0xcb, 0x42, 0xb4, 0x47, 0x44, 0x10, 0x7a, 0x41, 0x58, 0x14, 0x10,
-	0xcf, 0x66, 0x1e, 0x7d, 0xa3, 0x9e, 0xc6, 0xf6, 0x43, 0x11, 0x57, 0x13, 0x48, 0x3c, 0x5d, 0xfe,
-	0xa0, 0xef, 0xfe, 0x06, 0x00, 0x00, 0xff, 0xff, 0xc6, 0x71, 0x2f, 0x24, 0x4a, 0x03, 0x00, 0x00,
-}
-
-func (m *ProxyRequestPacketData) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ProxyRequestPacketData) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ProxyRequestPacketData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.ProxyClientId) > 0 {
-		i -= len(m.ProxyClientId)
-		copy(dAtA[i:], m.ProxyClientId)
-		i = encodeVarintProxy(dAtA, i, uint64(len(m.ProxyClientId)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.UpstreamClientId) > 0 {
-		i -= len(m.UpstreamClientId)
-		copy(dAtA[i:], m.UpstreamClientId)
-		i = encodeVarintProxy(dAtA, i, uint64(len(m.UpstreamClientId)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ProxyRequestAcknowledgement) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ProxyRequestAcknowledgement) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ProxyRequestAcknowledgement) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.IbcPrefix != nil {
-		{
-			size, err := m.IbcPrefix.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintProxy(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x1a
-	}
-	if m.ProxyPrefix != nil {
-		{
-			size, err := m.ProxyPrefix.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintProxy(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x12
-	}
-	if m.Status != 0 {
-		i = encodeVarintProxy(dAtA, i, uint64(m.Status))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
+	// 278 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x90, 0xb1, 0x4e, 0xc3, 0x30,
+	0x10, 0x86, 0x13, 0x86, 0x0a, 0x45, 0x15, 0x43, 0x28, 0x12, 0x44, 0xc2, 0xa0, 0x2e, 0xb0, 0x10,
+	0x53, 0x10, 0x2f, 0x00, 0x42, 0x8c, 0x20, 0xba, 0xb1, 0x54, 0xb6, 0x73, 0xa4, 0x96, 0x62, 0x5f,
+	0x64, 0x3b, 0x11, 0x7d, 0x0b, 0x1e, 0x8b, 0xb1, 0x23, 0x23, 0x4a, 0x5e, 0x04, 0xd5, 0x0e, 0x45,
+	0x5d, 0xac, 0x3b, 0x7f, 0xff, 0x77, 0xb2, 0x2f, 0x39, 0x95, 0x5c, 0x50, 0x85, 0x45, 0x53, 0x81,
+	0xa5, 0xb5, 0xc1, 0x8f, 0x55, 0x38, 0xf3, 0xda, 0xa0, 0xc3, 0x74, 0x2c, 0xb9, 0xc8, 0xc3, 0x45,
+	0x3b, 0xcb, 0x26, 0x25, 0x96, 0xe8, 0x01, 0xdd, 0x54, 0x21, 0x93, 0x9d, 0x94, 0x88, 0x65, 0x05,
+	0xd4, 0x77, 0xbc, 0x79, 0xa7, 0x4c, 0x0f, 0x7a, 0x76, 0xb6, 0x99, 0x2e, 0xd0, 0x00, 0x15, 0x95,
+	0x04, 0xed, 0x68, 0x3b, 0x1b, 0xaa, 0x21, 0x70, 0xf1, 0x1f, 0x40, 0xa5, 0xa4, 0x53, 0x7f, 0xa1,
+	0x6d, 0x17, 0x82, 0x53, 0x9d, 0x8c, 0x5e, 0x98, 0x61, 0xca, 0xa6, 0xd7, 0xc9, 0xc4, 0x3f, 0x68,
+	0x11, 0x06, 0x2d, 0x40, 0x33, 0x5e, 0x41, 0x71, 0x1c, 0x9f, 0xc7, 0x97, 0xfb, 0xaf, 0xa9, 0x67,
+	0x0f, 0x1e, 0x3d, 0x06, 0x92, 0xde, 0x24, 0x47, 0xc1, 0xb0, 0x60, 0x5a, 0x29, 0x60, 0xab, 0xec,
+	0x79, 0xe5, 0xd0, 0xc3, 0x79, 0x60, 0x83, 0x33, 0x3d, 0x48, 0xc6, 0x4f, 0xa0, 0xc1, 0x4a, 0x3b,
+	0x77, 0xcc, 0xc1, 0xfd, 0xf3, 0x57, 0x47, 0xe2, 0x75, 0x47, 0xe2, 0x9f, 0x8e, 0xc4, 0x9f, 0x3d,
+	0x89, 0xd6, 0x3d, 0x89, 0xbe, 0x7b, 0x12, 0xbd, 0xdd, 0x95, 0xd2, 0x2d, 0x1b, 0x9e, 0x0b, 0x54,
+	0xb4, 0x60, 0x8e, 0x89, 0x25, 0x93, 0xba, 0x62, 0x9c, 0x4a, 0x2e, 0xae, 0xc2, 0x46, 0x77, 0xf7,
+	0xeb, 0x56, 0x35, 0x58, 0x3e, 0xf2, 0xff, 0xba, 0xfd, 0x0d, 0x00, 0x00, 0xff, 0xff, 0xd0, 0x5e,
+	0x46, 0x55, 0x81, 0x01, 0x00, 0x00,
 }
 
 func (m *Params) Marshal() (dAtA []byte, err error) {
@@ -467,43 +220,6 @@ func encodeVarintProxy(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *ProxyRequestPacketData) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.UpstreamClientId)
-	if l > 0 {
-		n += 1 + l + sovProxy(uint64(l))
-	}
-	l = len(m.ProxyClientId)
-	if l > 0 {
-		n += 1 + l + sovProxy(uint64(l))
-	}
-	return n
-}
-
-func (m *ProxyRequestAcknowledgement) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Status != 0 {
-		n += 1 + sovProxy(uint64(m.Status))
-	}
-	if m.ProxyPrefix != nil {
-		l = m.ProxyPrefix.Size()
-		n += 1 + l + sovProxy(uint64(l))
-	}
-	if m.IbcPrefix != nil {
-		l = m.IbcPrefix.Size()
-		n += 1 + l + sovProxy(uint64(l))
-	}
-	return n
-}
-
 func (m *Params) Size() (n int) {
 	if m == nil {
 		return 0
@@ -533,261 +249,6 @@ func sovProxy(x uint64) (n int) {
 }
 func sozProxy(x uint64) (n int) {
 	return sovProxy(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *ProxyRequestPacketData) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowProxy
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ProxyRequestPacketData: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ProxyRequestPacketData: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UpstreamClientId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProxy
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthProxy
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthProxy
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.UpstreamClientId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProxyClientId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProxy
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthProxy
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthProxy
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ProxyClientId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipProxy(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthProxy
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ProxyRequestAcknowledgement) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowProxy
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ProxyRequestAcknowledgement: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ProxyRequestAcknowledgement: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
-			}
-			m.Status = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProxy
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Status |= Status(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProxyPrefix", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProxy
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthProxy
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthProxy
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ProxyPrefix == nil {
-				m.ProxyPrefix = &types.MerklePrefix{}
-			}
-			if err := m.ProxyPrefix.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IbcPrefix", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProxy
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthProxy
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthProxy
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.IbcPrefix == nil {
-				m.IbcPrefix = &types.MerklePrefix{}
-			}
-			if err := m.IbcPrefix.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipProxy(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthProxy
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *Params) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)

@@ -10,13 +10,14 @@ import (
 	commitmenttypes "github.com/cosmos/ibc-go/modules/core/23-commitment/types"
 	host "github.com/cosmos/ibc-go/modules/core/24-host"
 	"github.com/cosmos/ibc-go/modules/core/exported"
+	proxyclienttypes "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-proxy/types"
 	proxytypes "github.com/datachainlab/ibc-proxy/modules/proxy/types"
 	"github.com/datachainlab/ibc-proxy/testing/simapp"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-func (coord *Coordinator) InitProxy(
+func (coord *Coordinator) CreateClient2(
 	source, counterparty *TestChain,
 	clientType string, useMultiV bool, depth uint32,
 ) (clientID string, err error) {
@@ -28,51 +29,43 @@ func (coord *Coordinator) InitProxy(
 	if err != nil {
 		return "", err
 	}
-	err = source.App.(*simapp.SimApp).IBCProxyKeeper.EnableProxy(source.GetContext(), clientID)
-	if err != nil {
-		return clientID, err
-	}
 	coord.CommitBlock(source)
 	return clientID, err
 }
 
-// steps:
-// - setup connection
-// - setup channel (port=proxy)
-// - relay the proxy request packet
-func (coord *Coordinator) SetupProxy(
-	downstream, proxy *TestChain,
-	upstreamClientID string,
-) (string, error) {
-	// A: downstream, B: proxy
-
-	clientA, clientB := coord.SetupClients(downstream, proxy, exported.Tendermint)
-	connA, connB := coord.CreateConnection(downstream, proxy, clientA, clientB, proxytypes.Version)
-	chanA, _ := coord.CreateChannel(downstream, proxy, connA, connB, proxytypes.PortID, proxytypes.PortID, channeltypes.UNORDERED)
-
-	// begin proxy handshake
-
-	packet, proxyClient, err := downstream.App.(*simapp.SimApp).IBCProxyKeeper.SendProxyRequest(
-		downstream.GetContext(),
-		chanA.PortID, chanA.ID,
-		upstreamClientID,
-		clienttypes.NewHeight(0, 110), 0,
-	)
-	if err != nil {
+func (coord *Coordinator) CreateProxyClient(downstream, proxy *TestChain, clientType string, upstreamClientID string) (string, error) {
+	clientID := downstream.NewClientID(proxyclienttypes.ProxyClientType)
+	if err := downstream.CreateProxyClient(proxy, clientType, clientID, upstreamClientID); err != nil {
 		return "", err
 	}
+	return clientID, nil
+}
 
-	ack := proxy.App.(*simapp.SimApp).IBCProxyKeeper.OnRecvPacket(proxy.GetContext(), *packet)
-	err = downstream.App.(*simapp.SimApp).IBCProxyKeeper.OnAcknowledgementPacket(
-		downstream.GetContext(), *packet, ack.(channeltypes.Acknowledgement),
-	)
-	if err != nil {
-		return proxyClient, err
+func (chain *TestChain) CreateProxyClient(proxy *TestChain, clientType string, clientID string, upstreamClientID string) error {
+	msg := chain.ConstructMsgCreateClient(proxy, clientID, clientType)
+
+	ibcPrefix := commitmenttypes.NewMerklePrefix([]byte(host.StoreKey))
+	proxyPrefix := commitmenttypes.NewMerklePrefix([]byte(proxytypes.StoreKey))
+	clientState := &proxyclienttypes.ClientState{
+		ProxyClientState: msg.ClientState,
+		UpstreamClientId: upstreamClientID,
+		IbcPrefix:        &ibcPrefix,
+		ProxyPrefix:      &proxyPrefix,
 	}
-
-	coord.CommitBlock(downstream, proxy)
-
-	return proxyClient, nil
+	anyClientState, err := clienttypes.PackClientState(clientState)
+	if err != nil {
+		return err
+	}
+	consensusState := proxyclienttypes.NewConsensusState(msg.ConsensusState)
+	anyConsensusState, err := clienttypes.PackConsensusState(consensusState)
+	if err != nil {
+		return err
+	}
+	return chain.sendMsgs(&clienttypes.MsgCreateClient{
+		ClientState:    anyClientState,
+		ConsensusState: anyConsensusState,
+		Signer:         msg.Signer,
+	})
 }
 
 func (chain *TestChain) UpdateProxyClient(proxy *TestChain, proxyClientID string) error {

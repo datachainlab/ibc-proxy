@@ -264,7 +264,6 @@ func NewSimApp(
 	app.CapabilityKeeper = capabilitykeeper.NewKeeper(appCodec, keys[capabilitytypes.StoreKey], memKeys[capabilitytypes.MemStoreKey])
 	scopedIBCKeeper := app.CapabilityKeeper.ScopeToModule(ibchost.ModuleName)
 	scopedTransferKeeper := app.CapabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
-	scopedIBCProxyKeeper := app.CapabilityKeeper.ScopeToModule(ibcproxytypes.ModuleName)
 	// NOTE: the IBC mock keeper and application module is used only for testing core IBC. Do
 	// note replicate if you do not need to test core IBC or light clients.
 	scopedIBCMockKeeper := app.CapabilityKeeper.ScopeToModule(ibcmock.ModuleName)
@@ -310,7 +309,7 @@ func NewSimApp(
 	app.IBCKeeper = applyPatchToIBCKeeper(*ibcKeeper, appCodec, keys[ibchost.StoreKey], app.GetSubspace(ibchost.ModuleName))
 
 	app.IBCProxyKeeper = ibcproxykeeper.NewKeeper(
-		appCodec, keys[ibcproxytypes.StoreKey], keys[ibchost.StoreKey], false, app.IBCKeeper.ClientKeeper, app.IBCKeeper.ConnectionKeeper, app.IBCKeeper.ChannelKeeper, scopedIBCProxyKeeper, &app.IBCKeeper.PortKeeper,
+		appCodec, keys[ibcproxytypes.StoreKey], keys[ibchost.StoreKey], app.IBCKeeper.ClientKeeper,
 	)
 	proxyModule := ibcproxy.NewAppModule(app.IBCProxyKeeper)
 
@@ -344,7 +343,6 @@ func NewSimApp(
 	ibcRouter := porttypes.NewRouter()
 	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferModule)
 	ibcRouter.AddRoute(ibcmock.ModuleName, mockModule)
-	ibcRouter.AddRoute(ibcproxytypes.ModuleName, proxyModule)
 	app.IBCKeeper.SetRouter(ibcRouter)
 
 	// create evidence keeper with router
