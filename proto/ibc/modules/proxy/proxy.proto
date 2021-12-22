@@ -8,9 +8,6 @@ import "google/protobuf/any.proto";
 import "ibc/core/client/v1/client.proto";
 import "ibc/core/commitment/v1/commitment.proto";
 
-message Params {
-  bool proxy_client_enabled = 1;
-  bool proxy_service_enabled = 2;
-}
+message Params {}
 
 message GenesisState {}
