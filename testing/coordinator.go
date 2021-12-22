@@ -140,6 +140,28 @@ func (coord *Coordinator) UpdateClient(
 	return nil
 }
 
+func (coord *Coordinator) UpdateClients(chains []*TestChain, clientIDs []string, clientType string) error {
+	if len(chains) == 0 {
+		return fmt.Errorf("chains should be non-empty")
+	} else if len(chains) != len(clientIDs)+1 {
+		return fmt.Errorf("length of items mismatch")
+	}
+	rChain := make([]*TestChain, len(chains))
+	rClientIDs := make([]string, len(clientIDs))
+	for i := 0; i < len(chains); i++ {
+		rChain[i] = chains[len(chains)-1-i]
+	}
+	for i := 0; i < len(clientIDs); i++ {
+		rClientIDs[i] = clientIDs[len(clientIDs)-1-i]
+	}
+	for i, chain := range rChain[:len(rChain)-1] {
+		if err := coord.UpdateClient(rChain[i+1], chain, rClientIDs[i], clientType); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // CreateConnection constructs and executes connection handshake messages in order to create
 // OPEN channels on chainA and chainB. The connection information of for chainA and chainB
 // are returned within a TestConnection struct. The function expects the connections to be

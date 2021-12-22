@@ -184,6 +184,7 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 		}
 		coord.IncrementTime()
 	} else {
+
 		var (
 			counterpartyClient exported.ClientState
 			proofClient        []byte
@@ -194,9 +195,17 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 
 		// source: downstream, counterparty: upstream
 		proxy := proxies[0].Chain
+
+		// Update Client
 		connection := counterparty.GetConnection(counterpartyConnection)
 
 		if proxies[1] == nil {
+			if err := coord.UpdateClients(
+				[]*TestChain{proxy, counterparty, source},
+				[]string{proxies[0].UpstreamClientID, counterpartyConnection.ClientID},
+				exported.Tendermint); err != nil {
+				return err
+			}
 			var found bool
 			counterpartyClient, proofClient = counterparty.QueryClientStateProof(counterpartyConnection.ClientID)
 			proofConsensus, consensusHeight = counterparty.QueryConsensusStateProof(counterpartyConnection.ClientID)
@@ -205,6 +214,12 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 				return fmt.Errorf("consensusState '%v-%v' not found", counterpartyConnection.ClientID, consensusHeight)
 			}
 		} else {
+			if err := coord.UpdateClients(
+				[]*TestChain{proxy, counterparty, proxies[1].Chain, source},
+				[]string{proxies[0].UpstreamClientID, proxies[1].ClientID, proxies[1].UpstreamClientID},
+				exported.Tendermint); err != nil {
+				return err
+			}
 			head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
 			counterpartyProxy := *proxies[1]
 			counterpartyClient, proofClient = counterpartyProxy.Chain.QueryMultiVLeafClientProof(head, counterpartyProxy.UpstreamClientID)
@@ -212,14 +227,20 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 		}
 
 		proofInit, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
+		proxyClientState, proofProxyClient, proofProxyHeight := source.queryClientStateProof(sourceConnection.ClientID, int64(counterpartyClient.GetLatestHeight().GetRevisionHeight()-1))
+		proofProxyConsensus, proxyConsensusHeight, _ := source.queryConsensusStateProof(sourceConnection.ClientID, int64(counterpartyClient.GetLatestHeight().GetRevisionHeight()-1))
+		proxyConsensusState, found := source.GetConsensusState(sourceConnection.ClientID, proxyConsensusHeight)
+		if !found {
+			return fmt.Errorf("consensusState '%v-%v' not found", sourceConnection.ClientID, proxyConsensusHeight)
+		}
+
 		msg, err := proxytypes.NewMsgProxyConnectionOpenTry(
 			counterpartyConnection.ID,
-			proxies[0].UpstreamClientID,
 			proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
 			connection,
-			counterpartyClient,
-			consensusState,
-			proofInit, proofClient, proofConsensus, proofHeight, consensusHeight, proxy.SenderAccount.GetAddress().String(),
+			counterpartyClient, consensusState,
+			proxyClientState, proxyConsensusState,
+			proofInit, proofClient, proofConsensus, proofHeight, consensusHeight, proofProxyClient, proofProxyConsensus, proofProxyHeight, proxyConsensusHeight, proxy.SenderAccount.GetAddress().String(),
 		)
 		if err != nil {
 			return err

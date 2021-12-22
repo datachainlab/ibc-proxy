@@ -46,11 +46,13 @@ func NewKeeper(cdc codec.BinaryCodec, proxyStoreKey, ibcStoreKey sdk.StoreKey, a
 // GetCommitmentPrefix returns the IBC connection store prefix as a commitment
 // Prefix
 func (k Keeper) GetProxyCommitmentPrefix() exported.Prefix {
-	return commitmenttypes.NewMerklePrefix([]byte(k.proxyStoreKey.Name()))
+	prefix := commitmenttypes.NewMerklePrefix([]byte(k.proxyStoreKey.Name()))
+	return &prefix
 }
 
 func (k Keeper) GetIBCCommitmentPrefix() exported.Prefix {
-	return commitmenttypes.NewMerklePrefix([]byte(k.ibcStoreKey.Name()))
+	prefix := commitmenttypes.NewMerklePrefix([]byte(k.ibcStoreKey.Name()))
+	return &prefix
 }
 
 func (k Keeper) ProxyStore(ctx sdk.Context, upstreamPrefix exported.Prefix, upstreamClientID string) sdk.KVStore {

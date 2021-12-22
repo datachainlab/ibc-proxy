@@ -78,39 +78,41 @@ func (msg MsgProxyClientState) UnpackInterfaces(unpacker codectypes.AnyUnpacker)
 
 func NewMsgProxyConnectionOpenTry(
 	connectionID string,
-	upstreamClientID string,
 	upstreamPrefix commitmenttypes.MerklePrefix,
 	connection connectiontypes.ConnectionEnd,
-	clientState exported.ClientState,
-	consensusState exported.ConsensusState,
+	downstreamClientState exported.ClientState,
+	downstreamConsensusState exported.ConsensusState,
+	proxyClientState exported.ClientState,
+	proxyConsensusState exported.ConsensusState,
 	proofInit []byte,
 	proofClient []byte,
 	proofConsensus []byte,
 	proofHeight clienttypes.Height,
 	consensusHeight clienttypes.Height,
+	proofProxyClient []byte,
+	proofProxyConsensus []byte,
+	proofProxyHeight clienttypes.Height,
+	proxyConsensusHeight clienttypes.Height,
 	signer string,
 ) (*MsgProxyConnectionOpenTry, error) {
-	anyClient, err := clienttypes.PackClientState(clientState)
-	if err != nil {
-		return nil, err
-	}
-	anyConsensus, err := clienttypes.PackConsensusState(consensusState)
-	if err != nil {
-		return nil, err
-	}
 	return &MsgProxyConnectionOpenTry{
-		ConnectionId:     connectionID,
-		UpstreamClientId: upstreamClientID,
-		UpstreamPrefix:   upstreamPrefix,
-		Connection:       connection,
-		ClientState:      anyClient,
-		ConsensusState:   anyConsensus,
-		ProofInit:        proofInit,
-		ProofClient:      proofClient,
-		ProofConsensus:   proofConsensus,
-		ProofHeight:      proofHeight,
-		ConsensusHeight:  consensusHeight,
-		Signer:           signer,
+		ConnectionId:             connectionID,
+		UpstreamPrefix:           upstreamPrefix,
+		Connection:               connection,
+		DownstreamClientState:    mustPackClientState(downstreamClientState),
+		DownstreamConsensusState: mustPackConsensusState(downstreamConsensusState),
+		ProxyClientState:         mustPackClientState(proxyClientState),
+		ProxyConsensusState:      mustPackConsensusState(proxyConsensusState),
+		ProofInit:                proofInit,
+		ProofClient:              proofClient,
+		ProofConsensus:           proofConsensus,
+		ProofHeight:              proofHeight,
+		ConsensusHeight:          consensusHeight,
+		ProofProxyClient:         proofProxyClient,
+		ProofProxyConsensus:      proofProxyConsensus,
+		ProofProxyHeight:         proofProxyHeight,
+		ProxyConsensusHeight:     proxyConsensusHeight,
+		Signer:                   signer,
 	}, nil
 }
 
@@ -130,14 +132,27 @@ func (msg MsgProxyConnectionOpenTry) GetSigners() []sdk.AccAddress {
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
 func (msg MsgProxyConnectionOpenTry) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	var clientState exported.ClientState
-	err := unpacker.UnpackAny(msg.ClientState, &clientState)
-	if err != nil {
+	var downstreamClientState exported.ClientState
+	if err := unpacker.UnpackAny(msg.DownstreamClientState, &downstreamClientState); err != nil {
 		return err
 	}
 
-	var consensusState exported.ConsensusState
-	return unpacker.UnpackAny(msg.ConsensusState, &consensusState)
+	var downstreamConsensusState exported.ConsensusState
+	if err := unpacker.UnpackAny(msg.DownstreamConsensusState, &downstreamConsensusState); err != nil {
+		return err
+	}
+
+	var proxyClientState exported.ClientState
+	if err := unpacker.UnpackAny(msg.ProxyClientState, &proxyClientState); err != nil {
+		return err
+	}
+
+	var proxyConsensusState exported.ConsensusState
+	if err := unpacker.UnpackAny(msg.ProxyConsensusState, &proxyConsensusState); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func NewMsgProxyConnectionOpenAck(
@@ -312,4 +327,20 @@ func (msg MsgProxyAcknowledgePacket) GetSigners() []sdk.AccAddress {
 		panic(err)
 	}
 	return []sdk.AccAddress{accAddr}
+}
+
+func mustPackClientState(clientState exported.ClientState) *codectypes.Any {
+	anyClient, err := clienttypes.PackClientState(clientState)
+	if err != nil {
+		panic(err)
+	}
+	return anyClient
+}
+
+func mustPackConsensusState(consensusState exported.ConsensusState) *codectypes.Any {
+	anyConsensus, err := clienttypes.PackConsensusState(consensusState)
+	if err != nil {
+		panic(err)
+	}
+	return anyConsensus
 }

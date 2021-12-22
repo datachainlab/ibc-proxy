@@ -27,7 +27,7 @@ func (k Keeper) OnRecvPacket(
 	if err != nil {
 		return channeltypes.NewErrorAcknowledgement(fmt.Sprintf("failed to OnRecvProxyRequest: %s", err.Error()))
 	}
-	ackData := types.NewProxyRequestAcknowledgement(types.OK, k.GetProxyCommitmentPrefix().(commitmenttypes.MerklePrefix), k.GetIBCCommitmentPrefix().(commitmenttypes.MerklePrefix))
+	ackData := types.NewProxyRequestAcknowledgement(types.OK, *k.GetProxyCommitmentPrefix().(*commitmenttypes.MerklePrefix), *k.GetIBCCommitmentPrefix().(*commitmenttypes.MerklePrefix))
 	return channeltypes.NewResultAcknowledgement(k.cdc.MustMarshal(&ackData))
 }
 

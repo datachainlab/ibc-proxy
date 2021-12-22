@@ -1,31 +1,58 @@
 package keeper
 
 import (
+	"bytes"
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	connectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
+	commitmenttypes "github.com/cosmos/ibc-go/modules/core/23-commitment/types"
+	host "github.com/cosmos/ibc-go/modules/core/24-host"
 	"github.com/cosmos/ibc-go/modules/core/exported"
+	multivtypes "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-multiv/types"
+	proxytypes "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-proxy/types"
+	dbm "github.com/tendermint/tm-db"
 )
 
-// caller: B
 // CONTRACT: upstream is A, downstream is B, we are proxy(P)
 func (k Keeper) ConnOpenTry(
 	ctx sdk.Context,
 
 	connectionID string, // the connection ID corresponding to B on A
-	upstreamClientID string, // the client ID corresponding to A on P
-	upstreamPrefix exported.Prefix,
+	upstreamPrefix exported.Prefix, // store prefix on upstream chain
 	connection connectiontypes.ConnectionEnd, // the connection corresponding to B on A (its state must be INIT)
 
-	clientState exported.ClientState, // clientState for chainB
+	downstreamClientState exported.ClientState, // clientState for chainB
+	downstreamConsensusState exported.ConsensusState, // consensusState for chainB
+	proxyClientState exported.ClientState, // clientState for proxy
+	proxyConsensusState exported.ConsensusState, // consensusState for proxy
+
 	proofInit []byte, // proof that chainA stored connectionEnd in state (on ConnOpenInit)
 	proofClient []byte, // proof that chainA stored a light client of chainB
 	proofConsensus []byte, // proof that chainA stored chainB's consensus state at consensus height
 	proofHeight exported.Height, // height at which relayer constructs proof of A storing connectionEnd in state
 	consensusHeight exported.Height, // latest height of chain B which chain A has stored in its chain B client
-	expectedConsensusState exported.ConsensusState,
+	proofProxyClient []byte,
+	proofProxyConsensus []byte,
+	proofProxyHeight exported.Height,
+	proxyConsensusHeight exported.Height,
 ) error {
+
+	proxyClientState2, ok := proxyClientState.(*proxytypes.ClientState)
+	if !ok {
+		return fmt.Errorf("clientType mismatch %v", proxyClientState.ClientType())
+	}
+	if !bytes.Equal(k.GetIBCCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), proxyClientState2.IbcPrefix.Bytes()) {
+		return fmt.Errorf("IBC commitment prefix mismatch: %X != %X", k.GetIBCCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), proxyClientState2.IbcPrefix.Bytes())
+	}
+	if !bytes.Equal(k.GetProxyCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), proxyClientState2.ProxyPrefix.Bytes()) {
+		return fmt.Errorf("Proxy commitment prefix mismatch: %X != %X", k.GetProxyCommitmentPrefix().(*commitmenttypes.MerklePrefix).Bytes(), proxyClientState2.ProxyPrefix.Bytes())
+	}
+	upstreamClientID := proxyClientState2.UpstreamClientId
+
 	if !k.IsProxyEnabled(ctx, upstreamClientID) {
 		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
 	}
@@ -40,20 +67,38 @@ func (k Keeper) ConnOpenTry(
 	}
 
 	// Check that ChainA stored the clientState provided in the msg
-	if err := k.VerifyAndProxyClientState(ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, proofClient, clientState); err != nil {
+	if err := k.VerifyAndProxyClientState(ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, proofClient, downstreamClientState); err != nil {
+		return err
+	}
+
+	// Check that ChainA stored the correct ConsensusState of chainB or proxy at the given consensusHeight
+	if err := k.VerifyAndProxyClientConsensusState(
+		ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, consensusHeight, proofConsensus, downstreamConsensusState,
+	); err != nil {
+		return err
+	}
+
+	if dcs, ok := downstreamClientState.(*multivtypes.ClientState); ok {
+		downstreamClientState = dcs.GetUnderlyingClientState()
+	}
+
+	store := makeMemStore(k.cdc, downstreamConsensusState, proofProxyHeight)
+
+	if err := downstreamClientState.VerifyClientState(
+		store, k.cdc, proofProxyHeight, connection.Counterparty.GetPrefix(), connection.Counterparty.ClientId, proofProxyClient, proxyClientState,
+	); err != nil {
+		return err
+	}
+
+	if err := downstreamClientState.VerifyClientConsensusState(
+		store, k.cdc, proofProxyHeight, connection.Counterparty.ClientId, proxyConsensusHeight, connection.Counterparty.GetPrefix(), proofProxyConsensus, proxyConsensusState,
+	); err != nil {
 		return err
 	}
 
 	// Ensure that ChainB stored expected connectionEnd in its state during ConnOpenTry
 	if err := k.VerifyAndProxyConnectionState(
 		ctx, upstreamClientID, upstreamPrefix, connection, proofHeight, proofInit, connectionID,
-	); err != nil {
-		return err
-	}
-
-	// Check that ChainA stored the correct ConsensusState of chainB or proxy at the given consensusHeight
-	if err := k.VerifyAndProxyClientConsensusState(
-		ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, consensusHeight, proofConsensus, expectedConsensusState,
 	); err != nil {
 		return err
 	}
@@ -148,4 +193,14 @@ func (k Keeper) ConnOpenConfirm(
 	}
 
 	return nil
+}
+
+func makeMemStore(cdc codec.BinaryCodec, consensusState exported.ConsensusState, proofHeight exported.Height) dbadapter.Store {
+	consensusStateBytes, err := clienttypes.MarshalConsensusState(cdc, consensusState)
+	if err != nil {
+		panic(err)
+	}
+	store := dbadapter.Store{DB: dbm.NewMemDB()}
+	store.Set(host.ConsensusStateKey(proofHeight), consensusStateBytes)
+	return store
 }
