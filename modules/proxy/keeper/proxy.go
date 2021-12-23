@@ -8,11 +8,6 @@ import (
 	"github.com/cosmos/ibc-go/modules/core/exported"
 )
 
-// Verifier is always proxy chain
-// parameters:
-//	 upstreamClientID: the clientID of upstream
-//   proof: the commitment proof of the client state corresponding to upstreamClientID
-
 func (k Keeper) VerifyClientState(
 	ctx sdk.Context,
 	upstreamClientID string,
