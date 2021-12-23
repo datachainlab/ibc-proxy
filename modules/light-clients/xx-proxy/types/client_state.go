@@ -1,8 +1,6 @@
 package types
 
 import (
-	"errors"
-
 	ics23 "github.com/confio/ics23/go"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -73,29 +71,21 @@ func (cs *ClientState) GetProofSpecs() []*ics23.ProofSpec {
 // Clients must validate the initial consensus state, and may store any client-specific metadata
 // necessary for correct light client operation
 func (cs *ClientState) Initialize(ctx sdk.Context, cdc codec.BinaryCodec, clientStore sdk.KVStore, consState exported.ConsensusState) error {
-	if cs.TrustedSetup {
-		if cs.ProxyClientState == nil || cs.IbcPrefix == nil || cs.ProxyPrefix == nil {
-			return sdkerrors.Wrap(clienttypes.ErrInvalidClient, "each fields of the clientState must be non-empty")
-		} else if consState == nil {
-			return sdkerrors.Wrap(clienttypes.ErrInvalidConsensus, "each fields of the consensusState must be non-empty")
-		}
-		if _, err := clienttypes.UnpackClientState(cs.ProxyClientState); err != nil {
-			return sdkerrors.Wrapf(clienttypes.ErrInvalidClient, "failed to unpack client state: %v", err)
-		}
-		cons, ok := consState.(*ConsensusState)
-		if !ok {
-			return sdkerrors.Wrapf(clienttypes.ErrInvalidConsensus, "invalid initial consensus state. expected type: %T, got: %T",
-				&ConsensusState{}, consState)
-		}
-		if _, err := clienttypes.UnpackConsensusState(cons.ProxyConsensusState); err != nil {
-			return sdkerrors.Wrapf(clienttypes.ErrInvalidConsensus, "failed to unpack client state: %v", err)
-		}
-	} else {
-		if cs.ProxyClientState != nil || cs.IbcPrefix != nil || cs.ProxyPrefix != nil {
-			return sdkerrors.Wrap(errors.New("invalid clientState"), "each fields of the clientState must be empty")
-		} else if consState != nil {
-			return sdkerrors.Wrap(errors.New("invalid consensusState"), "each fields of the consensusState must be empty")
-		}
+	if cs.ProxyClientState == nil || cs.IbcPrefix == nil || cs.ProxyPrefix == nil {
+		return sdkerrors.Wrap(clienttypes.ErrInvalidClient, "each fields of the clientState must be non-empty")
+	} else if consState == nil {
+		return sdkerrors.Wrap(clienttypes.ErrInvalidConsensus, "each fields of the consensusState must be non-empty")
+	}
+	if _, err := clienttypes.UnpackClientState(cs.ProxyClientState); err != nil {
+		return sdkerrors.Wrapf(clienttypes.ErrInvalidClient, "failed to unpack client state: %v", err)
+	}
+	cons, ok := consState.(*ConsensusState)
+	if !ok {
+		return sdkerrors.Wrapf(clienttypes.ErrInvalidConsensus, "invalid initial consensus state. expected type: %T, got: %T",
+			&ConsensusState{}, consState)
+	}
+	if _, err := clienttypes.UnpackConsensusState(cons.ProxyConsensusState); err != nil {
+		return sdkerrors.Wrapf(clienttypes.ErrInvalidConsensus, "failed to unpack client state: %v", err)
 	}
 	return nil
 }

@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/ibc-go/modules/core/exported"
 )
@@ -21,9 +19,6 @@ func (k Keeper) ClientState(
 	proofHeight exported.Height, // height at which relayer constructs proof of A storing connectionEnd in state
 	consensusHeight exported.Height, // latest height of chain B which chain A has stored in its chain B client
 ) error {
-	if !k.IsProxyEnabled(ctx, upstreamClientID) {
-		return fmt.Errorf("clientID '%v' doesn't have proxy enabled", upstreamClientID)
-	}
 
 	// Check that ChainA stored the clientState provided in the msg
 	if err := k.VerifyAndProxyClientState(ctx, upstreamClientID, upstreamPrefix, counterpartyClientID, proofHeight, proofClient, clientState); err != nil {

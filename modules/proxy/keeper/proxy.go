@@ -1,19 +1,12 @@
 package keeper
 
 import (
-	"math"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	connectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 	"github.com/cosmos/ibc-go/modules/core/exported"
 )
-
-// Verifier is always proxy chain
-// parameters:
-//	 upstreamClientID: the clientID of upstream
-//   proof: the commitment proof of the client state corresponding to upstreamClientID
 
 func (k Keeper) VerifyClientState(
 	ctx sdk.Context,
@@ -151,7 +144,6 @@ func (k Keeper) VerifyChannelState(
 	ctx sdk.Context,
 	upstreamClientID string,
 	upstreamPrefix exported.Prefix,
-	connection exported.ConnectionI,
 	height exported.Height,
 	proof []byte,
 	portID,
@@ -178,14 +170,13 @@ func (k Keeper) VerifyAndProxyChannelState(
 	ctx sdk.Context,
 	upstreamClientID string,
 	upstreamPrefix exported.Prefix,
-	connection exported.ConnectionI,
 	height exported.Height,
 	proof []byte,
 	portID,
 	channelID string,
 	channel exported.ChannelI, // the channel of downstream that upstream has
 ) error {
-	if err := k.VerifyChannelState(ctx, upstreamClientID, upstreamPrefix, connection, height, proof, portID, channelID, channel); err != nil {
+	if err := k.VerifyChannelState(ctx, upstreamClientID, upstreamPrefix, height, proof, portID, channelID, channel); err != nil {
 		return err
 	}
 	return k.SetProxyChannel(
@@ -425,17 +416,7 @@ func (k Keeper) VerifyAndProxyNextSequenceRecv(
 	)
 }
 
-// getBlockDelay calculates the block delay period from the time delay of the connection
-// and the maximum expected time per block.
+// getBlockDelay always returns 0
 func (k Keeper) getBlockDelay(ctx sdk.Context, connection exported.ConnectionI) uint64 {
-	// expectedTimePerBlock should never be zero, however if it is then return a 0 blcok delay for safety
-	// as the expectedTimePerBlock parameter was not set.
-	expectedTimePerBlock := k.connectionKeeper.GetMaxExpectedTimePerBlock(ctx)
-	if expectedTimePerBlock == 0 {
-		return 0
-	}
-	// calculate minimum block delay by dividing time delay period
-	// by the expected time per block. Round up the block delay.
-	timeDelay := connection.GetDelayPeriod()
-	return uint64(math.Ceil(float64(timeDelay) / float64(expectedTimePerBlock)))
+	return 0
 }

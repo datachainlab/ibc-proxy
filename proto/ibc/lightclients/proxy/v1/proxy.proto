@@ -19,10 +19,6 @@ message ClientState {
   ibc.core.commitment.v1.MerklePrefix proxy_prefix = 3;
   // the ibc commitment prefix of the proxy chain
   ibc.core.commitment.v1.MerklePrefix ibc_prefix = 4;
-  // a boolean value indicating whether or not to trust to create ProxyClient by the relayer
-  // if true, trust that the values in each field of the client state are valid
-  // if false, the client state must be setup through a channel between downstream and proxy chain. please see ./modules/proxy/keeper/relay.go
-  bool trusted_setup = 5;
 }
 
 message ConsensusState {

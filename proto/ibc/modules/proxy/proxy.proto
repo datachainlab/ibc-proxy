@@ -8,28 +8,6 @@ import "google/protobuf/any.proto";
 import "ibc/core/client/v1/client.proto";
 import "ibc/core/commitment/v1/commitment.proto";
 
-message ProxyRequestPacketData {
-  string upstream_client_id = 1;
-  string proxy_client_id = 2;
-}
-
-message ProxyRequestAcknowledgement {
-  Status status = 1;
-  ibc.core.commitment.v1.MerklePrefix proxy_prefix = 2;
-  ibc.core.commitment.v1.MerklePrefix ibc_prefix = 3;
-}
-
-enum Status {
-  option (gogoproto.goproto_enum_prefix) = false;
-
-  STATUS_UNINITIALIZED_UNSPECIFIED = 0 [(gogoproto.enumvalue_customname) = "UNINITIALIZED"];
-  STATE_OK = 1 [(gogoproto.enumvalue_customname) = "OK"];
-  STATE_FAILED = 2 [(gogoproto.enumvalue_customname) = "FAILED"];
-}
-
-message Params {
-  bool proxy_client_enabled = 1;
-  bool proxy_service_enabled = 2;
-}
+message Params {}
 
 message GenesisState {}

@@ -10,41 +10,36 @@ import (
 	"github.com/cosmos/ibc-go/modules/core/exported"
 )
 
-// source: downstream, counterparty: upstream
+// upstream: chainA, downstream: chainB
 func (k Keeper) ChanOpenTry(
 	ctx sdk.Context,
-	upstreamClientID string,
-	upstreamPrefix exported.Prefix,
-	order channeltypes.Order,
-	connectionHops []string, // from upstream
-	upstreamPortID string,
-	upstreamChannelID string,
-	downstreamPortID string,
-	version string,
-	proofInit []byte,
-	proofHeight exported.Height,
+
+	upstreamClientID string, // the client ID corresponding to light client for chainA on chainB
+	upstreamPrefix exported.Prefix, // store prefix on chainA
+
+	order channeltypes.Order, // the channel order on chainA
+	connectionHops []string, // hops from upstream
+	upstreamPortID string, // the portID on chainA
+	upstreamChannelID string, // the channelID on chainA
+	downstreamPortID string, // the portID on chainB
+	version string, // the version of chainA's channel
+
+	proofInit []byte, // proof that chainA stored channel in state
+	proofHeight exported.Height, // height at which relayer constructs proof of chainA storing channel in state
 ) error {
+	if l := len(connectionHops); l != 1 {
+		return fmt.Errorf("hops length must be 1, but got %v", l)
+	}
 
 	connectionEnd, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionHops[0])
 	if !found {
-		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, connectionHops[0])
-	}
-
-	getVersions := connectionEnd.GetVersions()
-	if len(getVersions) != 1 {
 		return sdkerrors.Wrapf(
-			connectiontypes.ErrInvalidVersion,
-			"single version must be negotiated on connection before opening channel, got: %v",
-			getVersions,
+			connectiontypes.ErrConnectionNotFound,
+			"connection '%#v:%v:%v' not found", upstreamPrefix, upstreamClientID, connectionHops[0],
 		)
 	}
-
-	if !connectiontypes.VerifySupportedFeature(getVersions[0], order.String()) {
-		return sdkerrors.Wrapf(
-			connectiontypes.ErrInvalidVersion,
-			"connection version %s does not support channel ordering: %s",
-			getVersions[0], order.String(),
-		)
+	if err := k.validateChannelOrder(order, connectionEnd); err != nil {
+		return err
 	}
 
 	// expectedCounterpaty is the counterparty of the counterparty's channel end
@@ -56,7 +51,7 @@ func (k Keeper) ChanOpenTry(
 	)
 
 	if err := k.VerifyAndProxyChannelState(
-		ctx, upstreamClientID, upstreamPrefix, connectionEnd,
+		ctx, upstreamClientID, upstreamPrefix,
 		proofHeight, proofInit,
 		upstreamPortID, upstreamChannelID, expectedChannel,
 	); err != nil {
@@ -70,23 +65,34 @@ func (k Keeper) ChanOpenTry(
 func (k Keeper) ChanOpenAck(
 	ctx sdk.Context,
 
-	upstreamClientID string,
-	upstreamPrefix exported.Prefix,
-	order channeltypes.Order,
-	connectionHops []string, // from upstream
+	upstreamClientID string, // the client ID corresponding to light client for chainA on chainB
+	upstreamPrefix exported.Prefix, // store prefix on chainA
 
-	portID,
-	channelID string,
-	downstreamPortID,
-	downstreamChannelID string,
-	version string,
-	proofTry []byte,
-	proofHeight exported.Height,
+	order channeltypes.Order, // the channel order on chainA
+	connectionHops []string, // hops from upstream
+
+	upstreamPortID string, // the portID on chainA
+	upstreamChannelID string, // the channelID on chainA
+	downstreamPortID string, // the portID on chainB
+	downstreamChannelID string, // the channelID on chainB
+
+	version string, // the version of chainA's channel
+	proofTry []byte, // proof that chainA stored channel in state
+	proofHeight exported.Height, // height at which relayer constructs proof of chainA storing channel in state
 ) error {
+	if l := len(connectionHops); l != 1 {
+		return fmt.Errorf("hops length must be 1, but got %v", l)
+	}
 
 	connectionEnd, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionHops[0])
 	if !found {
-		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, connectionHops[0])
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrConnectionNotFound,
+			"connection '%#v:%v:%v' not found", upstreamPrefix, upstreamClientID, connectionHops[0],
+		)
+	}
+	if err := k.validateChannelOrder(order, connectionEnd); err != nil {
+		return err
 	}
 
 	expectedCounterparty := channeltypes.NewCounterparty(downstreamPortID, downstreamChannelID)
@@ -96,9 +102,9 @@ func (k Keeper) ChanOpenAck(
 	)
 
 	if err := k.VerifyAndProxyChannelState(
-		ctx, upstreamClientID, upstreamPrefix, connectionEnd,
+		ctx, upstreamClientID, upstreamPrefix,
 		proofHeight, proofTry,
-		portID, channelID, expectedChannel,
+		upstreamPortID, upstreamChannelID, expectedChannel,
 	); err != nil {
 		return err
 	}
@@ -110,39 +116,55 @@ func (k Keeper) ChanOpenAck(
 func (k Keeper) ChanOpenConfirm(
 	ctx sdk.Context,
 
-	upstreamClientID string,
-	upstreamPrefix exported.Prefix,
+	upstreamClientID string, // the client ID corresponding to light client for chainA on chainB
+	upstreamPrefix exported.Prefix, // store prefix on chainA
 
-	portID string,
-	channelID string,
-	downstreamChannelID string,
-	proofAck []byte,
-	proofHeight exported.Height,
+	upstreamPortID string, // the portID on chainA
+	upstreamChannelID string, // the channelID on chainA
+	downstreamChannelID string, // the channelID on chainB
+
+	proofAck []byte, // proof that chainA stored channel in state
+	proofHeight exported.Height, // height at which relayer constructs proof of chainA storing channel in state
 ) error {
 
-	channel, found := k.GetProxyChannel(ctx, upstreamPrefix, upstreamClientID, portID, channelID)
+	channel, found := k.GetProxyChannel(ctx, upstreamPrefix, upstreamClientID, upstreamPortID, upstreamChannelID)
 	if !found {
-		return fmt.Errorf("channel '%v:%v:%v' not found", upstreamClientID, portID, channelID)
+		return fmt.Errorf("channel '%#v:%v:%v:%v' not found", upstreamPrefix, upstreamClientID, upstreamPortID, upstreamChannelID)
 	} else if channel.Counterparty.ChannelId != "" {
-		return fmt.Errorf("fatal error")
+		return fmt.Errorf("counterparty.ChannelID must be empty, but got '%v'", channel.Counterparty.ChannelId)
 	} else if channel.State != channeltypes.INIT {
 		return fmt.Errorf("channel state must be %s", channeltypes.INIT)
-	}
-	connectionEnd, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, channel.ConnectionHops[0])
-	if !found {
-		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, channel.ConnectionHops[0])
 	}
 
 	channel.Counterparty.ChannelId = downstreamChannelID
 	channel.State = channeltypes.OPEN
 
 	if err := k.VerifyAndProxyChannelState(
-		ctx, upstreamClientID, upstreamPrefix, connectionEnd,
+		ctx, upstreamClientID, upstreamPrefix,
 		proofHeight, proofAck,
-		portID, channelID, channel,
+		upstreamPortID, upstreamChannelID, channel,
 	); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (k Keeper) validateChannelOrder(order channeltypes.Order, connectionEnd connectiontypes.ConnectionEnd) error {
+	getVersions := connectionEnd.GetVersions()
+	if len(getVersions) != 1 {
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrInvalidVersion,
+			"single version must be negotiated on connection before opening channel, got: %v",
+			getVersions,
+		)
+	}
+	if !connectiontypes.VerifySupportedFeature(getVersions[0], order.String()) {
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrInvalidVersion,
+			"connection version %s does not support channel ordering: %s",
+			getVersions[0], order.String(),
+		)
+	}
 	return nil
 }

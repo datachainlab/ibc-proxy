@@ -72,17 +72,14 @@ func (k Keeper) GetProxyChannel(
 	return channel, true
 }
 
-// Commitment provides downstream to verifiable commitment
-// CONTRACT: the storeKey for commitments must be equal upstream's prefix
-
 func (k Keeper) SetProxyClientState(
 	ctx sdk.Context,
-	counterpartyPrefix exported.Prefix, // upstream's prefix
+	upstreamPrefix exported.Prefix, // upstream's prefix
 	counterpartyClientIdentifier string, // clientID corresponding to downstream on upstream
 	upstreamClientID string, // client id corresponding to upstream on proxy
 	clientState exported.ClientState,
 ) error {
-	store := k.ProxyClientStore(ctx, counterpartyPrefix, upstreamClientID, counterpartyClientIdentifier)
+	store := k.ProxyClientStore(ctx, upstreamPrefix, upstreamClientID, counterpartyClientIdentifier)
 	bz := clienttypes.MustMarshalClientState(k.cdc, clientState)
 	store.Set(host.ClientStateKey(), bz)
 	return nil
@@ -90,13 +87,13 @@ func (k Keeper) SetProxyClientState(
 
 func (k Keeper) SetProxyClientConsensusState(
 	ctx sdk.Context,
-	counterpartyPrefix exported.Prefix,
+	upstreamPrefix exported.Prefix, // upstream's prefix
 	counterpartyClientIdentifier string,
 	upstreamClientID string,
 	consensusHeight exported.Height,
 	consensusState exported.ConsensusState,
 ) error {
-	store := k.ProxyClientStore(ctx, counterpartyPrefix, upstreamClientID, counterpartyClientIdentifier)
+	store := k.ProxyClientStore(ctx, upstreamPrefix, upstreamClientID, counterpartyClientIdentifier)
 	bz := clienttypes.MustMarshalConsensusState(k.cdc, consensusState)
 	store.Set(host.ConsensusStateKey(consensusHeight), bz)
 	return nil
@@ -104,12 +101,12 @@ func (k Keeper) SetProxyClientConsensusState(
 
 func (k Keeper) SetProxyConnection(
 	ctx sdk.Context,
-	counterpartyPrefix exported.Prefix,
+	upstreamPrefix exported.Prefix, // upstream's prefix
 	upstreamClientID string,
 	connectionID string,
 	connectionEnd connectiontypes.ConnectionEnd,
 ) error {
-	store := k.ProxyStore(ctx, counterpartyPrefix, upstreamClientID)
+	store := k.ProxyStore(ctx, upstreamPrefix, upstreamClientID)
 	bz := k.cdc.MustMarshal(&connectionEnd)
 	store.Set(host.ConnectionKey(connectionID), bz)
 	return nil
@@ -117,13 +114,13 @@ func (k Keeper) SetProxyConnection(
 
 func (k Keeper) SetProxyChannel(
 	ctx sdk.Context,
-	counterpartyPrefix exported.Prefix,
+	upstreamPrefix exported.Prefix, // upstream's prefix
 	upstreamClientID string,
 	portID,
 	channelID string,
 	channelEnd exported.ChannelI,
 ) error {
-	store := k.ProxyStore(ctx, counterpartyPrefix, upstreamClientID)
+	store := k.ProxyStore(ctx, upstreamPrefix, upstreamClientID)
 	channel := channelEnd.(channeltypes.Channel)
 	bz := k.cdc.MustMarshal(&channel)
 	store.Set(host.ChannelKey(portID, channelID), bz)
@@ -132,54 +129,54 @@ func (k Keeper) SetProxyChannel(
 
 func (k Keeper) SetProxyPacketCommitment(
 	ctx sdk.Context,
-	counterpartyPrefix exported.Prefix,
+	upstreamPrefix exported.Prefix, // upstream's prefix
 	upstreamClientID string,
 	portID,
 	channelID string,
 	sequence uint64,
 	commitmentBytes []byte,
 ) error {
-	store := k.ProxyStore(ctx, counterpartyPrefix, upstreamClientID)
+	store := k.ProxyStore(ctx, upstreamPrefix, upstreamClientID)
 	store.Set(host.PacketCommitmentKey(portID, channelID, sequence), commitmentBytes)
 	return nil
 }
 
 func (k Keeper) SetProxyPacketAcknowledgement(
 	ctx sdk.Context,
-	counterpartyPrefix exported.Prefix,
+	upstreamPrefix exported.Prefix, // upstream's prefix
 	upstreamClientID string,
 	portID,
 	channelID string,
 	sequence uint64,
 	acknowledgement []byte,
 ) error {
-	store := k.ProxyStore(ctx, counterpartyPrefix, upstreamClientID)
+	store := k.ProxyStore(ctx, upstreamPrefix, upstreamClientID)
 	store.Set(host.PacketAcknowledgementKey(portID, channelID, sequence), channeltypes.CommitAcknowledgement(acknowledgement))
 	return nil
 }
 
 func (k Keeper) SetProxyPacketReceiptAbsence(
 	ctx sdk.Context,
-	counterpartyPrefix exported.Prefix,
+	upstreamPrefix exported.Prefix, // upstream's prefix
 	upstreamClientID string,
 	portID,
 	channelID string,
 	sequence uint64,
 ) error {
-	store := k.ProxyStore(ctx, counterpartyPrefix, upstreamClientID)
+	store := k.ProxyStore(ctx, upstreamPrefix, upstreamClientID)
 	store.Set(host.PacketReceiptKey(portID, channelID, sequence), []byte{byte(1)})
 	return nil
 }
 
 func (k Keeper) SetProxyNextSequenceRecv(
 	ctx sdk.Context,
-	counterpartyPrefix exported.Prefix,
+	upstreamPrefix exported.Prefix, // upstream's prefix
 	upstreamClientID string,
 	portID,
 	channelID string,
 	nextSequenceRecv uint64,
 ) error {
-	store := k.ProxyStore(ctx, counterpartyPrefix, upstreamClientID)
+	store := k.ProxyStore(ctx, upstreamPrefix, upstreamClientID)
 	bz := sdk.Uint64ToBigEndian(nextSequenceRecv)
 	store.Set(host.NextSequenceRecvKey(portID, channelID), bz)
 	return nil
