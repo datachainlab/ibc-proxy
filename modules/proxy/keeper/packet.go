@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"time"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	connectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
@@ -10,14 +8,14 @@ import (
 	"github.com/cosmos/ibc-go/modules/core/exported"
 )
 
-// source: downstream, counterparty: upstream
+// upstream: chainA, downstream: chainB
 func (k Keeper) RecvPacket(
 	ctx sdk.Context,
-	upstreamClientID string,
-	upstreamPrefix exported.Prefix,
-	packet exported.PacketI,
-	proof []byte,
-	proofHeight exported.Height,
+	upstreamClientID string, // the client ID corresponding to light client for chainA on chainB
+	upstreamPrefix exported.Prefix, // store prefix on chainA
+	packet exported.PacketI, // packet
+	proof []byte, // proof that chanA stored packet in state
+	proofHeight exported.Height, // height at which relayer constructs proof of chainA storing packet in state
 ) error {
 	channel, found := k.GetProxyChannel(ctx, upstreamPrefix, upstreamClientID, packet.GetSourcePort(), packet.GetSourceChannel())
 	if !found {
@@ -47,14 +45,6 @@ func (k Keeper) RecvPacket(
 		return sdkerrors.Wrap(connectiontypes.ErrConnectionNotFound, channel.ConnectionHops[0])
 	}
 
-	// check if packet timeouted by comparing it with the latest timestamp of the chain
-	if packet.GetTimeoutTimestamp() != 0 && uint64(ctx.BlockTime().UnixNano()) >= packet.GetTimeoutTimestamp() {
-		return sdkerrors.Wrapf(
-			channeltypes.ErrPacketTimeout,
-			"block timestamp >= packet timeout timestamp (%s >= %s)", ctx.BlockTime(), time.Unix(0, int64(packet.GetTimeoutTimestamp())),
-		)
-	}
-
 	if err := k.VerifyAndProxyPacketCommitment(
 		ctx,
 		upstreamClientID,
@@ -70,14 +60,15 @@ func (k Keeper) RecvPacket(
 	return nil
 }
 
+// upstream: chainA, downstream: chainB
 func (k Keeper) AcknowledgePacket(
 	ctx sdk.Context,
-	upstreamClientID string,
-	upstreamPrefix exported.Prefix,
-	packet exported.PacketI,
-	acknowledgement []byte,
-	proof []byte,
-	proofHeight exported.Height,
+	upstreamClientID string, // the client ID corresponding to light client for chainA on chainB
+	upstreamPrefix exported.Prefix, // store prefix on chainA
+	packet exported.PacketI, // packet
+	acknowledgement []byte, // ack
+	proof []byte, // proof that chanA stored packet in state
+	proofHeight exported.Height, // height at which relayer constructs proof of chainA storing packet in state
 ) error {
 	channel, found := k.GetProxyChannel(ctx, upstreamPrefix, upstreamClientID, packet.GetDestPort(), packet.GetDestChannel())
 	if !found {
