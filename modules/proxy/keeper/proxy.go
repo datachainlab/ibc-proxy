@@ -416,8 +416,7 @@ func (k Keeper) VerifyAndProxyNextSequenceRecv(
 	)
 }
 
-// getBlockDelay calculates the block delay period from the time delay of the connection
-// and the maximum expected time per block.
+// getBlockDelay always returns 0
 func (k Keeper) getBlockDelay(ctx sdk.Context, connection exported.ConnectionI) uint64 {
 	return 0
 }
