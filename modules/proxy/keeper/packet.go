@@ -21,7 +21,7 @@ func (k Keeper) RecvPacket(
 ) error {
 	channel, found := k.GetProxyChannel(ctx, upstreamPrefix, upstreamClientID, packet.GetSourcePort(), packet.GetSourceChannel())
 	if !found {
-		return sdkerrors.Wrap(channeltypes.ErrChannelNotFound, packet.GetDestChannel())
+		return sdkerrors.Wrap(channeltypes.ErrChannelNotFound, packet.GetSourceChannel())
 	}
 
 	// packet must come from the channel's counterparty
@@ -67,8 +67,6 @@ func (k Keeper) RecvPacket(
 		return err
 	}
 
-	// TODO persists a packet
-
 	return nil
 }
 
@@ -108,8 +106,6 @@ func (k Keeper) AcknowledgePacket(
 	); err != nil {
 		return err
 	}
-
-	// TODO persists an acknowledgement
 
 	return nil
 }

@@ -149,7 +149,6 @@ func (k Keeper) VerifyChannelState(
 	ctx sdk.Context,
 	upstreamClientID string,
 	upstreamPrefix exported.Prefix,
-	connection exported.ConnectionI,
 	height exported.Height,
 	proof []byte,
 	portID,
@@ -176,14 +175,13 @@ func (k Keeper) VerifyAndProxyChannelState(
 	ctx sdk.Context,
 	upstreamClientID string,
 	upstreamPrefix exported.Prefix,
-	connection exported.ConnectionI,
 	height exported.Height,
 	proof []byte,
 	portID,
 	channelID string,
 	channel exported.ChannelI, // the channel of downstream that upstream has
 ) error {
-	if err := k.VerifyChannelState(ctx, upstreamClientID, upstreamPrefix, connection, height, proof, portID, channelID, channel); err != nil {
+	if err := k.VerifyChannelState(ctx, upstreamClientID, upstreamPrefix, height, proof, portID, channelID, channel); err != nil {
 		return err
 	}
 	return k.SetProxyChannel(

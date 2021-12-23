@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	connectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 	commitmenttypes "github.com/cosmos/ibc-go/modules/core/23-commitment/types"
@@ -102,13 +103,13 @@ func (k Keeper) ConnOpenAck(
 
 	connectionID string, // the connection ID corresponding to chainB on chainA
 	upstreamPrefix exported.Prefix, // store prefix on chainA
-	connection connectiontypes.ConnectionEnd, // the connection corresponding to chainB on chainA (its state must be TRYOPEN)
+	connectionEnd connectiontypes.ConnectionEnd, // the connection corresponding to chainB on chainA (its state must be TRYOPEN)
 
 	downstreamClientState exported.ClientState, // clientState for chainB
 	downstreamConsensusState exported.ConsensusState, // consensusState for chainB
 	proxyClientState exported.ClientState, // clientState for proxy
 
-	proofTry []byte, // proof that chainA stored connectionEnd in state in ConnOpenTry
+	proofTry []byte, // proof that chainA stored connectionEnd in state (on ConnOpenTry)
 	proofClient []byte, // proof that chainA stored chainB's clientState
 	proofConsensus []byte, // proof that chainA stored chainB's consensus state at consensus height
 	proofHeight exported.Height, // height at which relayer constructs proof of chainA storing connectionEnd in state
@@ -130,18 +131,21 @@ func (k Keeper) ConnOpenAck(
 		return fmt.Errorf("connection '%v:%v' already exists", upstreamClientID, connectionID)
 	}
 
-	if connection.State != connectiontypes.TRYOPEN {
-		return fmt.Errorf("connection state must be %s", connectiontypes.TRYOPEN)
+	if connectionEnd.State != connectiontypes.TRYOPEN {
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrInvalidConnectionState,
+			"connection state is not TRYOPEN (got %s)", connectiontypes.State(connectionEnd.GetState()).String(),
+		)
 	}
 
 	// Ensure that chainA stored the clientState provided in the msg
-	if err := k.VerifyAndProxyClientState(ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, proofClient, downstreamClientState); err != nil {
+	if err := k.VerifyAndProxyClientState(ctx, upstreamClientID, upstreamPrefix, connectionEnd.GetClientID(), proofHeight, proofClient, downstreamClientState); err != nil {
 		return err
 	}
 
 	// Ensure that chainA has stored the correct ConsensusState for chainA at the consensusHeight
 	if err := k.VerifyAndProxyClientConsensusState(
-		ctx, upstreamClientID, upstreamPrefix, connection.GetClientID(), proofHeight, consensusHeight, proofConsensus, downstreamConsensusState,
+		ctx, upstreamClientID, upstreamPrefix, connectionEnd.GetClientID(), proofHeight, consensusHeight, proofConsensus, downstreamConsensusState,
 	); err != nil {
 		return err
 	}
@@ -153,20 +157,20 @@ func (k Keeper) ConnOpenAck(
 	store := makeMemStore(k.cdc, downstreamConsensusState, proofProxyHeight)
 
 	if err := downstreamClientState.VerifyClientState(
-		store, k.cdc, proofProxyHeight, connection.Counterparty.GetPrefix(), connection.Counterparty.ClientId, proofProxyClient, proxyClientState,
+		store, k.cdc, proofProxyHeight, connectionEnd.Counterparty.GetPrefix(), connectionEnd.Counterparty.ClientId, proofProxyClient, proxyClientState,
 	); err != nil {
 		return err
 	}
 
 	if err := downstreamClientState.VerifyClientConsensusState(
-		store, k.cdc, proofProxyHeight, connection.Counterparty.ClientId, proxyConsensusHeight, connection.Counterparty.GetPrefix(), proofProxyConsensus, proxyConsensusState,
+		store, k.cdc, proofProxyHeight, connectionEnd.Counterparty.ClientId, proxyConsensusHeight, connectionEnd.Counterparty.GetPrefix(), proofProxyConsensus, proxyConsensusState,
 	); err != nil {
 		return err
 	}
 
 	// Ensure that chainB stored expected connectionEnd in its state during ConnOpenTry
 	if err := k.VerifyAndProxyConnectionState(
-		ctx, upstreamClientID, upstreamPrefix, connection, proofHeight, proofTry, connectionID,
+		ctx, upstreamClientID, upstreamPrefix, connectionEnd, proofHeight, proofTry, connectionID,
 	); err != nil {
 		return err
 	}
@@ -187,21 +191,27 @@ func (k Keeper) ConnOpenConfirm(
 	proofHeight exported.Height, // height that relayer constructed proofAck
 ) error {
 
-	connection, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
+	connectionEnd, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
 	if !found {
-		return fmt.Errorf("connection '%v:%v' not found", upstreamClientID, connectionID)
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrConnectionNotFound,
+			"connection '%#v:%v:%v' not found", upstreamPrefix, upstreamClientID, connectionID,
+		)
 	}
 
-	if connection.State != connectiontypes.INIT {
-		return fmt.Errorf("connection state must be %s", connectiontypes.INIT)
+	if connectionEnd.State != connectiontypes.INIT {
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrInvalidConnectionState,
+			"connection state is not INIT (got %s)", connectiontypes.State(connectionEnd.GetState()).String(),
+		)
 	}
 
-	connection.State = connectiontypes.OPEN
-	connection.Counterparty.ConnectionId = counterpartyConnectionID
+	connectionEnd.State = connectiontypes.OPEN
+	connectionEnd.Counterparty.ConnectionId = counterpartyConnectionID
 
 	// Ensure that chainA stored expected connectionEnd in its state during ConnOpenTry
 	if err := k.VerifyAndProxyConnectionState(
-		ctx, upstreamClientID, upstreamPrefix, connection, proofHeight, proofAck, connectionID,
+		ctx, upstreamClientID, upstreamPrefix, connectionEnd, proofHeight, proofAck, connectionID,
 	); err != nil {
 		return err
 	}
