@@ -22,6 +22,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgProxyChannelOpenTry{},
 		&MsgProxyChannelOpenAck{},
 		&MsgProxyChannelOpenConfirm{},
+		&MsgProxyChannelOpenFinalize{},
 		&MsgProxyRecvPacket{},
 		&MsgProxyAcknowledgePacket{},
 	)

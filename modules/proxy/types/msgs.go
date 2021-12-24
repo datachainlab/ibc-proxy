@@ -339,6 +339,20 @@ func (msg MsgProxyChannelOpenConfirm) GetSigners() []sdk.AccAddress {
 }
 
 // ValidateBasic implements sdk.Msg
+func (msg MsgProxyChannelOpenFinalize) ValidateBasic() error {
+	return nil
+}
+
+// GetSigners implements sdk.Msg
+func (msg MsgProxyChannelOpenFinalize) GetSigners() []sdk.AccAddress {
+	accAddr, err := sdk.AccAddressFromBech32(msg.Signer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{accAddr}
+}
+
+// ValidateBasic implements sdk.Msg
 func (msg MsgProxyRecvPacket) ValidateBasic() error {
 	return nil
 }

@@ -124,6 +124,9 @@ func (coord *Coordinator) CreateChannelWithProxy(
 	err = coord.ChanOpenConfirmWithProxy(chainB, chainA, channelB, channelA, connB, connA, order, proxies.Swap())
 	require.NoError(coord.t, err)
 
+	err = coord.ChanOpenFinalizeWithProxy(chainA, chainB, channelA, channelB, connA, connB, order, proxies)
+	require.NoError(coord.t, err)
+
 	return &channelA, &channelB
 }
 
@@ -577,6 +580,11 @@ func (coord *Coordinator) ChanOpenTryWithProxy(
 		}
 		coord.CommitBlock(proxy)
 
+		channel := proxy.GetProxyChannel(proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix), proxies[0].UpstreamClientID, counterpartyChannel.PortID, counterpartyChannel.ID)
+		if channel.State != channeltypes.INIT {
+			return fmt.Errorf("channel state must be INIT, but got %v", channel.State)
+		}
+
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
 			return err
 		}
@@ -648,6 +656,11 @@ func (coord *Coordinator) ChanOpenAckWithProxy(
 		}
 		coord.CommitBlock(proxy)
 
+		channel := proxy.GetProxyChannel(proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix), proxies[0].UpstreamClientID, counterpartyChannel.PortID, counterpartyChannel.ID)
+		if channel.State != channeltypes.TRYOPEN {
+			return fmt.Errorf("channel state must be TRYOPEN, but got %v", channel.State)
+		}
+
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
 			return err
 		}
@@ -713,6 +726,11 @@ func (coord *Coordinator) ChanOpenConfirmWithProxy(
 		}
 		coord.CommitBlock(proxy)
 
+		channel := proxy.GetProxyChannel(proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix), proxies[0].UpstreamClientID, counterpartyChannel.PortID, counterpartyChannel.ID)
+		if channel.State != channeltypes.OPEN {
+			return fmt.Errorf("channel state must be OPEN, but got %v", channel.State)
+		}
+
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
 			return err
 		}
@@ -742,6 +760,47 @@ func (coord *Coordinator) ChanOpenConfirmWithProxy(
 			proxies[1].Chain, source, proxies[1].UpstreamClientID, exported.Tendermint,
 		)
 	}
+}
+
+func (coord *Coordinator) ChanOpenFinalizeWithProxy(
+	source, counterparty *TestChain,
+	sourceChannel, counterpartyChannel TestChannel,
+	sourceConnection, counterpartyConnection *TestConnection,
+	order channeltypes.Order,
+	proxies ProxyPair,
+) error {
+	if proxies[0] == nil {
+		return nil
+	}
+
+	// source: downstream, counterparty: upstream
+	proxy := proxies[0].Chain
+	proofConfirm, proofHeight := counterparty.QueryProof(host.ChannelKey(counterpartyChannel.PortID, counterpartyChannel.ID))
+
+	msg := &proxytypes.MsgProxyChannelOpenFinalize{
+		UpstreamClientId: proxies[0].UpstreamClientID,
+		UpstreamPrefix:   proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
+		PortId:           counterpartyChannel.PortID,
+		ChannelId:        counterpartyChannel.ID,
+		ProofConfirm:     proofConfirm,
+		ProofHeight:      proofHeight,
+		Signer:           proxy.SenderAccount.GetAddress().String(),
+	}
+	if _, err := proxy.SendMsgs(msg); err != nil {
+		return err
+	}
+	coord.CommitBlock(proxy)
+
+	channel := proxy.GetProxyChannel(proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix), proxies[0].UpstreamClientID, counterpartyChannel.PortID, counterpartyChannel.ID)
+	if channel.State != channeltypes.OPEN {
+		return fmt.Errorf("channel state must be OPEN, but got %v", channel.State)
+	}
+
+	if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
+		return err
+	}
+	coord.CommitBlock(source)
+	return nil
 }
 
 func (coord *Coordinator) SendPacketWithProxy(
@@ -982,4 +1041,14 @@ func (chain *TestChain) GetProxyConnection(
 	conn, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetProxyConnection(chain.GetContext(), upstreamPrefix, upstreamClientID, connectionID)
 	require.True(chain.t, found)
 	return conn
+}
+
+func (chain *TestChain) GetProxyChannel(
+	upstreamPrefix exported.Prefix,
+	upstreamClientID string,
+	portID, channelID string,
+) channeltypes.Channel {
+	channel, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetProxyChannel(chain.GetContext(), upstreamPrefix, upstreamClientID, portID, channelID)
+	require.True(chain.t, found)
+	return channel
 }

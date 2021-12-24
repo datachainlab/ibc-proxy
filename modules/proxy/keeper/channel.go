@@ -150,6 +150,39 @@ func (k Keeper) ChanOpenConfirm(
 	return nil
 }
 
+func (k Keeper) ChanOpenFinalize(
+	ctx sdk.Context,
+
+	upstreamClientID string, // the client ID corresponding to light client for chainA on chainB
+	upstreamPrefix exported.Prefix, // store prefix on chainA
+
+	upstreamPortID string, // the portID on chainA
+	upstreamChannelID string, // the channelID on chainA
+
+	proofConfirm []byte, // proof that chainA stored channel in state
+	proofHeight exported.Height, // height at which relayer constructs proof of chainA storing channel in state
+) error {
+
+	channel, found := k.GetProxyChannel(ctx, upstreamPrefix, upstreamClientID, upstreamPortID, upstreamChannelID)
+	if !found {
+		return fmt.Errorf("channel '%#v:%v:%v:%v' not found", upstreamPrefix, upstreamClientID, upstreamPortID, upstreamChannelID)
+	} else if channel.State != channeltypes.TRYOPEN {
+		return fmt.Errorf("channel state must be %s", channeltypes.TRYOPEN)
+	}
+
+	channel.State = channeltypes.OPEN
+
+	if err := k.VerifyAndProxyChannelState(
+		ctx, upstreamClientID, upstreamPrefix,
+		proofHeight, proofConfirm,
+		upstreamPortID, upstreamChannelID, channel,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (k Keeper) validateChannelOrder(order channeltypes.Order, connectionEnd connectiontypes.ConnectionEnd) error {
 	getVersions := connectionEnd.GetVersions()
 	if len(getVersions) != 1 {
