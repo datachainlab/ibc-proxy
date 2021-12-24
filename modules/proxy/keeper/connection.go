@@ -87,7 +87,7 @@ func (k Keeper) ConnOpenTry(
 		return err
 	}
 
-	// Ensure that chainA stored expected connectionEnd in its state during ConnOpenTry
+	// Ensure that chainA stored expected connectionEnd in its state during ConnOpenInit
 	if err := k.VerifyAndProxyConnectionState(
 		ctx, upstreamClientID, upstreamPrefix, connection, proofHeight, proofInit, connectionID,
 	); err != nil {
@@ -209,9 +209,48 @@ func (k Keeper) ConnOpenConfirm(
 	connectionEnd.State = connectiontypes.OPEN
 	connectionEnd.Counterparty.ConnectionId = counterpartyConnectionID
 
-	// Ensure that chainA stored expected connectionEnd in its state during ConnOpenTry
+	// Ensure that chainA stored expected connectionEnd in its state during ConnOpenAck
 	if err := k.VerifyAndProxyConnectionState(
 		ctx, upstreamClientID, upstreamPrefix, connectionEnd, proofHeight, proofAck, connectionID,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// upstream: chainA, downstream: chainB
+func (k Keeper) ConnOpenFinalize(
+	ctx sdk.Context,
+
+	connectionID string, // the connection ID corresponding to chainB on chainA
+	upstreamClientID string, // the client ID corresponding to light client for chainA on chainB
+	upstreamPrefix exported.Prefix, // store prefix on chainA
+
+	proofConfirm []byte, // proof that connection opened on chainA during ConnOpenConfirm
+	proofHeight exported.Height, // height that relayer constructed proofConfirm
+) error {
+
+	connectionEnd, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, connectionID)
+	if !found {
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrConnectionNotFound,
+			"connection '%#v:%v:%v' not found", upstreamPrefix, upstreamClientID, connectionID,
+		)
+	}
+
+	if connectionEnd.State != connectiontypes.TRYOPEN {
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrInvalidConnectionState,
+			"connection state is not TRYOPEN (got %s)", connectiontypes.State(connectionEnd.GetState()).String(),
+		)
+	}
+
+	connectionEnd.State = connectiontypes.OPEN
+
+	// Ensure that chainA stored expected connectionEnd in its state during ConnOpenConfirm
+	if err := k.VerifyAndProxyConnectionState(
+		ctx, upstreamClientID, upstreamPrefix, connectionEnd, proofHeight, proofConfirm, connectionID,
 	); err != nil {
 		return err
 	}

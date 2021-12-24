@@ -259,6 +259,43 @@ func (msg MsgProxyConnectionOpenConfirm) UnpackInterfaces(unpacker codectypes.An
 	return nil
 }
 
+func NewMsgProxyConnectionOpenFinalize(
+	connectionID string,
+	upstreamClientID string,
+	upstreamPrefix commitmenttypes.MerklePrefix,
+	proofConfirm []byte,
+	proofHeight clienttypes.Height,
+	signer string,
+) (*MsgProxyConnectionOpenFinalize, error) {
+	return &MsgProxyConnectionOpenFinalize{
+		ConnectionId:     connectionID,
+		UpstreamClientId: upstreamClientID,
+		UpstreamPrefix:   upstreamPrefix,
+		ProofConfirm:     proofConfirm,
+		ProofHeight:      proofHeight,
+		Signer:           signer,
+	}, nil
+}
+
+// ValidateBasic implements sdk.Msg
+func (msg MsgProxyConnectionOpenFinalize) ValidateBasic() error {
+	return nil
+}
+
+// GetSigners implements sdk.Msg
+func (msg MsgProxyConnectionOpenFinalize) GetSigners() []sdk.AccAddress {
+	accAddr, err := sdk.AccAddressFromBech32(msg.Signer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{accAddr}
+}
+
+// UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
+func (msg MsgProxyConnectionOpenFinalize) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	return nil
+}
+
 // ValidateBasic implements sdk.Msg
 func (msg MsgProxyChannelOpenTry) ValidateBasic() error {
 	return nil

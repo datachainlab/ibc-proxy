@@ -15,6 +15,7 @@ service Msg {
   rpc ProxyConnectionOpenTry(MsgProxyConnectionOpenTry) returns (MsgProxyConnectionOpenTryResponse);
   rpc ProxyConnectionOpenAck(MsgProxyConnectionOpenAck) returns (MsgProxyConnectionOpenAckResponse);
   rpc ProxyConnectionOpenConfirm(MsgProxyConnectionOpenConfirm) returns (MsgProxyConnectionOpenConfirmResponse);
+  rpc ProxyConnectionOpenFinalize(MsgProxyConnectionOpenFinalize) returns (MsgProxyConnectionOpenFinalizeResponse);
 
   rpc ProxyChannelOpenTry(MsgProxyChannelOpenTry) returns (MsgProxyChannelOpenTryResponse);
   rpc ProxyChannelOpenAck(MsgProxyChannelOpenAck) returns (MsgProxyChannelOpenAckResponse);
@@ -104,6 +105,20 @@ message MsgProxyConnectionOpenConfirm {
 }
 
 message MsgProxyConnectionOpenConfirmResponse {}
+
+message MsgProxyConnectionOpenFinalize {
+  option (gogoproto.equal)           = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string connection_id = 1;
+  string upstream_client_id = 2;
+  ibc.core.commitment.v1.MerklePrefix upstream_prefix = 3 [(gogoproto.nullable) = false];
+  bytes proof_confirm = 4;
+  ibc.core.client.v1.Height proof_height = 5 [(gogoproto.nullable) = false];
+  string signer = 6;
+}
+
+message MsgProxyConnectionOpenFinalizeResponse {}
 
 message MsgProxyChannelOpenTry {
   option (gogoproto.equal)           = false;
