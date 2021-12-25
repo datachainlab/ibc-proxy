@@ -12,13 +12,16 @@ import "google/protobuf/any.proto";
 
 service Msg {
   rpc ProxyClientState(MsgProxyClientState) returns (MsgProxyClientStateResponse);
+
   rpc ProxyConnectionOpenTry(MsgProxyConnectionOpenTry) returns (MsgProxyConnectionOpenTryResponse);
   rpc ProxyConnectionOpenAck(MsgProxyConnectionOpenAck) returns (MsgProxyConnectionOpenAckResponse);
   rpc ProxyConnectionOpenConfirm(MsgProxyConnectionOpenConfirm) returns (MsgProxyConnectionOpenConfirmResponse);
+  rpc ProxyConnectionOpenFinalize(MsgProxyConnectionOpenFinalize) returns (MsgProxyConnectionOpenFinalizeResponse);
 
   rpc ProxyChannelOpenTry(MsgProxyChannelOpenTry) returns (MsgProxyChannelOpenTryResponse);
   rpc ProxyChannelOpenAck(MsgProxyChannelOpenAck) returns (MsgProxyChannelOpenAckResponse);
   rpc ProxyChannelOpenConfirm(MsgProxyChannelOpenConfirm) returns (MsgProxyChannelOpenConfirmResponse);
+  rpc ProxyChannelOpenFinalize(MsgProxyChannelOpenFinalize) returns (MsgProxyChannelOpenFinalizeResponse);
 
   rpc ProxyRecvPacket(MsgProxyRecvPacket) returns (MsgProxyRecvPacketResponse);
   rpc ProxyAcknowledgePacket(MsgProxyAcknowledgePacket) returns (MsgProxyAcknowledgePacketResponse);
@@ -105,6 +108,20 @@ message MsgProxyConnectionOpenConfirm {
 
 message MsgProxyConnectionOpenConfirmResponse {}
 
+message MsgProxyConnectionOpenFinalize {
+  option (gogoproto.equal)           = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string connection_id = 1;
+  string upstream_client_id = 2;
+  ibc.core.commitment.v1.MerklePrefix upstream_prefix = 3 [(gogoproto.nullable) = false];
+  bytes proof_confirm = 4;
+  ibc.core.client.v1.Height proof_height = 5 [(gogoproto.nullable) = false];
+  string signer = 6;
+}
+
+message MsgProxyConnectionOpenFinalizeResponse {}
+
 message MsgProxyChannelOpenTry {
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
@@ -156,6 +173,18 @@ message MsgProxyChannelOpenConfirm {
 }
 
 message MsgProxyChannelOpenConfirmResponse {}
+
+message MsgProxyChannelOpenFinalize {
+  string upstream_client_id = 1;
+  ibc.core.commitment.v1.MerklePrefix upstream_prefix = 2 [(gogoproto.nullable) = false];
+  string port_id = 3;
+  string channel_id = 4;
+  bytes proof_confirm = 5;
+  ibc.core.client.v1.Height proof_height = 6 [(gogoproto.nullable) = false];
+  string signer = 7;
+}
+
+message MsgProxyChannelOpenFinalizeResponse {}
 
 message MsgProxyRecvPacket {
   option (gogoproto.equal)           = false;

@@ -99,6 +99,9 @@ func (coord *Coordinator) CreateConnectionWithProxy(
 	err = coord.ConnOpenConfirmWithProxy(chainB, chainA, connB, connA, proxies.Swap())
 	require.NoError(coord.t, err)
 
+	err = coord.ConnOpenFinalizeWithProxy(chainA, chainB, connA, connB, proxies)
+	require.NoError(coord.t, err)
+
 	return connA, connB
 }
 
@@ -119,6 +122,9 @@ func (coord *Coordinator) CreateChannelWithProxy(
 	require.NoError(coord.t, err)
 
 	err = coord.ChanOpenConfirmWithProxy(chainB, chainA, channelB, channelA, connB, connA, order, proxies.Swap())
+	require.NoError(coord.t, err)
+
+	err = coord.ChanOpenFinalizeWithProxy(chainA, chainB, channelA, channelB, connA, connB, order, proxies)
 	require.NoError(coord.t, err)
 
 	return &channelA, &channelB
@@ -238,6 +244,11 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 		}
 		coord.CommitBlock(proxy)
 
+		connectionEnd := proxy.GetProxyConnection(proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix), proxies[0].UpstreamClientID, counterpartyConnection.ID)
+		if connectionEnd.State != connectiontypes.INIT {
+			return fmt.Errorf("connection state must be INIT, but got %v", connectionEnd.State)
+		}
+
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
 			return err
 		}
@@ -343,6 +354,11 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 		}
 		coord.CommitBlock(proxy)
 
+		connectionEnd := proxy.GetProxyConnection(proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix), proxies[0].UpstreamClientID, counterpartyConnection.ID)
+		if connectionEnd.State != connectiontypes.TRYOPEN {
+			return fmt.Errorf("connection state must be TRYOPEN, but got %v", connectionEnd.State)
+		}
+
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
 			return err
 		}
@@ -413,6 +429,11 @@ func (coord *Coordinator) ConnOpenConfirmWithProxy(
 		}
 		coord.CommitBlock(proxy)
 
+		connectionEnd := proxy.GetProxyConnection(proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix), proxies[0].UpstreamClientID, counterpartyConnection.ID)
+		if connectionEnd.State != connectiontypes.OPEN {
+			return fmt.Errorf("connection state must be OPEN, but got %v", connectionEnd.State)
+		}
+
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
 			return err
 		}
@@ -441,6 +462,50 @@ func (coord *Coordinator) ConnOpenConfirmWithProxy(
 			proxies[1].Chain, source, proxies[1].UpstreamClientID, exported.Tendermint,
 		)
 	}
+}
+
+func (coord *Coordinator) ConnOpenFinalizeWithProxy(
+	source, counterparty *TestChain,
+	sourceConnection, counterpartyConnection *TestConnection,
+	proxies ProxyPair,
+) error {
+	if proxies[0] == nil {
+		return nil
+	}
+
+	// source: downstream, counterparty: upstream
+	proxy := proxies[0].Chain
+
+	connectionKey := host.ConnectionKey(counterpartyConnection.ID)
+	proofConfirm, proofHeight := counterparty.QueryProof(connectionKey)
+
+	msg, err := proxytypes.NewMsgProxyConnectionOpenFinalize(
+		counterpartyConnection.ID,
+		proxies[0].UpstreamClientID,
+		proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
+		proofConfirm,
+		proofHeight,
+		proxy.SenderAccount.GetAddress().String(),
+	)
+	if err != nil {
+		return err
+	}
+	if _, err := proxy.SendMsgs(msg); err != nil {
+		return err
+	}
+	coord.CommitBlock(proxy)
+
+	connectionEnd := proxy.GetProxyConnection(proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix), proxies[0].UpstreamClientID, counterpartyConnection.ID)
+	if connectionEnd.State != connectiontypes.OPEN {
+		return fmt.Errorf("connection state must be OPEN, but got %v", connectionEnd.State)
+	}
+
+	if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
+		return err
+	}
+	coord.CommitBlock(source)
+
+	return nil
 }
 
 func (coord *Coordinator) ChanOpenInitWithProxy(
@@ -515,6 +580,11 @@ func (coord *Coordinator) ChanOpenTryWithProxy(
 		}
 		coord.CommitBlock(proxy)
 
+		channel := proxy.GetProxyChannel(proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix), proxies[0].UpstreamClientID, counterpartyChannel.PortID, counterpartyChannel.ID)
+		if channel.State != channeltypes.INIT {
+			return fmt.Errorf("channel state must be INIT, but got %v", channel.State)
+		}
+
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
 			return err
 		}
@@ -586,6 +656,11 @@ func (coord *Coordinator) ChanOpenAckWithProxy(
 		}
 		coord.CommitBlock(proxy)
 
+		channel := proxy.GetProxyChannel(proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix), proxies[0].UpstreamClientID, counterpartyChannel.PortID, counterpartyChannel.ID)
+		if channel.State != channeltypes.TRYOPEN {
+			return fmt.Errorf("channel state must be TRYOPEN, but got %v", channel.State)
+		}
+
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
 			return err
 		}
@@ -651,6 +726,11 @@ func (coord *Coordinator) ChanOpenConfirmWithProxy(
 		}
 		coord.CommitBlock(proxy)
 
+		channel := proxy.GetProxyChannel(proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix), proxies[0].UpstreamClientID, counterpartyChannel.PortID, counterpartyChannel.ID)
+		if channel.State != channeltypes.OPEN {
+			return fmt.Errorf("channel state must be OPEN, but got %v", channel.State)
+		}
+
 		if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
 			return err
 		}
@@ -680,6 +760,47 @@ func (coord *Coordinator) ChanOpenConfirmWithProxy(
 			proxies[1].Chain, source, proxies[1].UpstreamClientID, exported.Tendermint,
 		)
 	}
+}
+
+func (coord *Coordinator) ChanOpenFinalizeWithProxy(
+	source, counterparty *TestChain,
+	sourceChannel, counterpartyChannel TestChannel,
+	sourceConnection, counterpartyConnection *TestConnection,
+	order channeltypes.Order,
+	proxies ProxyPair,
+) error {
+	if proxies[0] == nil {
+		return nil
+	}
+
+	// source: downstream, counterparty: upstream
+	proxy := proxies[0].Chain
+	proofConfirm, proofHeight := counterparty.QueryProof(host.ChannelKey(counterpartyChannel.PortID, counterpartyChannel.ID))
+
+	msg := &proxytypes.MsgProxyChannelOpenFinalize{
+		UpstreamClientId: proxies[0].UpstreamClientID,
+		UpstreamPrefix:   proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix),
+		PortId:           counterpartyChannel.PortID,
+		ChannelId:        counterpartyChannel.ID,
+		ProofConfirm:     proofConfirm,
+		ProofHeight:      proofHeight,
+		Signer:           proxy.SenderAccount.GetAddress().String(),
+	}
+	if _, err := proxy.SendMsgs(msg); err != nil {
+		return err
+	}
+	coord.CommitBlock(proxy)
+
+	channel := proxy.GetProxyChannel(proxies[0].UpstreamPrefix.(commitmenttypes.MerklePrefix), proxies[0].UpstreamClientID, counterpartyChannel.PortID, counterpartyChannel.ID)
+	if channel.State != channeltypes.OPEN {
+		return fmt.Errorf("channel state must be OPEN, but got %v", channel.State)
+	}
+
+	if err := source.UpdateProxyClient(proxy, proxies[0].ClientID); err != nil {
+		return err
+	}
+	coord.CommitBlock(source)
+	return nil
 }
 
 func (coord *Coordinator) SendPacketWithProxy(
@@ -910,4 +1031,24 @@ func (chain *TestChain) QueryProxyProof(key []byte) ([]byte, clienttypes.Height)
 	// was created in the IAVL tree. Tendermint and subsequently the clients that rely on it
 	// have heights 1 above the IAVL tree. Thus we return proof height + 1
 	return proof, clienttypes.NewHeight(revision, uint64(res.Height)+1)
+}
+
+func (chain *TestChain) GetProxyConnection(
+	upstreamPrefix exported.Prefix,
+	upstreamClientID string,
+	connectionID string,
+) connectiontypes.ConnectionEnd {
+	conn, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetProxyConnection(chain.GetContext(), upstreamPrefix, upstreamClientID, connectionID)
+	require.True(chain.t, found)
+	return conn
+}
+
+func (chain *TestChain) GetProxyChannel(
+	upstreamPrefix exported.Prefix,
+	upstreamClientID string,
+	portID, channelID string,
+) channeltypes.Channel {
+	channel, found := chain.App.(*simapp.SimApp).IBCProxyKeeper.GetProxyChannel(chain.GetContext(), upstreamPrefix, upstreamClientID, portID, channelID)
+	require.True(chain.t, found)
+	return channel
 }

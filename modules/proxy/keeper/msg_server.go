@@ -89,6 +89,17 @@ func (k *Keeper) ProxyConnectionOpenConfirm(goCtx context.Context, msg *types.Ms
 	return &types.MsgProxyConnectionOpenConfirmResponse{}, nil
 }
 
+// ProxyConnectionOpenFinalize implements types.MsgServer
+func (k *Keeper) ProxyConnectionOpenFinalize(goCtx context.Context, msg *types.MsgProxyConnectionOpenFinalize) (*types.MsgProxyConnectionOpenFinalizeResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	err := k.ConnOpenFinalize(ctx, msg.ConnectionId, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.ProofConfirm, msg.ProofHeight)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgProxyConnectionOpenFinalizeResponse{}, nil
+}
+
 // ProxyConnectionOpenTry implements types.MsgServer
 func (k *Keeper) ProxyChannelOpenTry(goCtx context.Context, msg *types.MsgProxyChannelOpenTry) (*types.MsgProxyChannelOpenTryResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
@@ -120,6 +131,17 @@ func (k *Keeper) ProxyChannelOpenConfirm(goCtx context.Context, msg *types.MsgPr
 		return nil, err
 	}
 	return &types.MsgProxyChannelOpenConfirmResponse{}, nil
+}
+
+// ProxyChannelOpenFinalize implements types.MsgServer
+func (k *Keeper) ProxyChannelOpenFinalize(goCtx context.Context, msg *types.MsgProxyChannelOpenFinalize) (*types.MsgProxyChannelOpenFinalizeResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	err := k.ChanOpenFinalize(ctx, msg.UpstreamClientId, &msg.UpstreamPrefix, msg.PortId, msg.ChannelId, msg.ProofConfirm, msg.ProofHeight)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgProxyChannelOpenFinalizeResponse{}, nil
 }
 
 // ProxyRecvPacket implements types.MsgServer
