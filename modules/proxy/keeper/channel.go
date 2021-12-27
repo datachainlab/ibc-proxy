@@ -91,6 +91,12 @@ func (k Keeper) ChanOpenAck(
 			"connection '%#v:%v:%v' not found", upstreamPrefix, upstreamClientID, connectionHops[0],
 		)
 	}
+	if connectionEnd.GetState() != int32(connectiontypes.OPEN) {
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrInvalidConnectionState,
+			"connection state is not OPEN (got %s)", connectiontypes.State(connectionEnd.GetState()).String(),
+		)
+	}
 	if err := k.validateChannelOrder(order, connectionEnd); err != nil {
 		return err
 	}
@@ -136,6 +142,20 @@ func (k Keeper) ChanOpenConfirm(
 		return fmt.Errorf("channel state must be %s", channeltypes.INIT)
 	}
 
+	connectionEnd, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, channel.ConnectionHops[0])
+	if !found {
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrConnectionNotFound,
+			"connection '%#v:%v:%v' not found", upstreamPrefix, upstreamClientID, channel.ConnectionHops[0],
+		)
+	}
+	if connectionEnd.GetState() != int32(connectiontypes.OPEN) {
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrInvalidConnectionState,
+			"connection state is not OPEN (got %s)", connectiontypes.State(connectionEnd.GetState()).String(),
+		)
+	}
+
 	channel.Counterparty.ChannelId = downstreamChannelID
 	channel.State = channeltypes.OPEN
 
@@ -150,6 +170,7 @@ func (k Keeper) ChanOpenConfirm(
 	return nil
 }
 
+// source: downstream, counterparty: upstream
 func (k Keeper) ChanOpenFinalize(
 	ctx sdk.Context,
 
@@ -168,6 +189,20 @@ func (k Keeper) ChanOpenFinalize(
 		return fmt.Errorf("channel '%#v:%v:%v:%v' not found", upstreamPrefix, upstreamClientID, upstreamPortID, upstreamChannelID)
 	} else if channel.State != channeltypes.TRYOPEN {
 		return fmt.Errorf("channel state must be %s", channeltypes.TRYOPEN)
+	}
+
+	connectionEnd, found := k.GetProxyConnection(ctx, upstreamPrefix, upstreamClientID, channel.ConnectionHops[0])
+	if !found {
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrConnectionNotFound,
+			"connection '%#v:%v:%v' not found", upstreamPrefix, upstreamClientID, channel.ConnectionHops[0],
+		)
+	}
+	if connectionEnd.GetState() != int32(connectiontypes.OPEN) {
+		return sdkerrors.Wrapf(
+			connectiontypes.ErrInvalidConnectionState,
+			"connection state is not OPEN (got %s)", connectiontypes.State(connectionEnd.GetState()).String(),
+		)
 	}
 
 	channel.State = channeltypes.OPEN
