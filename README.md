@@ -3,7 +3,9 @@
 ![Test](https://github.com/datachainlab/ibc-proxy/workflows/Test/badge.svg)
 [![GoDoc](https://godoc.org/github.com/datachainlab/ibc-proxy?status.svg)](https://pkg.go.dev/github.com/datachainlab/ibc-proxy?tab=doc)
 
-IBC-Proxy is a module to proxy one or both of the verifications between two chains connected by IBC.
+IBC-Proxy is a module to proxy one or both of the verifications between two chains connected by IBC. This allows you to configure a cross-chain hub that supports multi-hop communication (currently 2-hops).
+
+This is an example of implementing [this strategy](https://github.com/cosmos/ibc/tree/ee71d0640c23ec4e05e924f52f557b5e06c1d82f/spec/core/ics-002-client-semantics#proxy-clients).
 
 **This software is still under heavy active development.**
 
@@ -11,23 +13,25 @@ IBC-Proxy is a module to proxy one or both of the verifications between two chai
 
 IBC-proxy provides the following two components:
 
-1. `Proxy Client` to verify the state of the `Proxy` and its commitments (also compliant with ICS-02).
+1. `Proxy Client` to verify the state of the `Proxy machine` and its commitments (also compliant with ICS-02).
 2. `Proxy Module` to verify the state of counterparty chain and generates verifiable commitments using `Proxy Client`.
 
-In IBC, cross-chain communication is usually achieved by verifying a message from the counterparty chain with a light client and handling it.  Since the required light clients are different for each chain, all chains that intend to communicate with a chain need to implement the corresponding light client as smart contract.
+In IBC, cross-chain communication is usually achieved by verifying a message from the counterparty chain with a light client and handling it. Since the required light clients are different for each chain, all chains that intend to communicate with a chain need to implement the corresponding light client as smart contract.
 
 It may be not easy to achieve for some blockchains. The execution environments for smart contracts are diverse, and there are some restrictions on supported languages and constraints on computational resources such as gas prices. In constructing a heterogeneous blockchain network, having the feasible network topology limited by these chain-specific problems is not desirable.
 
 This problem is because the communication destination and the verification destination are combined in the current IBC. Therefore, IBC-Proxy enables the isolation of verification and communication of the counterparty chain. 
 
-- Client on Proxy chain verifies a `upstream` chain, and Proxy Module generates a `Proxy Commitment` and its proof corresponding to the verification
+- Client on Proxy machine verifies a `upstream` chain, and Proxy Module generates a `Proxy Commitment` and its proof corresponding to the verification
 - `downstream` chain uses a Proxy Client to verifies the commitment proof instead of verifying the `upstream` chain's directly.
 
 The following figure shows the concept:
 
 ![proxy-packet-relay](./docs/proxy-packet-relay.png "proxy-packet-relay")
 
-The figure shows the case where Proxy P0 verifies Chain C0 and Chain C1 verifies P0. Note that for the reverse direction packet flow, you can select a configuration where C0 verifies C1 directly without Proxy.
+The figure shows the case where Proxy P0 verifies Chain C0 and Chain C1 verifies P0. Note that for the reverse direction packet flow, you can select a configuration where C0 verifies C1 directly without Proxy. In that case, an asymmetric verification structure can be realized, where C0 verifies C1 through the Proxy and C1 directly verifies C0.
+
+Therefore, the IBC-Proxy provides flexibility in the design of cross-chain network topologies. By introducing the Proxy Module to a cross-chain hub, each chain connected to the hub can realize multi-hop communication with each other through it.
 
 ## Demo
 
@@ -58,7 +62,7 @@ In the definition of the spec, the following points need to be kept in mind:
 
 The type of Proxy Commitment is mapped one-to-one to various status indicators such as Client, Connection, Channel, etc. as in IBC. In IBC, the commitment path is guaranteed to be it by including an unique identifier in a certain host.
 
-However, since the Proxy must use the identifiers on the Upstream, path collisions can occur when different Upstreams are supported on one Proxy.
+However, since the Proxy must use the identifiers on the upstream, path collisions can occur when different upstreams are supported on one Proxy.
 
 Therefore, in order to obtain a path that is unique, we introduce a new commitment path format as follows:
 `/{proxy_prefix}/{upstream_client_id}/{upstream_prefix}/{upstream_commitment_path}`
@@ -72,7 +76,7 @@ Therefore, in order to obtain a path that is unique, we introduce a new commitme
 - `upstream_commitment_path`
     - IBC Commitment path in the upstream
 
-Downstream builds this path based on the state of the Proxy Client and uses it during verification.
+The downstream builds this path based on the state of the Proxy Client and uses it during verification.
 
 ### Proxy Client
 
@@ -106,6 +110,10 @@ message ConsensusState {
 - `ibc_prefix` is the prefix of the store that holds the IBC commitment
 
 Note: a full client spec is WIP. The current implementation is [here](./modules/light-clients/xx-proxy/types/client_state.go).
+
+### Security assumptions
+
+In any case using IBC-Proxy, an additional trust assumption of trusting the Proxy Machine is required. Therefore, if there is the comparable security, the Proxy Machine should be a chain that guarantees relatively strong security.
 
 ## Author
 
