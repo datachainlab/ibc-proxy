@@ -3,7 +3,7 @@
 ![Test](https://github.com/datachainlab/ibc-proxy/workflows/Test/badge.svg)
 [![GoDoc](https://godoc.org/github.com/datachainlab/ibc-proxy?status.svg)](https://pkg.go.dev/github.com/datachainlab/ibc-proxy?tab=doc)
 
-IBC-Proxy is a module to proxy one or both of the verifications between two chains connected by IBC. Also, this allows you to configure a cross-chain hub that supports multi-hop communication (currently 2-hops).
+IBC-Proxy is a module to proxy the light client verification between two chains connected by IBC. Also, this allows you to configure a cross-chain hub that supports multi-hop communication (currently 2-hops).
 
 This is an example of implementing [this strategy](https://github.com/cosmos/ibc/tree/ee71d0640c23ec4e05e924f52f557b5e06c1d82f/spec/core/ics-002-client-semantics#proxy-clients).
 
@@ -11,19 +11,21 @@ This is an example of implementing [this strategy](https://github.com/cosmos/ibc
 
 ## Overview
 
-IBC-proxy provides the following two components:
-
-1. `Proxy Client` to verify the state of the `Proxy machine` and its commitments (also compliant with ICS-02).
-2. `Proxy Module` to verify the state of counterparty chain and generates verifiable commitments using `Proxy Client`.
-
 In IBC, cross-chain communication is usually achieved by verifying a message from the counterparty chain with a light client and handling it. Since the required light clients are different for each chain, all chains that intend to communicate with a chain need to implement the corresponding light client as smart contract.
 
-It may be not easy to achieve for some blockchains. The execution environments for smart contracts are diverse, and there are some restrictions on supported languages and constraints on computational resources such as gas prices. In constructing a heterogeneous blockchain network, having the feasible network topology limited by these chain-specific problems is not desirable.
+It may not be easy to achieve for some blockchains. The execution environments for smart contracts are diverse, and there are some restrictions on supported languages and constraints on computational resources such as gas prices. In constructing a heterogeneous blockchain network, having the feasible network topology limited by these chain-specific problems is not desirable.
 
 This problem is because the communication destination and the verification destination are combined in the current IBC. Therefore, IBC-Proxy enables the isolation of verification and communication of the counterparty chain. 
 
-- Client on Proxy machine verifies a `upstream` chain, and Proxy Module generates a `Proxy Commitment` and its proof corresponding to the verification
-- `downstream` chain uses a Proxy Client to verifies the commitment proof instead of verifying the `upstream` chain's directly.
+IBC-proxy provides the following two components:
+
+1. `Proxy Client` verifies the state of the `Proxy machine` and its commitments (also compliant with ICS-02).
+2. `Proxy Module` verifies the state of the counterparty chain and generates a commitment and its proof that can be verified by the `Proxy Client`.
+
+These function as follows:
+
+- A Client on the Proxy machine verifies the `upstream` chain, and the `Proxy Module` generates a `Proxy Commitment` and its proof corresponding to the verification
+- The `downstream` chain uses a `Proxy Client` to verifies the commitment instead of verifying the `upstream` chain's directly.
 
 The following figure shows the concept:
 
@@ -31,7 +33,7 @@ The following figure shows the concept:
 
 The figure shows the case where Proxy P0 verifies Chain C0 and Chain C1 verifies P0. Note that for the reverse direction packet flow, you can select a configuration where C0 verifies C1 directly without Proxy. In that case, an asymmetric verification structure can be realized, where C0 verifies C1 through the Proxy and C1 directly verifies C0.
 
-Therefore, the IBC-Proxy provides flexibility in the design of cross-chain network topologies. By introducing the Proxy Module to a cross-chain hub, each chain connected to the hub can realize multi-hop communication with each other through it.
+Therefore, IBC-Proxy provides flexibility in the design of cross-chain network topologies. By introducing the Proxy Module to a cross-chain hub, each chain connected to the hub can realize multi-hop communication with each other through it.
 
 ## Demo
 
@@ -40,7 +42,7 @@ Therefore, the IBC-Proxy provides flexibility in the design of cross-chain netwo
 
 ## Definitions
 
-`Proxy Machine` (`Proxy` for short) refers to a machine that holds `Proxy Module`.
+`Proxy Machine` (`Proxy` for short) refers to a machine(or chain) that holds `Proxy Module`.
 
 `Proxy Client` refers to an IBC Client for `Proxy`.
 
