@@ -35,7 +35,8 @@ Therefore, the IBC-Proxy provides flexibility in the design of cross-chain netwo
 
 ## Demo
 
-- ICS-20 through proxy: https://github.com/datachainlab/ibc-proxy-relay/blob/796833cfc0012645079691eaad5fb16f217300c0/.github/workflows/test.yml#L63
+- [IBC Relayer support](https://github.com/datachainlab/ibc-proxy-relay)
+- Token Transfer(ICS-20) through proxy: https://github.com/datachainlab/ibc-proxy-relay/blob/796833cfc0012645079691eaad5fb16f217300c0/.github/workflows/test.yml#L63
 
 ## Definitions
 
@@ -127,7 +128,7 @@ In the IBC connection handshake, it is required to verify that the counterparty 
 
 For example, when two chains C0 and C1 perform connection handshake and C1 performs ConnOpenTry, the client to C0 on C1 is used to verify that C0 is tracking a valid client state for C1.
 
-However, when using a Proxy, the downstream does not track the state of the upstream directly, so it cannot be verified in the same way. This is because the downstream tracks the client state for Proxy and the Proxy tracks the client state for the upstream. In other words, when the counterparty chain uses the Proxy client, it is required to verify the client state for the Proxy based on the clientState of the counterparty chain, and then verify self clientState that the Proxy tracks.
+However, when using a Proxy, the downstream does not track the state of the upstream directly, so it cannot be verified in the same way. This is because the downstream tracks the client state for Proxy and the Proxy tracks the client state for the upstream. In other words, when the counterparty chain uses the Proxy client, it is required to verify the client state for the Proxy based on the client state of the counterparty chain, and then verify self client state that the Proxy tracks.
 
 We introduce an extension to the existing IBC Client to make it support such a multi-stage verification scheme. This is achieved by wrapping the existing Client implementation. The details can be found [here](./modules/light-clients/xx-multiv).
 
