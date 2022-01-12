@@ -121,6 +121,16 @@ For example, when C0, the downstream side, specifies P0, which refers to the Pro
 
 Note that the Channel structure is unaffected regardless of whether or not a proxy is used, since it does not refer to the client.
 
+### Multi-stage Verification
+
+In the IBC connection handshake, it is required to verify that the counterparty chain correctly tracks self client state and consensus state during ConnOpenTry and ConnOpenAck.
+
+For example, when two chains C0 and C1 perform connection handshake and C1 performs ConnOpenTry, the client to C0 on C1 is used to verify that C0 is tracking a valid client state for C1.
+
+However, when using a Proxy, the downstream does not track the state of the upstream directly, so it cannot be verified in the same way. This is because the downstream tracks the client state for Proxy and the Proxy tracks the client state for the upstream. In other words, when the counterparty chain uses the Proxy client, it is required to verify the client state for the Proxy based on the clientState of the counterparty chain, and then verify self clientState that the Proxy tracks.
+
+We introduce an extension to the existing IBC Client to make it support such a multi-stage verification scheme. This is achieved by wrapping the existing Client implementation. The details can be found [here](./modules/light-clients/xx-multiv).
+
 ### Security assumptions
 
 In any case using IBC-Proxy, an additional trust assumption of trusting the Proxy Machine is required. Therefore, if there is the comparable security, the Proxy Machine should be a chain that guarantees relatively strong security.
