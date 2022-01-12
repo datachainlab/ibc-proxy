@@ -11,11 +11,13 @@ This is an example of implementing [this strategy](https://github.com/cosmos/ibc
 
 ## Overview
 
-In IBC, cross-chain communication is usually achieved by verifying a message from the counterparty chain with a light client and handling it. Since the required light clients are different for each chain, all chains that intend to communicate with a chain need to implement the corresponding light client as smart contract.
+In IBC, cross-chain communication is usually achieved by verifying a message from the counterparty chain with a light client and handling it. Since the required light clients are different for each chain, all chains that intend to communicate with a chain need to implement the corresponding light client.
 
 It may not be easy to achieve for some blockchains. The execution environments for smart contracts are diverse, and there are some restrictions on supported languages and constraints on computational resources such as gas prices. In constructing a heterogeneous blockchain network, having the feasible network topology limited by these chain-specific problems is not desirable.
 
-This problem is because the communication destination and the verification destination are combined in the current IBC. Therefore, IBC-Proxy enables the isolation of verification and communication of the counterparty chain. 
+Besides, Hub-and-spoke architecture is often used to achieve cross-chain network, but in the current release of IBC, each zone cannot communicate directly with each other through the hub. For now, we need to implement a per-application routing protocol in the hub.
+
+These problems are because the communication destination and the verification destination are combined in the current IBC. Therefore, IBC-Proxy enables the isolation of verification and communication of the counterparty chain.
 
 IBC-proxy provides the following two components:
 
