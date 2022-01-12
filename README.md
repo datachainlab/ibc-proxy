@@ -3,7 +3,7 @@
 ![Test](https://github.com/datachainlab/ibc-proxy/workflows/Test/badge.svg)
 [![GoDoc](https://godoc.org/github.com/datachainlab/ibc-proxy?status.svg)](https://pkg.go.dev/github.com/datachainlab/ibc-proxy?tab=doc)
 
-IBC-Proxy is a module to proxy one or both of the verifications between two chains connected by IBC. This allows you to configure a cross-chain hub that supports multi-hop communication (currently 2-hops).
+IBC-Proxy is a module to proxy one or both of the verifications between two chains connected by IBC. Also, this allows you to configure a cross-chain hub that supports multi-hop communication (currently 2-hops).
 
 This is an example of implementing [this strategy](https://github.com/cosmos/ibc/tree/ee71d0640c23ec4e05e924f52f557b5e06c1d82f/spec/core/ics-002-client-semantics#proxy-clients).
 
@@ -110,6 +110,16 @@ message ConsensusState {
 - `ibc_prefix` is the prefix of the store that holds the IBC commitment
 
 Note: a full client spec is WIP. The current implementation is [here](./modules/light-clients/xx-proxy/types/client_state.go).
+
+### Connection and Channel structure
+
+When one of the chain uses a Proxy, the downstream side specifies the client_id of the proxy as the client_id of the ConnectionEnd, and the upstream side specifies the client_id of the Proxy as the client_id of the counterparty.
+
+For example, when C0, the downstream side, specifies P0, which refers to the Proxy Client, as the ConnectionEnd.client_id, C1, the upstream side, specifies P0 as the counterparty.client_id as well. The following figure shows such an example:
+
+![connection-channel-structure](./docs/connection-channel-structure.png "connection-channel-structure")
+
+Note that the Channel structure is unaffected regardless of whether or not a proxy is used, since it does not refer to the client.
 
 ### Security assumptions
 
