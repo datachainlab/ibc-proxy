@@ -418,5 +418,6 @@ func (k Keeper) VerifyAndProxyNextSequenceRecv(
 
 // getBlockDelay always returns 0
 func (k Keeper) getBlockDelay(ctx sdk.Context, connection exported.ConnectionI) uint64 {
+	// TODO can we use the parameter `KeyMaxExpectedTimePerBlock` of the proxy to calclulate the block delay?
 	return 0
 }

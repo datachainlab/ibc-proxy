@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	_, _, _, _ sdk.Msg                            = (*MsgProxyClientState)(nil), (*MsgProxyConnectionOpenTry)(nil), (*MsgProxyConnectionOpenAck)(nil), (*MsgProxyConnectionOpenConfirm)(nil)
-	_, _, _, _ codectypes.UnpackInterfacesMessage = (*MsgProxyClientState)(nil), (*MsgProxyConnectionOpenTry)(nil), (*MsgProxyConnectionOpenAck)(nil), (*MsgProxyConnectionOpenConfirm)(nil)
+	_, _, _, _, _ sdk.Msg                            = (*MsgProxyClientState)(nil), (*MsgProxyConnectionOpenTry)(nil), (*MsgProxyConnectionOpenAck)(nil), (*MsgProxyConnectionOpenConfirm)(nil), (*MsgProxyConnectionOpenFinalize)(nil)
+	_, _, _       codectypes.UnpackInterfacesMessage = (*MsgProxyClientState)(nil), (*MsgProxyConnectionOpenTry)(nil), (*MsgProxyConnectionOpenAck)(nil)
 
-	_, _, _ sdk.Msg = (*MsgProxyChannelOpenTry)(nil), (*MsgProxyChannelOpenAck)(nil), (*MsgProxyChannelOpenConfirm)(nil)
-	_, _    sdk.Msg = (*MsgProxyRecvPacket)(nil), (*MsgProxyAcknowledgePacket)(nil)
+	_, _, _, _ sdk.Msg = (*MsgProxyChannelOpenTry)(nil), (*MsgProxyChannelOpenAck)(nil), (*MsgProxyChannelOpenConfirm)(nil), (*MsgProxyChannelOpenFinalize)(nil)
+	_, _, _    sdk.Msg = (*MsgProxyRecvPacket)(nil), (*MsgProxyAcknowledgePacket)(nil), (*MsgProxyTimeoutPacket)(nil)
 )
 
 func NewMsgProxyClientState(
@@ -291,11 +291,6 @@ func (msg MsgProxyConnectionOpenFinalize) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{accAddr}
 }
 
-// UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
-func (msg MsgProxyConnectionOpenFinalize) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
-	return nil
-}
-
 // ValidateBasic implements sdk.Msg
 func (msg MsgProxyChannelOpenTry) ValidateBasic() error {
 	return nil
@@ -371,7 +366,22 @@ func (msg MsgProxyAcknowledgePacket) ValidateBasic() error {
 	return nil
 }
 
+// GetSigners implements sdk.Msg
 func (msg MsgProxyAcknowledgePacket) GetSigners() []sdk.AccAddress {
+	accAddr, err := sdk.AccAddressFromBech32(msg.Signer)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{accAddr}
+}
+
+// ValidateBasic implements sdk.Msg
+func (msg MsgProxyTimeoutPacket) ValidateBasic() error {
+	return nil
+}
+
+// GetSigners implements sdk.Msg
+func (msg MsgProxyTimeoutPacket) GetSigners() []sdk.AccAddress {
 	accAddr, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		panic(err)
