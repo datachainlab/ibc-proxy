@@ -3,7 +3,7 @@ module github.com/datachainlab/ibc-proxy
 go 1.16
 
 replace (
-	github.com/cosmos/ibc-go => github.com/datachainlab/ibc-go v0.0.0-20210623043207-6582d8c965f8
+	github.com/cosmos/ibc-go => github.com/datachainlab/ibc-go v0.0.0-20220120054455-a627cf595609
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 )
 
