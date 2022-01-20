@@ -25,6 +25,7 @@ service Msg {
 
   rpc ProxyRecvPacket(MsgProxyRecvPacket) returns (MsgProxyRecvPacketResponse);
   rpc ProxyAcknowledgePacket(MsgProxyAcknowledgePacket) returns (MsgProxyAcknowledgePacketResponse);
+  rpc ProxyTimeoutPacket(MsgProxyTimeoutPacket) returns (MsgProxyTimeoutPacketResponse);
 }
 
 message MsgProxyClientState {
@@ -214,3 +215,18 @@ message MsgProxyAcknowledgePacket {
 }
 
 message MsgProxyAcknowledgePacketResponse {}
+
+message MsgProxyTimeoutPacket {
+  option (gogoproto.equal)           = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string upstream_client_id = 1;
+  ibc.core.commitment.v1.MerklePrefix upstream_prefix = 2 [(gogoproto.nullable) = false];
+  ibc.core.channel.v1.Packet         packet           = 3 [(gogoproto.nullable) = false];
+  bytes                     proof_unreceived = 4;
+  ibc.core.client.v1.Height proof_height     = 5 [(gogoproto.nullable) = false];
+  uint64 next_sequence_recv = 6;
+  string signer             = 7;
+}
+
+message MsgProxyTimeoutPacketResponse {}

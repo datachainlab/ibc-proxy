@@ -2,6 +2,7 @@ package keeper
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	connectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
@@ -180,4 +181,21 @@ func (k Keeper) SetProxyNextSequenceRecv(
 	bz := sdk.Uint64ToBigEndian(nextSequenceRecv)
 	store.Set(host.NextSequenceRecvKey(portID, channelID), bz)
 	return nil
+}
+
+func (k Keeper) GetUpstreamTimestampAtHeight(
+	ctx sdk.Context,
+	upstreamClientID string,
+	height exported.Height,
+) (uint64, error) {
+	consensusState, found := k.clientKeeper.GetClientConsensusState(ctx, upstreamClientID, height)
+
+	if !found {
+		return 0, sdkerrors.Wrapf(
+			clienttypes.ErrConsensusStateNotFound,
+			"clientID (%s), height (%s)", upstreamClientID, height,
+		)
+	}
+
+	return consensusState.GetTimestamp(), nil
 }

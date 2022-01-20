@@ -165,3 +165,13 @@ func (k *Keeper) ProxyAcknowledgePacket(goCtx context.Context, msg *types.MsgPro
 	}
 	return &types.MsgProxyAcknowledgePacketResponse{}, nil
 }
+
+// ProxyTimeoutPacket implements types.MsgServer
+func (k Keeper) ProxyTimeoutPacket(goCtx context.Context, msg *types.MsgProxyTimeoutPacket) (*types.MsgProxyTimeoutPacketResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	err := k.TimeoutPacket(ctx, msg.UpstreamClientId, msg.UpstreamPrefix, msg.Packet, msg.ProofUnreceived, msg.ProofHeight, msg.NextSequenceRecv)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgProxyTimeoutPacketResponse{}, nil
+}
