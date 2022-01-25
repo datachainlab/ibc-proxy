@@ -1,6 +1,9 @@
 package types
 
 import (
+	"encoding/binary"
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -34,4 +37,20 @@ func GetConsensusState(store sdk.KVStore, cdc codec.BinaryCodec, height exported
 	}
 
 	return consensusState, nil
+}
+
+func SetUpstreamBlockTime(clientStore sdk.KVStore, height exported.Height, timestamp uint64) {
+	var bz [8]byte
+	binary.BigEndian.PutUint64(bz[:], timestamp)
+	clientStore.Set([]byte(fmt.Sprintf("/upstreamBlockTimes/%s", height.String())), bz[:])
+}
+
+func GetUpstreamBlockTime(clientStore sdk.KVStore, height exported.Height) (uint64, bool) {
+	bz := clientStore.Get([]byte(fmt.Sprintf("/upstreamBlockTimes/%s", height.String())))
+	if l := len(bz); l == 0 {
+		return 0, false
+	} else if l != 8 {
+		panic("the state is corrupted")
+	}
+	return binary.BigEndian.Uint64(bz), true
 }

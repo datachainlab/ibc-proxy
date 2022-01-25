@@ -37,6 +37,7 @@ import (
 	"github.com/cosmos/ibc-go/modules/core/types"
 	ibctmtypes "github.com/cosmos/ibc-go/modules/light-clients/07-tendermint/types"
 
+	proxyclienttypes "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-proxy/types"
 	"github.com/datachainlab/ibc-proxy/testing/mock"
 	"github.com/datachainlab/ibc-proxy/testing/simapp"
 )
@@ -232,12 +233,19 @@ func (chain *TestChain) QueryClientStateProof(clientID string) (exported.ClientS
 	return clientState, proofClient
 }
 
+func GetClientLatestHeight(clientState exported.ClientState) clienttypes.Height {
+	if clientState.ClientType() != proxyclienttypes.ProxyClientType {
+		return clientState.GetLatestHeight().(clienttypes.Height)
+	}
+	return clientState.(*proxyclienttypes.ClientState).GetProxyClientState().GetLatestHeight().(clienttypes.Height)
+}
+
 // QueryConsensusStateProof performs an abci query for a consensus state
 // stored on the given clientID. The proof and consensusHeight are returned.
 func (chain *TestChain) QueryConsensusStateProof(clientID string) ([]byte, clienttypes.Height) {
 	clientState := chain.GetClientState(clientID)
 
-	consensusHeight := clientState.GetLatestHeight().(clienttypes.Height)
+	consensusHeight := GetClientLatestHeight(clientState)
 	consensusKey := host.FullConsensusStateKey(clientID, consensusHeight)
 	proofConsensus, _ := chain.QueryProof(consensusKey)
 
@@ -495,7 +503,7 @@ func (chain *TestChain) UpdateTMClient(counterparty *TestChain, clientID string)
 func (chain *TestChain) ConstructUpdateTMClientHeader(counterparty *TestChain, clientID string) (*ibctmtypes.Header, error) {
 	header := counterparty.LastHeader
 	// Relayer must query for LatestHeight on client to get TrustedHeight
-	trustedHeight := chain.GetClientState(clientID).GetLatestHeight().(clienttypes.Height)
+	trustedHeight := GetClientLatestHeight(chain.GetClientState(clientID))
 	var (
 		tmTrustedVals *tmtypes.ValidatorSet
 		ok            bool

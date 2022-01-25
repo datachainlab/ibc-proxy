@@ -5,6 +5,7 @@ option go_package = "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-
 
 import "gogoproto/gogo.proto";
 import "google/protobuf/any.proto";
+import "ibc/core/client/v1/client.proto";
 import "ibc/core/commitment/v1/commitment.proto";
 
 message ClientState {
@@ -19,6 +20,10 @@ message ClientState {
   ibc.core.commitment.v1.MerklePrefix proxy_prefix = 3;
   // the ibc commitment prefix of the proxy chain
   ibc.core.commitment.v1.MerklePrefix ibc_prefix = 4;
+  // latest height on the upstream chain
+  UpstreamHeight upstream_height = 5 [(gogoproto.nullable) = false];
+  // latest timestamp on the upstream chain
+  uint64 upstream_timestamp = 6;
 }
 
 message ConsensusState {
@@ -27,4 +32,28 @@ message ConsensusState {
   // consensus state corresponding to proxy
   // the type must implements ConsensusState interface
   google.protobuf.Any proxy_consensus_state = 1;
+}
+
+message Header {
+  option (gogoproto.goproto_getters) = false;
+
+  google.protobuf.Any proxy_header = 1;
+  UpstreamBlockProof upstream_block_proof = 2;
+}
+
+message UpstreamBlockProof {
+  bytes proof = 1;
+  ibc.core.client.v1.Height proof_height = 2 [(gogoproto.nullable) = false];
+  ibc.core.client.v1.Height upstream_height = 3 [(gogoproto.nullable) = false];
+  uint64 upstream_timestamp = 4;
+}
+
+message UpstreamHeight {
+  option (gogoproto.goproto_getters) = false;
+  option (gogoproto.goproto_stringer) = false;
+
+  // the revision that the client is currently on
+  uint64 revision_number = 1 [(gogoproto.moretags) = "yaml:\"revision_number\""];
+  // the height within the given revision
+  uint64 revision_height = 2 [(gogoproto.moretags) = "yaml:\"revision_height\""];
 }

@@ -20,20 +20,19 @@ func NewClientState(upstreamClientID string) *ClientState {
 	return &ClientState{UpstreamClientId: upstreamClientID}
 }
 
-func (cs *ClientState) IsInitialized() bool {
-	return cs.ProxyClientState != nil
-}
-
 func (cs *ClientState) ClientType() string {
 	return ProxyClientType
 }
 
 func (cs *ClientState) GetProxyClientState() exported.ClientState {
-	state, err := clienttypes.UnpackClientState(cs.ProxyClientState)
+	if cs.ProxyClientState == nil {
+		return nil
+	}
+	clientState, err := clienttypes.UnpackClientState(cs.ProxyClientState)
 	if err != nil {
 		panic(err)
 	}
-	return state
+	return clientState
 }
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
@@ -44,11 +43,9 @@ func (cs *ClientState) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	return nil
 }
 
+// GetLatestHeight returns the latest height of the upstream instead of the proxy
 func (cs *ClientState) GetLatestHeight() exported.Height {
-	if cs.ProxyClientState == nil {
-		return clienttypes.NewHeight(0, 0)
-	}
-	return cs.GetProxyClientState().GetLatestHeight()
+	return cs.UpstreamHeight
 }
 
 func (cs *ClientState) Status(
@@ -60,6 +57,24 @@ func (cs *ClientState) Status(
 }
 
 func (cs *ClientState) Validate() error {
+	if cs.ProxyClientState == nil {
+		return sdkerrors.Wrap(clienttypes.ErrInvalidClient, "ProxyClientState must be non-empty")
+	}
+	if cs.UpstreamClientId == "" {
+		return sdkerrors.Wrap(clienttypes.ErrInvalidClient, "UpstreamClientId must be non-empty")
+	}
+	if cs.ProxyPrefix == nil {
+		return sdkerrors.Wrap(clienttypes.ErrInvalidClient, "ProxyPrefix must be non-empty")
+	}
+	if cs.IbcPrefix == nil {
+		return sdkerrors.Wrap(clienttypes.ErrInvalidClient, "IbcPrefix must be non-empty")
+	}
+	if cs.UpstreamHeight.IsZero() {
+		return sdkerrors.Wrap(clienttypes.ErrInvalidClient, "UpstreamHeight must be non-empty")
+	}
+	if cs.UpstreamTimestamp == 0 {
+		return sdkerrors.Wrap(clienttypes.ErrInvalidClient, "UpstreamTimestamp must be non-zero")
+	}
 	return cs.GetProxyClientState().Validate()
 }
 
@@ -87,6 +102,7 @@ func (cs *ClientState) Initialize(ctx sdk.Context, cdc codec.BinaryCodec, client
 	if _, err := clienttypes.UnpackConsensusState(cons.ProxyConsensusState); err != nil {
 		return sdkerrors.Wrapf(clienttypes.ErrInvalidConsensus, "failed to unpack client state: %v", err)
 	}
+	SetUpstreamBlockTime(clientStore, cs.UpstreamHeight, cs.UpstreamTimestamp)
 	return nil
 }
 

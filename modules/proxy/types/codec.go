@@ -26,6 +26,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgProxyRecvPacket{},
 		&MsgProxyAcknowledgePacket{},
 	)
+	registry.RegisterImplementations((*exported.Header)(nil), &proxytypes.Header{})
 	registry.RegisterImplementations((*exported.ClientState)(nil), &proxytypes.ClientState{})
 	registry.RegisterImplementations((*exported.ConsensusState)(nil), &proxytypes.ConsensusState{})
 	multivtypes.RegisterInterfaces(registry)

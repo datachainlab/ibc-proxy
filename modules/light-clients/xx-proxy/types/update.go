@@ -7,13 +7,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
+	commitmenttypes "github.com/cosmos/ibc-go/modules/core/23-commitment/types"
 	host "github.com/cosmos/ibc-go/modules/core/24-host"
 	"github.com/cosmos/ibc-go/modules/core/exported"
 )
 
 // Update and Misbehaviour functions
 func (cs ClientState) CheckHeaderAndUpdateState(ctx sdk.Context, cdc codec.BinaryCodec, clientStore sdk.KVStore, header exported.Header) (exported.ClientState, exported.ConsensusState, error) {
-	clientState, consensusState, err := cs.GetProxyClientState().CheckHeaderAndUpdateState(ctx, cdc, NewProxyExtractorStore(cdc, clientStore), header)
+	h := header.(*Header)
+	clientState, consensusState, err := cs.GetProxyClientState().CheckHeaderAndUpdateState(ctx, cdc, NewProxyExtractorStore(cdc, clientStore), h.GetProxyHeader())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -27,6 +29,29 @@ func (cs ClientState) CheckHeaderAndUpdateState(ctx sdk.Context, cdc codec.Binar
 	}
 	cs.ProxyClientState = anyClientState
 	proxyConsensusState := &ConsensusState{ProxyConsensusState: anyConsensusState}
+
+	if ubp := h.UpstreamBlockProof; ubp != nil {
+		pc, err := GlobalProxyClientRegistry.MustGet(cs.GetProxyClientState().ClientType()).Build(cs.GetProxyClientState())
+		if err != nil {
+			return nil, nil, err
+		}
+		prefix := commitmenttypes.MultiPrefix{
+			Prefix:     cs.ProxyPrefix,
+			PathPrefix: []byte(cs.UpstreamClientId + "/"),
+		}
+		if err := pc.VerifyBlockTime(
+			NewProxyExtractorStore(cdc, clientStore),
+			cdc, ubp.ProofHeight, prefix, ubp.UpstreamHeight, ubp.Proof, ubp.UpstreamTimestamp,
+		); err != nil {
+			return nil, nil, err
+		}
+		if ubp.UpstreamHeight.GT(cs.UpstreamHeight) {
+			// NOTE: should we check if proofHeight is also advanced?
+			cs.UpstreamHeight = UpstreamHeight(ubp.UpstreamHeight)
+			cs.UpstreamTimestamp = ubp.UpstreamTimestamp
+		}
+		SetUpstreamBlockTime(clientStore, ubp.UpstreamHeight, ubp.UpstreamTimestamp)
+	}
 	return &cs, proxyConsensusState, nil
 }
 

@@ -159,8 +159,7 @@ func (chain *TestChain) QueryMultiVLeafClientProof(head *multivtypes.Proof, upst
 	if err != nil {
 		panic(err)
 	}
-	h := cs.GetLatestHeight()
-	upstreamClientState, upstreamClientProof, upstreamProofHeight := chain.queryClientStateProof(upstreamClientID, int64(h.GetRevisionHeight())-1)
+	upstreamClientState, upstreamClientProof, upstreamProofHeight := chain.queryClientStateProof(upstreamClientID, int64(GetClientLatestHeight(cs).GetRevisionHeight())-1)
 	leafClient := &multivtypes.LeafProof{
 		Proof:       upstreamClientProof,
 		ProofHeight: upstreamProofHeight,
@@ -174,8 +173,7 @@ func (chain *TestChain) QueryMultiVLeafConsensusProof(head *multivtypes.Proof, u
 	if err != nil {
 		panic(err)
 	}
-	h := cs.GetLatestHeight()
-	upstreamConsensusProof, upstreamConsensusHeight, upstreamProofHeight := chain.queryConsensusStateProof(upstreamClientID, int64(h.GetRevisionHeight())-1)
+	upstreamConsensusProof, upstreamConsensusHeight, upstreamProofHeight := chain.queryConsensusStateProof(upstreamClientID, int64(GetClientLatestHeight(cs).GetRevisionHeight())-1)
 	leafConsensus := &multivtypes.LeafProof{
 		Proof:       upstreamConsensusProof,
 		ProofHeight: upstreamProofHeight,
@@ -228,7 +226,7 @@ func (chain *TestChain) queryClientStateProof(clientID string, height int64) (ex
 func (chain *TestChain) queryConsensusStateProof(clientID string, height int64) ([]byte, clienttypes.Height, clienttypes.Height) {
 	clientState := chain.GetClientState(clientID)
 
-	consensusHeight := clientState.GetLatestHeight().(clienttypes.Height)
+	consensusHeight := GetClientLatestHeight(clientState)
 	consensusKey := host.FullConsensusStateKey(clientID, consensusHeight)
 	proofConsensus, proofHeight := chain.queryProof(consensusKey, height)
 

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	proxyclienttypes "github.com/datachainlab/ibc-proxy/modules/light-clients/xx-proxy/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
@@ -126,7 +127,8 @@ func (coord *Coordinator) UpdateClient(
 	switch clientType {
 	case exported.Tendermint:
 		err = source.UpdateTMClient(counterparty, clientID)
-
+	case proxyclienttypes.ProxyClientType:
+		err = source.UpdateProxyClient(counterparty, clientID)
 	default:
 		err = fmt.Errorf("client type %s is not supported", clientType)
 	}
@@ -140,22 +142,22 @@ func (coord *Coordinator) UpdateClient(
 	return nil
 }
 
-func (coord *Coordinator) UpdateClients(chains []*TestChain, clientIDs []string, clientType string) error {
+func (coord *Coordinator) UpdateClients(chains []*TestChain, clients [][2]string) error {
 	if len(chains) == 0 {
 		return fmt.Errorf("chains should be non-empty")
-	} else if len(chains) != len(clientIDs)+1 {
+	} else if len(chains) != len(clients)+1 {
 		return fmt.Errorf("length of items mismatch")
 	}
 	rChain := make([]*TestChain, len(chains))
-	rClientIDs := make([]string, len(clientIDs))
+	rClients := make([][2]string, len(clients))
 	for i := 0; i < len(chains); i++ {
 		rChain[i] = chains[len(chains)-1-i]
 	}
-	for i := 0; i < len(clientIDs); i++ {
-		rClientIDs[i] = clientIDs[len(clientIDs)-1-i]
+	for i := 0; i < len(clients); i++ {
+		rClients[i] = clients[len(clients)-1-i]
 	}
 	for i, chain := range rChain[:len(rChain)-1] {
-		if err := coord.UpdateClient(rChain[i+1], chain, rClientIDs[i], clientType); err != nil {
+		if err := coord.UpdateClient(rChain[i+1], chain, rClients[i][1], rClients[i][0]); err != nil {
 			return err
 		}
 	}
