@@ -33,24 +33,39 @@ func (coord *Coordinator) CreateClient2(
 	return clientID, err
 }
 
-func (coord *Coordinator) CreateProxyClient(downstream, proxy *TestChain, clientType string, upstreamClientID string) (string, error) {
+func (coord *Coordinator) CreateProxyClient(
+	downstream, proxy, upstream *TestChain,
+	clientType string, upstreamClientID string) (string, error) {
 	clientID := downstream.NewClientID(proxyclienttypes.ProxyClientType)
-	if err := downstream.CreateProxyClient(proxy, clientType, clientID, upstreamClientID); err != nil {
+	if err := downstream.CreateProxyClient(proxy, clientType, clientID, upstreamClientID, upstream.LastHeader.GetHeight(), uint64(upstream.LastHeader.GetTime().UnixNano())); err != nil {
 		return "", err
 	}
 	return clientID, nil
 }
 
-func (chain *TestChain) CreateProxyClient(proxy *TestChain, clientType string, clientID string, upstreamClientID string) error {
+func (chain *TestChain) CreateProxyClient(
+	proxy *TestChain,
+	clientType string, clientID string, upstreamClientID string,
+	upstreamHeight exported.Height, upstreamTimestamp uint64) error {
 	msg := chain.ConstructMsgCreateClient(proxy, clientID, clientType)
 
 	ibcPrefix := commitmenttypes.NewMerklePrefix([]byte(host.StoreKey))
 	proxyPrefix := commitmenttypes.NewMerklePrefix([]byte(proxytypes.StoreKey))
+	h := msg.ClientState.GetCachedValue().(exported.ClientState).GetLatestHeight()
 	clientState := &proxyclienttypes.ClientState{
 		ProxyClientState: msg.ClientState,
 		UpstreamClientId: upstreamClientID,
-		IbcPrefix:        &ibcPrefix,
 		ProxyPrefix:      &proxyPrefix,
+		IbcPrefix:        &ibcPrefix,
+		// TODO For now, UpstreamHeight and UpstreamTimestamp indicate the proxy's block in the initialization
+		// after fixed https://github.com/cosmos/ibc-go/issues/284, we should apply a fix to use the upstream's height instead
+		UpstreamHeight:    proxyclienttypes.NewHeight(h.GetRevisionNumber(), h.GetRevisionHeight()),
+		UpstreamTimestamp: msg.ConsensusState.GetCachedValue().(exported.ConsensusState).GetTimestamp(),
+		// UpstreamHeight:    proxyclienttypes.NewHeight(upstreamHeight.GetRevisionNumber(), upstreamHeight.GetRevisionHeight()),
+		// UpstreamTimestamp: upstreamTimestamp,
+	}
+	if err := clientState.Validate(); err != nil {
+		return err
 	}
 	anyClientState, err := clienttypes.PackClientState(clientState)
 	if err != nil {
@@ -73,7 +88,12 @@ func (chain *TestChain) UpdateProxyClient(proxy *TestChain, proxyClientID string
 	if err != nil {
 		return err
 	}
-	msg, err := clienttypes.NewMsgUpdateClient(proxyClientID, header, chain.SenderAccount.GetAddress().String())
+	anyHeader, err := clienttypes.PackHeader(header)
+	if err != nil {
+		return err
+	}
+	h := proxyclienttypes.Header{ProxyHeader: anyHeader}
+	msg, err := clienttypes.NewMsgUpdateClient(proxyClientID, &h, chain.SenderAccount.GetAddress().String())
 	if err != nil {
 		return err
 	}
@@ -201,8 +221,10 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 		if proxies[1] == nil {
 			if err := coord.UpdateClients(
 				[]*TestChain{proxy, counterparty, source},
-				[]string{proxies[0].UpstreamClientID, counterpartyConnection.ClientID},
-				exported.Tendermint); err != nil {
+				[][2]string{
+					{exported.Tendermint, proxies[0].UpstreamClientID},
+					{exported.Tendermint, counterpartyConnection.ClientID},
+				}); err != nil {
 				return err
 			}
 			var found bool
@@ -215,8 +237,11 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 		} else {
 			if err := coord.UpdateClients(
 				[]*TestChain{proxy, counterparty, proxies[1].Chain, source},
-				[]string{proxies[0].UpstreamClientID, proxies[1].ClientID, proxies[1].UpstreamClientID},
-				exported.Tendermint); err != nil {
+				[][2]string{
+					{exported.Tendermint, proxies[0].UpstreamClientID},
+					{proxyclienttypes.ProxyClientType, proxies[1].ClientID},
+					{exported.Tendermint, proxies[1].UpstreamClientID},
+				}); err != nil {
 				return err
 			}
 			head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
@@ -226,8 +251,8 @@ func (coord *Coordinator) ConnOpenTryWithProxy(
 		}
 
 		proofInit, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
-		proxyClientState, proofProxyClient, proofProxyHeight := source.queryClientStateProof(sourceConnection.ClientID, int64(counterpartyClient.GetLatestHeight().GetRevisionHeight()-1))
-		proofProxyConsensus, proxyConsensusHeight, _ := source.queryConsensusStateProof(sourceConnection.ClientID, int64(counterpartyClient.GetLatestHeight().GetRevisionHeight()-1))
+		proxyClientState, proofProxyClient, proofProxyHeight := source.queryClientStateProof(sourceConnection.ClientID, int64(GetClientLatestHeight(counterpartyClient).GetRevisionHeight()-1))
+		proofProxyConsensus, proxyConsensusHeight, _ := source.queryConsensusStateProof(sourceConnection.ClientID, int64(GetClientLatestHeight(counterpartyClient).GetRevisionHeight()-1))
 
 		msg, err := proxytypes.NewMsgProxyConnectionOpenTry(
 			counterpartyConnection.ID,
@@ -310,8 +335,10 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 		if proxies[1] == nil {
 			if err := coord.UpdateClients(
 				[]*TestChain{proxy, counterparty, source},
-				[]string{proxies[0].UpstreamClientID, counterpartyConnection.ClientID},
-				exported.Tendermint); err != nil {
+				[][2]string{
+					{exported.Tendermint, proxies[0].UpstreamClientID},
+					{exported.Tendermint, counterpartyConnection.ClientID},
+				}); err != nil {
 				return err
 			}
 			var found bool
@@ -324,8 +351,12 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 		} else {
 			if err := coord.UpdateClients(
 				[]*TestChain{proxy, counterparty, proxies[1].Chain, source},
-				[]string{proxies[0].UpstreamClientID, proxies[1].ClientID, proxies[1].UpstreamClientID},
-				exported.Tendermint); err != nil {
+				[][2]string{
+					{exported.Tendermint, proxies[0].UpstreamClientID},
+					{proxyclienttypes.ProxyClientType, proxies[1].ClientID},
+					{exported.Tendermint, proxies[1].UpstreamClientID},
+				},
+			); err != nil {
 				return err
 			}
 			head := counterparty.QueryMultiVBranchProof(counterpartyConnection.ClientID)
@@ -335,8 +366,8 @@ func (coord *Coordinator) ConnOpenAckWithProxy(
 		}
 
 		proofTry, proofHeight := counterparty.QueryProof(host.ConnectionKey(counterpartyConnection.ID))
-		proxyClientState, proofProxyClient, proofProxyHeight := source.queryClientStateProof(sourceConnection.ClientID, int64(counterpartyClient.GetLatestHeight().GetRevisionHeight()-1))
-		proofProxyConsensus, proxyConsensusHeight, _ := source.queryConsensusStateProof(sourceConnection.ClientID, int64(counterpartyClient.GetLatestHeight().GetRevisionHeight()-1))
+		proxyClientState, proofProxyClient, proofProxyHeight := source.queryClientStateProof(sourceConnection.ClientID, int64(GetClientLatestHeight(counterpartyClient).GetRevisionHeight()-1))
+		proofProxyConsensus, proxyConsensusHeight, _ := source.queryConsensusStateProof(sourceConnection.ClientID, int64(GetClientLatestHeight(counterpartyClient).GetRevisionHeight()-1))
 
 		msg, err := proxytypes.NewMsgProxyConnectionOpenAck(
 			counterpartyConnection.ID,
@@ -988,7 +1019,7 @@ func (chain *TestChain) QueryProxyConsensusStateProof(clientID string, upstreamP
 		upstreamClientID,
 	)
 	require.True(chain.t, found)
-	consensusHeight := clientState.GetLatestHeight().(clienttypes.Height)
+	consensusHeight := GetClientLatestHeight(clientState)
 	proofConsensus, _ := chain.QueryProxyProof(proxytypes.ProxyConsensusStateKey(upstreamPrefix, upstreamClientID, clientID, consensusHeight))
 	return proofConsensus, consensusHeight
 }

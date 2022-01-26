@@ -1,8 +1,11 @@
 package keeper
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"encoding/binary"
+	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
 	connectiontypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
 	channeltypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
@@ -70,6 +73,26 @@ func (k Keeper) GetProxyChannel(
 	}
 	k.cdc.MustUnmarshal(bz, &channel)
 	return channel, true
+}
+
+func (k Keeper) SetProxyUpstreamBlockTime(
+	ctx sdk.Context,
+	upstreamPrefix exported.Prefix, // upstream's prefix
+	upstreamClientID string, // client id corresponding to upstream on proxy
+	height exported.Height,
+) error {
+	consensusState, found := k.clientKeeper.GetClientConsensusState(ctx, upstreamClientID, height)
+	if !found {
+		return sdkerrors.Wrapf(
+			clienttypes.ErrConsensusStateNotFound,
+			"clientID (%s), height (%s)", upstreamClientID, height,
+		)
+	}
+	var bz [8]byte
+	binary.BigEndian.PutUint64(bz[:], consensusState.GetTimestamp())
+	store := k.ProxyStore(ctx, upstreamPrefix, upstreamClientID)
+	store.Set([]byte(fmt.Sprintf("block/%s", height.String())), bz[:])
+	return nil
 }
 
 func (k Keeper) SetProxyClientState(

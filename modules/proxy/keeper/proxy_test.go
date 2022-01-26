@@ -28,7 +28,7 @@ func (suite *KeeperTestSuite) TestOneSideProxy1() {
 	clientBA, err := suite.coordinator.CreateMultiVClient(suite.chainB, suite.chainA, exported.Tendermint, 0)
 	suite.Require().NoError(err)
 
-	clientAC, err := suite.coordinator.CreateProxyClient(suite.chainA, suite.chainC, exported.Tendermint, clientCB)
+	clientAC, err := suite.coordinator.CreateProxyClient(suite.chainA, suite.chainC, suite.chainB, exported.Tendermint, clientCB)
 	suite.Require().NoError(err)
 
 	ppair := ibctesting.ProxyPair{{suite.chainC, clientAC, clientCB, suite.chainB.GetPrefix()}, nil}
@@ -51,7 +51,7 @@ func (suite *KeeperTestSuite) TestOneSideProxy2() {
 	suite.Require().NoError(err)
 
 	// downstream creates a proxy client
-	clientBC, err := suite.coordinator.CreateProxyClient(suite.chainB, suite.chainC, exported.Tendermint, clientCA)
+	clientBC, err := suite.coordinator.CreateProxyClient(suite.chainB, suite.chainC, suite.chainA, exported.Tendermint, clientCA)
 	suite.Require().NoError(err)
 
 	ppair := ibctesting.ProxyPair{nil, {suite.chainC, clientBC, clientCA, suite.chainA.GetPrefix()}}
@@ -74,10 +74,10 @@ func (suite *KeeperTestSuite) TestBothSideProxy() {
 	clientDA, err := suite.coordinator.CreateClient2(suite.chainD, suite.chainA, exported.Tendermint, true, 0)
 	suite.Require().NoError(err)
 
-	clientAC, err := suite.coordinator.CreateProxyClient(suite.chainA, suite.chainC, exported.Tendermint, clientCB)
+	clientAC, err := suite.coordinator.CreateProxyClient(suite.chainA, suite.chainC, suite.chainB, exported.Tendermint, clientCB)
 	suite.Require().NoError(err)
 
-	clientBD, err := suite.coordinator.CreateProxyClient(suite.chainB, suite.chainD, exported.Tendermint, clientDA)
+	clientBD, err := suite.coordinator.CreateProxyClient(suite.chainB, suite.chainD, suite.chainA, exported.Tendermint, clientDA)
 	suite.Require().NoError(err)
 
 	ppair := ibctesting.ProxyPair{{suite.chainC, clientAC, clientCB, suite.chainB.GetPrefix()}, {suite.chainD, clientBD, clientDA, suite.chainA.GetPrefix()}}

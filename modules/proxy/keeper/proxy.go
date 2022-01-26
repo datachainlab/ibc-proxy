@@ -41,6 +41,9 @@ func (k Keeper) VerifyAndProxyClientState(
 	if err := k.VerifyClientState(ctx, upstreamClientID, upstreamPrefix, counterpartyClientID, height, proof, clientState); err != nil {
 		return err
 	}
+	if err := k.SetProxyUpstreamBlockTime(ctx, upstreamPrefix, upstreamClientID, height); err != nil {
+		return err
+	}
 	return k.SetProxyClientState(
 		ctx,
 		upstreamPrefix,
@@ -86,6 +89,9 @@ func (k Keeper) VerifyAndProxyClientConsensusState(
 	if err := k.VerifyClientConsensusState(ctx, upstreamClientID, upstreamPrefix, counterpartyClientID, height, consensusHeight, proof, consensusState); err != nil {
 		return err
 	}
+	if err := k.SetProxyUpstreamBlockTime(ctx, upstreamPrefix, upstreamClientID, height); err != nil {
+		return err
+	}
 	return k.SetProxyClientConsensusState(
 		ctx,
 		upstreamPrefix,
@@ -129,6 +135,9 @@ func (k Keeper) VerifyAndProxyConnectionState(
 	connectionID string, // ID of the connection that upstream has
 ) error {
 	if err := k.VerifyConnectionState(ctx, upstreamClientID, upstreamPrefix, connection, height, proof, connectionID); err != nil {
+		return err
+	}
+	if err := k.SetProxyUpstreamBlockTime(ctx, upstreamPrefix, upstreamClientID, height); err != nil {
 		return err
 	}
 	return k.SetProxyConnection(
@@ -177,6 +186,9 @@ func (k Keeper) VerifyAndProxyChannelState(
 	channel exported.ChannelI, // the channel of downstream that upstream has
 ) error {
 	if err := k.VerifyChannelState(ctx, upstreamClientID, upstreamPrefix, height, proof, portID, channelID, channel); err != nil {
+		return err
+	}
+	if err := k.SetProxyUpstreamBlockTime(ctx, upstreamPrefix, upstreamClientID, height); err != nil {
 		return err
 	}
 	return k.SetProxyChannel(
@@ -235,7 +247,9 @@ func (k Keeper) VerifyAndProxyPacketCommitment(
 	if err := k.VerifyPacketCommitment(ctx, upstreamClientID, upstreamPrefix, connection, height, proof, portID, channelID, sequence, commitmentBytes); err != nil {
 		return err
 	}
-
+	if err := k.SetProxyUpstreamBlockTime(ctx, upstreamPrefix, upstreamClientID, height); err != nil {
+		return err
+	}
 	return k.SetProxyPacketCommitment(
 		ctx,
 		upstreamPrefix,
@@ -293,7 +307,9 @@ func (k Keeper) VerifyAndProxyPacketAcknowledgement(
 	if err := k.VerifyPacketAcknowledgement(ctx, upstreamClientID, upstreamPrefix, connection, height, proof, portID, channelID, sequence, acknowledgement); err != nil {
 		return err
 	}
-
+	if err := k.SetProxyUpstreamBlockTime(ctx, upstreamPrefix, upstreamClientID, height); err != nil {
+		return err
+	}
 	return k.SetProxyPacketAcknowledgement(
 		ctx,
 		upstreamPrefix,
@@ -350,7 +366,9 @@ func (k Keeper) VerifyAndProxyPacketReceiptAbsence(
 	if err := k.VerifyPacketReceiptAbsence(ctx, upstreamClientID, upstreamPrefix, connection, height, proof, portID, channelID, sequence); err != nil {
 		return err
 	}
-
+	if err := k.SetProxyUpstreamBlockTime(ctx, upstreamPrefix, upstreamClientID, height); err != nil {
+		return err
+	}
 	return k.SetProxyPacketReceiptAbsence(
 		ctx,
 		upstreamPrefix,
@@ -405,7 +423,9 @@ func (k Keeper) VerifyAndProxyNextSequenceRecv(
 	if err := k.VerifyNextSequenceRecv(ctx, upstreamClientID, upstreamPrefix, connection, height, proof, portID, channelID, nextSequenceRecv); err != nil {
 		return err
 	}
-
+	if err := k.SetProxyUpstreamBlockTime(ctx, upstreamPrefix, upstreamClientID, height); err != nil {
+		return err
+	}
 	return k.SetProxyNextSequenceRecv(
 		ctx,
 		upstreamPrefix,
